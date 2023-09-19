@@ -29,7 +29,7 @@ def extract_exif(filepath: str) -> dict:
     return exif_table
 
 
-def get_georeferencing(exif_table: str) -> None:
+def get_georeferencing(exif_table: dict) -> None:
     datetime            = exif_table['DateTime']
     image_width         = exif_table['ExifImageWidth']
     image_height        = exif_table['ExifImageHeight']
