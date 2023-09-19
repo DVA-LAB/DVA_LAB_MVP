@@ -73,14 +73,14 @@ def get_georeferencing(exif_table: str) -> None:
     
     if match_flight_degree:
         print (f"드론 자세\t{match_flight_degree.group()}")
-    if match_flight_degree:
+    if match_gimbal_degree:
         print (f"짐벌 각도\t{match_gimbal_degree.group()}")
     if match_flight_speed:
         print (f"비행 속도\t{match_flight_speed.group()}")
     
     print('\n')
 
-    
+
 if __name__ == "__main__":
     filepaths = get_file_path(directory='data')
     for filepath in filepaths:
