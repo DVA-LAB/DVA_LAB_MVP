@@ -2,6 +2,7 @@ import os
 import re
 from PIL import Image
 from PIL.ExifTags import TAGS
+from typing import Tuple
 
 
 def get_file_path(directory: str) -> list:
@@ -29,7 +30,45 @@ def extract_exif(filepath: str) -> dict:
     return exif_table
 
 
-def get_georeferencing(exif_table: dict) -> None:
+def extract_xmp(filepath: str) -> Tuple[Tuple, Tuple, Tuple]:
+    with open(filepath, mode="rb") as f:
+        data        = f.read()
+        xmp_start   = data.find(b'<x:xmpmeta')
+        xmp_end     = data.find(b'/x:xmpmeta')
+        xmp_data    = data[xmp_start : xmp_end+12]
+        
+        pattern_absolute_altitude       = re.compile(b'AbsoluteAltitude="[+-]\d{1,}\.\d{1,}"')
+        pattern_relative_altitude       = re.compile(b'RelativeAltitude="[+-]\d{1,}\.\d{1,}"')
+        pattern_gimbal_yaw_degree       = re.compile(b'GimbalYawDegree="[+-]\d{1,}\.\d{1,}"')
+        pattern_gimbal_pitch_degree     = re.compile(b'GimbalPitchDegree="[+-]\d{1,}\.\d{1,}"')
+        pattern_gimbal_roll_degree      = re.compile(b'GimbalRollDegree="[+-]\d{1,}\.\d{1,}"')
+        pattern_flight_yaw_degree       = re.compile(b'FlightYawDegree="[+-]\d{1,}\.\d{1,}"')
+        pattern_flight_pitch_degree     = re.compile(b'FlightPitchDegree="[+-]\d{1,}\.\d{1,}"')
+        pattern_flight_roll_degree      = re.compile(b'FlightRollDegree="[+-]\d{1,}\.\d{1,}"')
+        
+        match_absolute_altitude         = pattern_absolute_altitude.search(xmp_data)
+        match_relative_altitude         = pattern_relative_altitude.search(xmp_data)
+        match_gimbal_yaw_degree         = pattern_gimbal_yaw_degree.search(xmp_data)
+        match_gimbal_pitch_degree       = pattern_gimbal_pitch_degree.search(xmp_data)
+        match_gimbal_roll_degree        = pattern_gimbal_roll_degree.search(xmp_data)
+        match_flight_yaw_degree         = pattern_flight_yaw_degree.search(xmp_data)
+        match_flight_pitch_degree       = pattern_flight_pitch_degree.search(xmp_data)
+        match_flight_roll_degree        = pattern_flight_roll_degree.search(xmp_data)
+        
+        altitude_absolute   = match_absolute_altitude.group().split(b'"')[1].decode('utf-8')
+        altitude_relative   = match_relative_altitude.group().split(b'"')[1].decode('utf-8')
+        flight_yaw          = match_flight_yaw_degree.group().split(b'"')[1].decode('utf-8')
+        flight_pitch        = match_flight_pitch_degree.group().split(b'"')[1].decode('utf-8')
+        flight_roll         = match_flight_roll_degree.group().split(b'"')[1].decode('utf-8')
+        gimbal_yaw          = match_gimbal_yaw_degree.group().split(b'"')[1].decode('utf-8')
+        gimbal_pitch        = match_gimbal_pitch_degree.group().split(b'"')[1].decode('utf-8')
+        gimbal_roll         = match_gimbal_roll_degree.group().split(b'"')[1].decode('utf-8')
+        
+        return (altitude_absolute, altitude_relative), (flight_yaw, flight_pitch, flight_roll), (gimbal_yaw, gimbal_pitch, gimbal_roll)
+        
+
+def extract_georeference(exif_table: dict, xmp: Tuple[Tuple, Tuple, Tuple]) -> None:
+    # Extract exif value by key
     datetime            = exif_table['DateTime']
     image_width         = exif_table['ExifImageWidth']
     image_height        = exif_table['ExifImageHeight']
@@ -38,8 +77,15 @@ def get_georeferencing(exif_table: dict) -> None:
     model               = exif_table['Model']
     orientation         = exif_table['Orientation']
     focal_length        = exif_table['FocalLength']
-    maker_note          = str(exif_table['MakerNote'])
+    maker_note          = exif_table['MakerNote']
     
+    # Unpack xmp in JPEG
+    altitude, flight_degree, gimbal_degree  = xmp
+    altitude_absolute, altitude_relative    = altitude
+    flight_yaw, flight_pitch, flight_roll   = flight_degree
+    gimbal_yaw, gimbal_pitch, gimbal_roll   = gimbal_degree
+    
+    # Calculate GPS
     lat = 0.0
     lon = 0.0
     alt = 0.0
@@ -62,27 +108,16 @@ def get_georeferencing(exif_table: dict) -> None:
     print (f"정렬방향\t{orientation}")
     print (f"제조사/모델\t{make}/{model}")
     print (f"초점거리\t{focal_length}")
-    print (f"GPS 좌표\t({lat:7f}, {lon:7f}, {alt})")
-    
-    pattern_gimbal_degree   = re.compile(r'GimbalDegree\(Y,P,R\):(-?\d+),(-?\d+),(-?\d+)')
-    pattern_flight_degree   = re.compile(r'FlightDegree\(Y,P,R\):(-?\d+),(-?\d+),(-?\d+)')
-    pattern_flight_speed    = re.compile(r'FlightSpeed\(X,Y,Z\):(-?\d+),(-?\d+),(-?\d+)')
-    match_gimbal_degree     = pattern_gimbal_degree.search(maker_note)
-    match_flight_degree     = pattern_flight_degree.search(maker_note)
-    match_flight_speed      = pattern_flight_speed.search(maker_note)
-    
-    if match_flight_degree:
-        print (f"드론 자세\t{match_flight_degree.group()}")
-    if match_gimbal_degree:
-        print (f"짐벌 각도\t{match_gimbal_degree.group()}")
-    if match_flight_speed:
-        print (f"비행 속도\t{match_flight_speed.group()}")
-    
-    print('\n')
+    print (f"GPS 좌표\t({lat:7f}, {lon:7f}, {alt})")    
+    print (f"절대 고도\t{altitude_absolute}") # this can cause error accumulation becasue of round off
+    print (f"상대 고도\t{altitude_relative}")
+    print (f"드론 자세\tFlightDegree(Y,P,R):{flight_yaw},{flight_pitch},{flight_roll}")
+    print (f"짐벌 각도\tGimbalDegree(Y,P,R):{gimbal_yaw},{gimbal_pitch},{gimbal_roll}\n")
 
 
 if __name__ == "__main__":
     filepaths = get_file_path(directory='data')
     for filepath in filepaths:
-        exif_table = extract_exif(filepath)
-        get_georeferencing(exif_table)
+        exif_table  = extract_exif(filepath)
+        xmp         = extract_xmp(filepath)
+        extract_georeference(exif_table, xmp)
