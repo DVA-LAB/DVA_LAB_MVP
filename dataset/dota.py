@@ -1,15 +1,15 @@
 # DOTA base로 생성한 HF competition용 데이터 셋
-import tempfile
-from datasets import Dataset, load_dataset, load_from_disk
-import cv2
-import pandas as pd
+import json
 import os
 import random
+import tempfile
+
+import cv2
 import numpy as np
-import os
-from PIL import Image, ImageDraw
+import pandas as pd
 import tqdm
-import json
+from datasets import Dataset, load_dataset, load_from_disk
+from PIL import Image, ImageDraw
 
 
 def calculate_object_ratio(obj_w, obj_h, img_w, img_h):
@@ -106,28 +106,44 @@ def process_image_and_labels(row):
 
 if __name__ == "__main__":
     save_path = "/mnt/sda/DVA_ship/hf_data"
-    os.remove(os.path.join(save_path, "metadata.jsonl"))
+    exist_ok = True
 
-    dataset = load_dataset(
-        path="datadrivenscience/ship-detection",
-    )
-    tr_data = dataset["train"]
-    test_data = dataset["test"]
-    count = 0
-
-    for dataset in [tr_data, test_data]:
-        for data in tqdm.tqdm(dataset):
-            Image.MAX_IMAGE_PIXELS = None
-            img_list, objects_list = process_image_and_labels(data)
-            if img_list:
-                for img, objects in zip(img_list, objects_list):
-                    with open(os.path.join(save_path, "metadata.jsonl"), "a") as f:
-                        json_line = json.dumps(
-                            {"file_name": f"img_{count}.png", "objects": objects}
-                        )
-                        f.write(json_line + "\n")
-                        img.save(os.path.join(save_path, f"img_{count}.png"))
-                        count += 1
+    if exist_ok or not os.path.exists(os.path.join(save_path, "metadata.jsonl")):
+        dataset = load_dataset(
+            path="datadrivenscience/ship-detection",
+        )
+        tr_data = dataset["train"]
+        test_data = dataset["test"]
+        count = 0
+        for dataset in [tr_data, test_data]:
+            for data in tqdm.tqdm(dataset):
+                Image.MAX_IMAGE_PIXELS = None
+                img_list, objects_list = process_image_and_labels(data)
+                if img_list:
+                    for img, objects in zip(img_list, objects_list):
+                        with open(os.path.join(save_path, "metadata.jsonl"), "a") as f:
+                            json_line = json.dumps(
+                                {"file_name": f"img_{count}.png", "objects": objects}
+                            )
+                            f.write(json_line + "\n")
+                            img.save(os.path.join(save_path, f"img_{count}.png"))
+                            count += 1
 
     dataset = load_dataset("imagefolder", data_dir=save_path)
     dataset = dataset["train"].train_test_split(train_size=0.9)
+    print(dataset)
+    #
+    # for idx, data in enumerate(dataset['train']):
+    #     image = data["image"]
+    #     annotations = data["objects"]
+    #     draw = ImageDraw.Draw(image)
+    #
+    #     for i in range(len(annotations["bbox"])):
+    #         box = annotations["bbox"][i]
+    #         x, y, w, h = tuple(box)
+    #         draw.rectangle((x, y, x + w, y + h), outline="red", width=1)
+    #         draw.text((x, y), 'ship', fill="white")
+    #
+    #     image.save(f"img_{idx}.png")
+    #     if idx > 10:
+    #         break
