@@ -7,12 +7,21 @@
   * 객체가 이미지 전체 넓이 대비 0.5~1% 비율이 되도록 사이즈 조정 후 random crop 수행
   * random crop한 이미지에 이미지 전체 넓이 대비 0.05% 미만 사이즈의 선박 존재시 해당 이미지는 제외 
 ### sample image
-<img src="./sample_img/dota_1.png" width="500" height="500">
-<img src="./sample_img/dota_2.png" width="500" height="500">
+<img src="./sample_img/dota_1.png" width="300" height="300">
+<img src="./sample_img/dota_2.png" width="300" height="300">
 
 ### data 구성
 ```commandline
-
+DatasetDict({
+    train: Dataset({
+        features: ['image', 'objects'],
+        num_rows: 358
+    })
+    test: Dataset({
+        features: ['image', 'objects'],
+        num_rows: 40
+    })
+})
 ```
 
 
