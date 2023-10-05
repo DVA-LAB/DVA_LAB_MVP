@@ -42,10 +42,8 @@ def check_object_within_crop(xmin, ymin, xmax, ymax, start_x, start_y, end_x, en
 def process_image_and_labels(row):
     img = row["image"]
     img_h, img_w = img.height, img.width
-    # print(img_h, img_w)
 
     labels = row["objects"]
-    # print(labels)
 
     bboxes = labels["bbox"]
     categories = labels["categories"]
@@ -75,6 +73,7 @@ def process_image_and_labels(row):
         with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as temp_file:
             cropped_img.save(temp_file.name, format="PNG")
             cropped_img = Image.open(temp_file.name)
+            c_img_h, c_img_w = cropped_img.height, cropped_img.width
         os.remove(temp_file.name)
 
         for bbox, category in zip(bboxes, categories):
@@ -84,15 +83,15 @@ def process_image_and_labels(row):
                 oxmin, oymin, oxmax, oymax, start_x, start_y, end_x, end_y
             ):
                 new_xmin, new_ymin = max(0, oxmin - start_x), max(0, oymin - start_y)
-                new_xmax, new_ymax = max(0, oxmax - start_x), max(0, oymax - start_y)
+                new_xmax, new_ymax = min(c_img_w, max(0, oxmax - start_x)), min(c_img_h, max(0, oymax - start_y))
                 cropped_bboxes.append(
-                    [new_xmin, new_ymin, oxmax - oxmin, oymax - oymin]
+                    [new_xmin, new_ymin, new_xmax - new_xmin, new_ymax - new_ymin]
                 )
                 cropped_categories.append(category)
 
                 obj_w, obj_h = new_xmax - new_xmin, new_ymax - new_ymin
-                obj_ratio = calculate_object_ratio(obj_w, obj_h, img_w, img_h)
-                if obj_ratio < 0.05:
+                obj_ratio = calculate_object_ratio(obj_w, obj_h, c_img_w, c_img_h)
+                if obj_ratio < 0.15:
                     check_size = False
         if check_size:
             imgs.append(cropped_img)
@@ -104,11 +103,12 @@ def process_image_and_labels(row):
         return None, None
 
 
-if __name__ == "__main__":
-    save_path = "/mnt/sda/DVA_ship/hf_data"
-    exist_ok = True
-
-    if exist_ok or not os.path.exists(os.path.join(save_path, "metadata.jsonl")):
+def get_dataset(save_path, exist_ok=False):
+    os.makedirs(save_path, exist_ok=True)
+    meta_path = os.path.join(save_path, "metadata.jsonl")
+    if exist_ok or not os.path.exists(meta_path):
+        if os.path.exists(meta_path):
+            os.remove(meta_path)
         dataset = load_dataset(
             path="datadrivenscience/ship-detection",
         )
@@ -121,9 +121,9 @@ if __name__ == "__main__":
                 img_list, objects_list = process_image_and_labels(data)
                 if img_list:
                     for img, objects in zip(img_list, objects_list):
-                        with open(os.path.join(save_path, "metadata.jsonl"), "a") as f:
+                        with open(meta_path, "a") as f:
                             json_line = json.dumps(
-                                {"file_name": f"img_{count}.png", "objects": objects}
+                                {"img_id": count, "file_name": f"img_{count}.png", "objects": objects}
                             )
                             f.write(json_line + "\n")
                             img.save(os.path.join(save_path, f"img_{count}.png"))
@@ -131,19 +131,11 @@ if __name__ == "__main__":
 
     dataset = load_dataset("imagefolder", data_dir=save_path)
     dataset = dataset["train"].train_test_split(train_size=0.9)
-    print(dataset)
-    #
-    # for idx, data in enumerate(dataset['train']):
-    #     image = data["image"]
-    #     annotations = data["objects"]
-    #     draw = ImageDraw.Draw(image)
-    #
-    #     for i in range(len(annotations["bbox"])):
-    #         box = annotations["bbox"][i]
-    #         x, y, w, h = tuple(box)
-    #         draw.rectangle((x, y, x + w, y + h), outline="red", width=1)
-    #         draw.text((x, y), 'ship', fill="white")
-    #
-    #     image.save(f"img_{idx}.png")
-    #     if idx > 10:
-    #         break
+    return dataset
+
+
+if __name__ == "__main__":
+    save_path = "/mnt/sda/DVA_ship/hf_data"
+    exist_ok = False
+
+    dataset = get_dataset(save_path, exist_ok)
