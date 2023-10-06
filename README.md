@@ -31,9 +31,3 @@ Input .MP4 and .SRT file should be located in "./input".
 #### 3. main.py
 Merge the other classes and pre, postprocessing
 TODO: Divide classes into folders or other py files.
-
-#### 4. test.py
-This file is for extracting georeferencing data from still cut. 
-It contains focal length, GPS, drone attitude, gimbal attitude etc.
-
-![캡처](georeferencing.png)
