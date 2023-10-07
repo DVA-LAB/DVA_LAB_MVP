@@ -5,6 +5,8 @@ Drone Video Analysis(DVA) project for helping MARC supported by Kakao Impact, MO
 ```
 ㄴinput
 ㄴutils
+  ㄴseg_frame_parsing.py
+  ㄴtracking_frame_parsing.py
   ㄴextract_meta.py
   ㄴvideo_segments.py
 main.py
