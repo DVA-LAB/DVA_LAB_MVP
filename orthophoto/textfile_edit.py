@@ -8,11 +8,11 @@ with open('./KNGeoid18.dat', 'r') as file:
         # 라인을 탭으로 구분된 필드로 분리
         latitude, longitude, altitude = map(float, line.strip().split('\t'))
         # 높이 값이 16에서 17 사이에 있는 레코드를 추출
-        if 33 <= latitude <= 34 and 124 <= longitude <= 128:
-            filtered_records.append((latitude, longitude, 0))
+        if 33 <= latitude <= 34.5 and 125.5 <= longitude <= 127.5:
+            filtered_records.append((latitude, longitude, altitude))
 
 # 추출된 레코드를 파일에 저장 (일련번호, 자리수를 맞추고 공백으로 구분)
-with open('./input.txt', 'w') as output_file:
+with open('./input_jeju.txt', 'w') as output_file:
     for idx, record in enumerate(filtered_records, start=1):
         # 일련번호를 6자리로 포맷팅하고, 나머지 필드의 자리수를 맞추고 공백으로 구분하여 파일에 쓰기
         output_file.write('{:06d} {:.5f} {:.5f} {:.3f}\n'.format(idx, record[0], record[1], record[2]))
