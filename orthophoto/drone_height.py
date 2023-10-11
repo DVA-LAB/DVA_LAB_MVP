@@ -7,26 +7,58 @@
 
 
 # 01. 드론 스틸사진에서 추출한 절대고도(Absolute Altitude), 촬영 시간 등 필요한 메타 데이터를 추출한다.
-
-
-
-
 # 02. 절대고도(Absolute Altitude)가 평균해수면을 기준일 경우
  # 02-1. 사진이 촬영된 시간의 조위값을 가져온다(해양수산부 바다누리 해양정보서비스).
   # http://www.khoa.go.kr/oceangrid/khoa/takepart/openapi/openApiObsTideRealDataInfo.do
  # 02-2. 사진이 촬영된 위치(좌표)의 평균해수면과 기본수준면(조위기준)의 차이 값을 가져온다.(국토지리정보원 육상/해상 높이 연계 서비스)
-  # https://map.ngii.go.kr/ms/mesrInfo/geoidIntro.do "파일 입력 기능으로 텍스트 파일 다운로드"
+  # https://map.ngii.go.kr/ms/mesrInfo/geoidIntro.do "그리드 입력 기능으로 텍스트 파일 다운로드"=>CSV 파일로 변경
  # 02-3. 조위값과 기준면의 차이를 이용해서 드론과 해수면과의 높이를 구한다. 
  # 드론의 높이(Height) =  절대고도(Absolute Altitude) - (조위 - (평균해수면 - 기본수준면))
-
-
-
 # 03. 절대고도(Absolute Altitude)가 타원체고 일 경우(DJI 기종)
  # 03-1. "KNGeoid18.dat"에서 촬영 위치(좌표)의 지오이드고를 가져온다(국토지리정보원 수직기준전환 서비스에서 다운로드).
   # https://map.ngii.go.kr/ms/mesrInfo/geoidIntro.do 
 ##이후의 과정은 02.의 순서를 그대로 따른다.
-
 # 04. 최종으로 계산한 드론과 해수면의 높이 차이를 반환한다.
 
-# 
+from scipy.spatial import cKDTree
+
+# CSV 파일 읽기
+ # 위도, 경도, LDL-IMSL, LDL-LMSL, LMSL-IMSL, CSV 파일 읽어오기 "LDL(수준(조위)기준면), IMSL(인천만평균해수면), LMSL(지역평균해수면)"
+ # ex) 34.50000,125.50000,1.840,1.840, 0.000
+def read_csv(file_path):
+    data = []
+    with open(file_path, 'r') as file:
+        lines = file.readlines()
+        for line in lines:
+            values = line.strip().split(',')
+            data.append(tuple(map(float, values)))
+    return data
+
+# KD 트리 생성 함수
+def create_kd_tree(data):
+    coordinates = [(row[0], row[1]) for row in data]
+    kdtree = cKDTree(coordinates)
+    return kdtree
+
+# API를 이용해 조위값 가져오는 함수
+def get_tide_level(time):
+    return tide_level
+    
+
+def drone_height(file_path, latitude, longitude, absolutaltitude, time):
+  
+  # CSV 파일에서 데이터 읽어오기
+  data = read_csv(file_path)
+
+  # KD 트리 생성
+  kdtree = create_kd_tree(data)
+  distance, index = kdtree.query([latitude, longitude])
+  closest_point = data[index]
+
+  tide_level = get_tide_level(time)
+
+  # 드론의 높이(Height) =  절대고도(Absolute Altitude) - (조위 - (평균해수면 - 기본수준면))
+  height = absolutaltitude - (tide_level - closest_point[2])
+
+  return height
 
