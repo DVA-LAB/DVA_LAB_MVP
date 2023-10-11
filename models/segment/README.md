@@ -27,8 +27,8 @@ segment.show_mask_bbox(masks, sample_bboxes, random_color=True)
 * segment 이미지 저장은 검증 목적으로 원본 이미지의 해상도를 유지 하지 않음
 
 ## 3. Sample 결과
-<img src="./sample_img/sample.PNG" width="300" height="300">
-<img src="./sample_img/result.png" width="300" height="300">
+<img src="./sample_img/sample.PNG" width="600" height="300">
+<img src="./sample_img/result.png" width="600" height="300">
 
 ## TODO
 * TODO@jh: SAM-HQ 옵션 추가 (https://drive.google.com/file/d/1qobFYrI4eyIANfBSmYcGuWRaSIXfMOQ8/view?usp=sharing)
