@@ -26,17 +26,27 @@ def extract_srt(lines: list) -> list:
     return subtitles
 
 
-def extract_metadata(video_path: str) -> Tuple[int, int, int, int]:
+def extract_date_from_srt(srt_path: str) -> list:
+    f = open(srt_path, mode='r', encoding='utf-8')
+    data = f.read()
+    pattern_date = re.compile(r"[0-9]{4,}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}")
+    dates = pattern_date.findall(data)
+    f.close()
+    
+    return dates
+
+
+def extract_video_metadata(video_path: str) -> Tuple[int, int, int, int]:
     cap = cv2.VideoCapture(video_path)
 
     if not cap.isOpened():
         print(f"{video_path} 파일을 열 수 없습니다.")
         return
 
-    frame_rate = int(cap.get(cv2.CAP_PROP_FPS))
-    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    frame_rate      = int(cap.get(cv2.CAP_PROP_FPS))
+    total_frames    = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    frame_width     = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    frame_height    = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
     print(f"파일명: {video_path}")
     print(f"프레임 레이트: {frame_rate}")
