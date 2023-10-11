@@ -1,7 +1,8 @@
-import cv2
-import numpy as np
 import xml.etree.ElementTree as ET
+
+import cv2
 import matplotlib.pyplot as plt
+import numpy as np
 
 
 def preprocess_image(img_array, xml_path):
@@ -13,9 +14,9 @@ def preprocess_image(img_array, xml_path):
     root = tree.getroot()
 
     # 모든 'object' 태그를 찾습니다.
-    for obj in root.findall('object'):
+    for obj in root.findall("object"):
         # 'polygon' 태그를 찾습니다.
-        polygon = obj.find('polygon')
+        polygon = obj.find("polygon")
 
         # 'polygon' 태그가 없는 경우 continue를 통해 넘어갑니다.
         if polygon is None:
@@ -25,8 +26,8 @@ def preprocess_image(img_array, xml_path):
         points = []
         idx = 1
         while True:
-            x = polygon.find(f'x{idx}')
-            y = polygon.find(f'y{idx}')
+            x = polygon.find(f"x{idx}")
+            y = polygon.find(f"y{idx}")
             if x is None or y is None:
                 break
             points.append([int(x.text), int(y.text)])
