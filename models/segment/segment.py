@@ -1,94 +1,76 @@
-import glob
-import os
-
 import cv2
+import matplotlib.pyplot as plt
 import numpy as np
 import torch
-from config import checkpoint_file, config_file, device, save, score_threshold
-from detect import get_bbox
-from mmdet.apis import init_detector
-from PIL import Image, ImageDraw
 from transformers import SamModel, SamProcessor
-from utils import is_rgb_or_bgr, preprocess_image
-
-from segment import get_seg
 
 
-class Chipseg:
-    def __init__(self, config_file, checkpoint_file):
-        self.det_model = init_detector(config_file, checkpoint_file, device=device)
-        self.seg_model = SamModel.from_pretrained("facebook/sam-vit-huge").to(device)
+class Segment:
+    def __init__(self, device):
+        self.device = device
+        self.rgb_img = None
+        self.model = SamModel.from_pretrained(
+            pretrained_model_name_or_path="facebook/sam-vit-huge"
+        ).to(self.device)
         self.processor = SamProcessor.from_pretrained("facebook/sam-vit-huge")
 
-    @staticmethod
-    def check_rgb(img_array):
-        if is_rgb_or_bgr(img_array) == "RGB":
-            print("아래 코드는 cv2로 불러온 BGR image array 입력 기준으로 작성되었습니다.")
-            print("이미지 채널을 한번 더 확인해 주세요. 혹시나,,")
+    def do_seg(self, bgr_img, boxes):
+        self.rgb_img = cv2.cvtColor(bgr_img, cv2.COLOR_BGR2RGB)
 
-    def get_bbox(self, mask_img):
-        return get_bbox(mask_img, self.det_model)
-
-    def get_seg(self, img_array, boxes):
-        return self.do_seg(img_array, boxes, self.seg_model, self.processor)
-
-    @staticmethod
-    def do_seg(img, boxes, seg_model, processor):
-        rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-
-        if len(boxes[0]):
-            boxes = boxes.unsqueeze(0).cpu().tolist()
-            inputs = processor(rgb_img, return_tensors="pt").to(device)
-            image_embeddings = seg_model.get_image_embeddings(inputs["pixel_values"])
-
-            inputs = processor(rgb_img, input_boxes=boxes, return_tensors="pt").to(
-                device
-            )
-            inputs.pop("pixel_values", None)
-            inputs.update({"image_embeddings": image_embeddings})
+        if len(boxes):
+            inputs = self.processor(
+                self.rgb_img, input_boxes=[boxes], return_tensors="pt"
+            ).to(self.device)
 
             with torch.no_grad():
-                outputs = seg_model(**inputs, multimask_output=False)
+                outputs = self.model(**inputs, multimask_output=False)
 
-            masks = processor.image_processor.post_process_masks(
+            masks = self.processor.image_processor.post_process_masks(
                 outputs.pred_masks.cpu(),
                 inputs["original_sizes"].cpu(),
                 inputs["reshaped_input_sizes"].cpu(),
             )
-            scores = outputs.iou_scores
-            return masks[0].squeeze().cpu().detach().numpy().astype(np.uint8)
+            return masks[0].cpu()
         else:
-            return [[]]
+            return None, None
+
+    def show_mask(self, masks, random_color=False):
+        plt.imshow(np.array(self.rgb_img))
+        ax = plt.gca()
+        for mask in masks:
+            color = self.get_color(random_color)
+            print(color)
+            h, w = mask.shape[-2:]
+            mask_image = mask.reshape(h, w, 1) * color.reshape(1, 1, -1)
+            ax.imshow(mask_image)
+            plt.axis("off")
+        plt.show()
+
+    def show_mask_bbox(self, masks, bboxes, random_color=False):
+        for bbox in bboxes:
+            x1, y1, x2, y2 = bbox
+            cv2.rectangle(self.rgb_img, (x1, y1), (x2, y2), (255, 0, 0), 10)
+        self.show_mask(masks, random_color)
 
     @staticmethod
-    def get_mask_img(img_array, video_name):
-        mask_path = os.path.join(
-            "/home/vision/Models/chip_segmentation/mask_info", video_name + ".xml"
-        )
-        mask_img = preprocess_image(img_array, mask_path)
-        return mask_img
-
-    @staticmethod
-    def save_seg(filename, img_array, chip_masks):
-        print_img = cv2.cvtColor(img_array.copy(), cv2.COLOR_BGR2RGB)
-        for mask in chip_masks:
-            mask = mask * 255
-            chip_mask_rgb = np.stack(
-                [mask, np.zeros_like(mask), np.zeros_like(mask)], axis=2
-            )
-            print_img = cv2.addWeighted(print_img, 1, chip_mask_rgb, 0.7, 0)
-        cv2.imwrite(filename, cv2.cvtColor(print_img, cv2.COLOR_RGB2BGR))
+    def get_color(random_color):
+        if random_color:
+            color = np.concatenate([np.random.random(3), np.array([0.6])], axis=0)
+        else:
+            color = np.array([30 / 255, 144 / 255, 255 / 255, 0.6])
+        return color
 
 
 if __name__ == "__main__":
-    video_name = "GX010271"
-    img_array = cv2.imread(
-        "/mnt/sda/09_chips/test/test_video/GX010271/GX010271_11100.png"
-    )
-    segment = Chipseg(config_file, checkpoint_file)
-    segment.check_rgb(img_array)
-    mask_img = segment.get_mask_img(img_array, video_name)
-    bboxes = segment.get_bbox(mask_img)
-    chip_masks = segment.get_seg(img_array, bboxes)
-    if save:
-        segment.save_seg("/mnt/sda/09_chips/test/test.png", img_array, chip_masks)
+    sample_img = "sample.jpg"
+    sample_bboxes = [
+        [75, 275, 1725, 850],
+        [425, 600, 700, 875],
+        [1375, 550, 1650, 800],
+        [1240, 675, 1400, 750],
+    ]
+    segment = Segment("cpu")
+    img = cv2.imread(sample_img)
+    masks = segment.do_seg(img, sample_bboxes)
+    # segment.show_mask(masks, random_color=True)
+    segment.show_mask_bbox(masks, sample_bboxes, random_color=True)
