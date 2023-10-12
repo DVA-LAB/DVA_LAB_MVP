@@ -29,7 +29,7 @@ def extract_srt(lines: list) -> list:
 def extract_date_from_srt(srt_path: str) -> list:
     f = open(srt_path, mode='r', encoding='utf-8')
     data = f.read()
-    pattern_date = re.compile(r"[0-9]{4,}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}")
+    pattern_date = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}")
     dates = pattern_date.findall(data)
     f.close()
     
@@ -187,7 +187,7 @@ if __name__ == "__main__":
         video_path = os.path.join(srt_folder, video_file)
         
         # 비디오 파일을 읽습니다.
-        frame_rate, total_frames, frame_width, frame_height = extract_metadata(video_path)
+        frame_rate, total_frames, frame_width, frame_height = extract_video_metadata(video_path)
 
         # SRT 파일을 읽습니다.
         for srt_file in srt_files:
