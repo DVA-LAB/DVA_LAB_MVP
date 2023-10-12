@@ -4,12 +4,11 @@ import numpy as np
 from PIL import ImageFont, ImageDraw, Image
 from utils.extract_meta import extract_date_from_srt, extract_video_metadata
 from ultralytics import YOLO
-from PIL import Image
 
 
 LEGAL_SPEED     = 50
 LEGAL_DISTANCE  = 50
-TARGET_SIZE     = (1200, 900)
+TARGET_SIZE     = (1920, 1080)
 
 
 if __name__ == "__main__":
@@ -17,7 +16,8 @@ if __name__ == "__main__":
     parser.add_argument('--srt_path', type=str, default='data/DJI_0010.srt')
     parser.add_argument('--video_path', type=str, default='data/DJI_0010.mp4')
     parser.add_argument('--model_name', type=str, default='yolov8n.pt')
-    parser.add_argument('--output_video', type=str, default='data/DJI_0010.AVI')
+    parser.add_argument('--output_video', type=str, default='data/output.avi')
+    parser.add_argument('--font_path', type=str, default='data/font/NanumSquareRoundR.ttf')
     args = parser.parse_args()
     
     dates = extract_date_from_srt(args.srt_path)
@@ -25,8 +25,13 @@ if __name__ == "__main__":
     
     frame_count = -1
     frame_rate, total_frames, frame_width, frame_height = extract_video_metadata(args.video_path)
+    
+    if total_frames > len(dates):
+        for i in range(total_frames - len(dates)):
+            dates.append(dates[-1])
+
     fourcc = cv2.VideoWriter_fourcc(*'DIVX')
-    out = cv2.VideoWriter(args.output_video, fourcc, frame_rate, (frame_width, frame_height))
+    out = cv2.VideoWriter(args.output_video, fourcc, frame_rate, TARGET_SIZE)
     
     cap = cv2.VideoCapture(args.video_path)
     while cap.isOpened():
@@ -63,7 +68,7 @@ if __name__ == "__main__":
         frame[y_position:y_position + background_height, x_position:x_position + background_width] = background
 
         # 한글 텍스트 시각화를 위해 폰트 설정과 CV2 → PIL 변환을 수행합니다.
-        font    = ImageFont.truetype("data/font/NanumSquareRoundR.ttf", size=24)
+        font    = ImageFont.truetype(args.font_path, size=24)
         image   = Image.fromarray(frame)
         draw    = ImageDraw.Draw(image)
 
@@ -85,7 +90,6 @@ if __name__ == "__main__":
             draw.rectangle(xy=(x, y, x+w, y+h), width=5, outline=(0, 255, 0))
             draw.text(xy=(x, y-50), text=title, font=font, align='left', fill=(0, 255, 0, 0))
 
-
         # 대시보드에 표시할 텍스트 정보를 생성합니다.
         if (LEGAL_DISTANCE > nearest_distance) or (LEGAL_SPEED < max_ship_speed):
             violation  = True
@@ -102,12 +106,15 @@ if __name__ == "__main__":
         draw.text(xy=(10, 120), text=f"선박 수: {boats}",                   font=font, align='left', fill=font_color)
         draw.text(xy=(10, 150), text=f"돌고래 수: {dolphins}",              font=font, align='left', fill=font_color)
 
+        # 비디오를 생성합니다.
         img = np.array(image)
-        
-        cv2.imshow(args.video_path, img)
         out.write(img)
+        
+        # 프레임을 윈도우에 띄웁니다.
+        cv2.imshow(args.video_path, img)
         if cv2.waitKey(1) & 0xFF == ord("q"):
             break
+        
         
     cap.release()
     out.release()
