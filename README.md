@@ -26,10 +26,11 @@ Input .MP4 and .SRT file should be located in "./input".
 This file is for making video segments struct including frame and metadata.
 Input .MP4 and .SRT file should be located in "./input".
 
+```python video_segments.py```
+
 #### 2-3. transform_coordinate.py
 This file is for getting 3D world coordinate from 2D image coordinate.
 
-```python video_segments.py```
 
 #### 3. main.py
 Merge the other classes and pre, postprocessing
