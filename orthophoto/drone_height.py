@@ -75,7 +75,7 @@ def drone_height(file_path, latitude, longitude, absolutaltitude, date, time, Ob
   tide_level = get_tide_level(ObsCode, date, time)
 
   # 드론의 높이(Height) =  절대고도(Absolute Altitude) - (조위 - (평균해수면 - 기본수준면))
-  height = float(absolutaltitude) - (float(tide_level) - float(closest_point[2]))
+  height = float(absolutaltitude) - (float(tide_level)*0.01 - float(closest_point[2]))
 
   return height
 
