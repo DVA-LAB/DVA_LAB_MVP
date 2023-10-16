@@ -5,6 +5,8 @@ Drone Video Analysis(DVA) project for helping MARC supported by Kakao Impact, MO
 ```
 ㄴinput
 ㄴutils
+  ㄴseg_frame_parsing.py
+  ㄴtracking_frame_parsing.py
   ㄴextract_meta.py
   ㄴvideo_segments.py
 main.py
@@ -35,6 +37,7 @@ This file is for getting 3D world coordinate from 2D image coordinate.
 #### 3. main.py
 Merge the other classes and pre, postprocessing
 TODO: Divide classes into folders or other py files.
+
 
 #### 4. visualize.py
 This file is for visualizing the result of detection and tracking.
