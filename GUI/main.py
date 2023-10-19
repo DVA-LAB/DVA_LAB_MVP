@@ -25,6 +25,11 @@ class VideoPlayerApp(QMainWindow):
         self.button_group_layout.addWidget(self.load_video_button)
         self.load_video_button.clicked.connect(self.load_video)
 
+        self.run_ai_model_button = QPushButton("Run AI models")
+        self.button_group_layout.addWidget(self.run_ai_model_button)
+        self.run_ai_model_button.clicked.connect(self.run_ai_models)
+        self.run_ai_model_button.hide()
+        
         button_row_layout = QHBoxLayout()
 
         self.skip_backward_button = QPushButton("<< 10seconds")
@@ -50,11 +55,6 @@ class VideoPlayerApp(QMainWindow):
         self.add_info_button.hide()
 
         self.button_group_layout.addStretch(1)
-
-        self.load_video_button = QPushButton("Load Other Videos")
-        self.button_group_layout.addWidget(self.load_video_button)
-        self.load_video_button.clicked.connect(self.load_video)
-        self.load_video_button.hide()
 
         # distance_layout 인스턴스 변수 초기화
         self.distance_layout = None
@@ -111,7 +111,7 @@ class VideoPlayerApp(QMainWindow):
             
             pixmap = self.video_label.pixmap()
             painter = QPainter(pixmap)
-            
+
             if self.adding_info:
                 for i, point in enumerate(self.points):
                     color = self.point_colors[i // 2]
@@ -142,17 +142,27 @@ class VideoPlayerApp(QMainWindow):
             painter.end()
             self.video_label.setPixmap(pixmap)
 
+    def run_ai_models(self):
+        # Call AI API function
+        # 10초 후에 버튼 비활성화
+        timer = QTimer()
+        timer.singleShot(1000, self.after_timer)
+
+    def after_timer(self):
+        self.run_ai_model_button.setEnabled(False)
+        self.play_pause_button.setText("Play")
+        self.play_pause_button.show()
+        self.skip_forward_button.show()
+        self.skip_backward_button.show()
+        self.add_info_button.show()
+
     def load_video(self):
         file_info = QFileDialog.getOpenFileUrl(self, "Open Video File", QUrl(""), "Video Files (*.mp4 *.avi *.mov);;All Files (*)")
         if file_info[1]:
             file_path = file_info[0].toLocalFile()
             self.video_capture.open(file_path)
-            self.play_video()
-            self.play_pause_button.setText("Pause")
-            self.play_pause_button.show()
-            self.skip_forward_button.show()
-            self.skip_backward_button.show()
-            self.add_info_button.show()
+            self.update_frame()
+            self.run_ai_model_button.show()
 
     def skip_forward(self):
         current_frame = self.video_capture.get(cv2.CAP_PROP_POS_FRAMES)
@@ -176,7 +186,6 @@ class VideoPlayerApp(QMainWindow):
                 color = QColor(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
                 self.point_colors.append(color)
                 if len(self.points) % 2 == 0:
-                    self.update_frame()
                     self.create_distance_text_fields()
         return super().eventFilter(obj, event)
 
@@ -188,7 +197,6 @@ class VideoPlayerApp(QMainWindow):
             self.video_label.installEventFilter(self)
             self.adding_info = True
             self.point_colors = []  # 이 부분 추가 (점 색상도 초기화)
-            self.update_frame()
             self.show_info_dialog()
             self.info_dialog_shown = True
         self.add_info_button.setDisabled(True)  # 버튼을 비활성화
@@ -203,9 +211,18 @@ class VideoPlayerApp(QMainWindow):
     def create_distance_text_fields(self):
         # 이전 텍스트 필드 및 레이블 제거
         if self.distance_layout:
-            self.distance_container_widget.deleteLater()  # 이전 레이아웃 및 위젯 제거
+            while self.distance_layout.count():
+                item = self.distance_layout.takeAt(0)
+                widget = item.widget()
+                if widget:
+                    widget.deleteLater()
             self.distance_layout = None
             self.point_text_fields = []  # 이전 텍스트 필드 초기화
+
+        # 이전 distance_container_widget을 삭제
+        if hasattr(self, 'distance_container_widget') and self.distance_container_widget:
+            self.distance_container_widget.deleteLater()
+            self.distance_container_widget = None
 
         self.distance_container_widget = QWidget(self)
         self.distance_layout = QFormLayout(self.distance_container_widget)
@@ -224,6 +241,7 @@ class VideoPlayerApp(QMainWindow):
             text_field.textChanged.connect(self.check_text_fields)  # 텍스트 변경 이벤트 연결
 
         self.done_button.show()
+
 
     def check_text_fields(self):
         all_filled = all(text_field.hasAcceptableInput() for text_field in self.point_text_fields)
@@ -273,9 +291,8 @@ class VideoPlayerApp(QMainWindow):
 
         self.distance_layout = None  # distance_layout을 초기화
         self.done_button.setEnabled(False)  # Done 버튼을 다시 비활성화
-        self.update_frame()
 
-        # 마우스 클릭 이벤트 활성화 유지
+        # 마우스 클릭 이벤트 비활성화
         self.adding_info = False
 
 if __name__ == "__main__":
