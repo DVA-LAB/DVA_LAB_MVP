@@ -24,6 +24,7 @@ class Segment:
             ).to(self.device)
 
             with torch.no_grad():
+                # TODO@jh: multimask 처리 구상
                 outputs = self.model(**inputs, multimask_output=False)
 
             masks = self.processor.image_processor.post_process_masks(
@@ -33,7 +34,7 @@ class Segment:
             )
             return masks[0].cpu()
         else:
-            return None, None
+            return None
 
     def show_mask(self, masks, random_color=False, save=None):
         plt.imshow(np.array(self.rgb_img))
