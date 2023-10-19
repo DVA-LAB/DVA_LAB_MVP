@@ -29,7 +29,7 @@ class VideoPlayerApp(QMainWindow):
         self.button_group_layout.addWidget(self.run_ai_model_button)
         self.run_ai_model_button.clicked.connect(self.run_ai_models)
         self.run_ai_model_button.hide()
-        
+
         button_row_layout = QHBoxLayout()
 
         self.skip_backward_button = QPushButton("<< 10seconds")
@@ -71,8 +71,9 @@ class VideoPlayerApp(QMainWindow):
         self.playing = False
 
         self.timer = QTimer(self)
-        self.timer.timeout.connect(self.update_frame)
+        self.timer.timeout.connect(self.read_frame)
 
+        self.frame = None
         self.info_dialog_shown = False  # 다이얼로그가 한 번 떴는지 여부를 나타내는 플래그
         self.adding_info = False
         self.points = []
@@ -99,48 +100,66 @@ class VideoPlayerApp(QMainWindow):
         self.playing = False
         self.timer.stop()
 
-    def update_frame(self):
-        ret, frame = self.video_capture.read()
-        if ret:
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            h, w, ch = frame.shape
-            bytes_per_line = ch * w
-            q_image = QImage(frame.data, w, h, bytes_per_line, QImage.Format.Format_RGB888)
-            pixmap = QPixmap.fromImage(q_image)
-            self.video_label.setPixmap(pixmap.scaled(self.video_label.size(), Qt.AspectRatioMode.KeepAspectRatio))
-            
-            pixmap = self.video_label.pixmap()
-            painter = QPainter(pixmap)
+    def read_frame(self):
+        _, self.frame = self.video_capture.read()
+        frame = cv2.cvtColor(self.frame, cv2.COLOR_BGR2RGB)
+        h, w, ch = frame.shape
+        bytes_per_line = ch * w
+        q_image = QImage(frame.data, w, h, bytes_per_line, QImage.Format.Format_RGB888)
+        pixmap = QPixmap.fromImage(q_image)
+        self.video_label.setPixmap(pixmap.scaled(self.video_label.size(), Qt.AspectRatioMode.KeepAspectRatio))
 
-            if self.adding_info:
-                for i, point in enumerate(self.points):
-                    color = self.point_colors[i // 2]
-                    pen = QPen(color)
-                    pen.setWidth(16)
-                    painter.setPen(pen)
-                    painter.drawPoint(point)
+        pixmap = self.video_label.pixmap()
+        painter = QPainter(pixmap)
+        
+        # 프레임 번호 텍스트 추가
+        frame_number_text = f"Frame: {int(self.video_capture.get(cv2.CAP_PROP_POS_FRAMES))}"
+        painter.setPen(QPen(Qt.GlobalColor.white))
+        painter.drawText(10, 20, frame_number_text)
 
-                # 두 번째 점 셋트를 기다리지 않고 바로 라인을 그림
-                for j in range(0, len(self.points), 2):
-                    if j + 1 < len(self.points):
-                        point1 = self.points[j]
-                        point2 = self.points[j + 1]
-                        line_color = self.point_colors[j// 2]
-                        line_pen = QPen(line_color)
-                        line_pen.setWidth(2)
-                        painter.setPen(line_pen)
-                        painter.drawLine(point1, point2)
-                        pair_index = j // 2 + 1
-                        point_text = f"Point {pair_index}"
-                        painter.drawText(point1.x(), point1.y() - 10, point_text)
-            
-            # 프레임 번호 텍스트 추가
-            frame_number_text = f"Frame: {int(self.video_capture.get(cv2.CAP_PROP_POS_FRAMES))}"
-            painter.setPen(QPen(Qt.GlobalColor.white))
-            painter.drawText(10, 20, frame_number_text)
+        painter.end()
+        self.video_label.setPixmap(pixmap)
 
-            painter.end()
-            self.video_label.setPixmap(pixmap)
+    def draw_frame(self):
+        frame = cv2.cvtColor(self.frame, cv2.COLOR_BGR2RGB)
+        h, w, ch = frame.shape
+        bytes_per_line = ch * w
+        q_image = QImage(frame.data, w, h, bytes_per_line, QImage.Format.Format_RGB888)
+        pixmap = QPixmap.fromImage(q_image)
+        self.video_label.setPixmap(pixmap.scaled(self.video_label.size(), Qt.AspectRatioMode.KeepAspectRatio))
+
+        pixmap = self.video_label.pixmap()
+        painter = QPainter(pixmap)
+
+        if self.adding_info:
+            for i, point in enumerate(self.points):
+                color = self.point_colors[i // 2]
+                pen = QPen(color)
+                pen.setWidth(16)
+                painter.setPen(pen)
+                painter.drawPoint(point)
+
+            # 두 번째 점 셋트를 기다리지 않고 바로 라인을 그림
+            for j in range(0, len(self.points), 2):
+                if j + 1 < len(self.points):
+                    point1 = self.points[j]
+                    point2 = self.points[j + 1]
+                    line_color = self.point_colors[j// 2]
+                    line_pen = QPen(line_color)
+                    line_pen.setWidth(2)
+                    painter.setPen(line_pen)
+                    painter.drawLine(point1, point2)
+                    pair_index = j // 2 + 1
+                    point_text = f"Point {pair_index}"
+                    painter.drawText(point1.x(), point1.y() - 10, point_text)
+
+        # 프레임 번호 텍스트 추가
+        frame_number_text = f"Frame: {int(self.video_capture.get(cv2.CAP_PROP_POS_FRAMES))}"
+        painter.setPen(QPen(Qt.GlobalColor.white))
+        painter.drawText(10, 20, frame_number_text)
+
+        painter.end()
+        self.video_label.setPixmap(pixmap)
 
     def run_ai_models(self):
         # Call AI API function
@@ -161,7 +180,7 @@ class VideoPlayerApp(QMainWindow):
         if file_info[1]:
             file_path = file_info[0].toLocalFile()
             self.video_capture.open(file_path)
-            self.update_frame()
+            self.read_frame()
             self.run_ai_model_button.show()
 
     def skip_forward(self):
@@ -169,14 +188,14 @@ class VideoPlayerApp(QMainWindow):
         fps = self.video_capture.get(cv2.CAP_PROP_FPS)
         target_frame = current_frame + 10 * fps
         self.video_capture.set(cv2.CAP_PROP_POS_FRAMES, target_frame)
-        self.update_frame()  # 프레임 이동 후 UI 업데이트
+        self.read_frame()  # 프레임 이동 후 UI 업데이트
 
     def skip_backward(self):
         current_frame = self.video_capture.get(cv2.CAP_PROP_POS_FRAMES)
         fps = self.video_capture.get(cv2.CAP_PROP_FPS)
         target_frame = current_frame - 10 * fps
         self.video_capture.set(cv2.CAP_PROP_POS_FRAMES, target_frame)
-        self.update_frame()  # 프레임 이동 후 UI 업데이트
+        self.read_frame()  # 프레임 이동 후 UI 업데이트
 
     def eventFilter(self, obj, event):
         if obj is self.video_label and self.adding_info and event.type() == QEvent.Type.MouseButtonPress:
@@ -186,6 +205,7 @@ class VideoPlayerApp(QMainWindow):
                 color = QColor(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
                 self.point_colors.append(color)
                 if len(self.points) % 2 == 0:
+                    self.draw_frame()
                     self.create_distance_text_fields()
         return super().eventFilter(obj, event)
 
@@ -197,6 +217,7 @@ class VideoPlayerApp(QMainWindow):
             self.video_label.installEventFilter(self)
             self.adding_info = True
             self.point_colors = []  # 이 부분 추가 (점 색상도 초기화)
+            self.draw_frame()
             self.show_info_dialog()
             self.info_dialog_shown = True
         self.add_info_button.setDisabled(True)  # 버튼을 비활성화
@@ -223,7 +244,7 @@ class VideoPlayerApp(QMainWindow):
         if hasattr(self, 'distance_container_widget') and self.distance_container_widget:
             self.distance_container_widget.deleteLater()
             self.distance_container_widget = None
-
+            
         self.distance_container_widget = QWidget(self)
         self.distance_layout = QFormLayout(self.distance_container_widget)
         self.layout.addWidget(self.distance_container_widget)  # 레이아웃에 추가
@@ -241,7 +262,6 @@ class VideoPlayerApp(QMainWindow):
             text_field.textChanged.connect(self.check_text_fields)  # 텍스트 변경 이벤트 연결
 
         self.done_button.show()
-
 
     def check_text_fields(self):
         all_filled = all(text_field.hasAcceptableInput() for text_field in self.point_text_fields)
@@ -291,8 +311,9 @@ class VideoPlayerApp(QMainWindow):
 
         self.distance_layout = None  # distance_layout을 초기화
         self.done_button.setEnabled(False)  # Done 버튼을 다시 비활성화
+        self.draw_frame()
 
-        # 마우스 클릭 이벤트 비활성화
+        # 마우스 클릭 이벤트 활성화 유지
         self.adding_info = False
 
 if __name__ == "__main__":
