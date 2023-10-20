@@ -1,9 +1,10 @@
-from PyQt6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget, QPushButton, QLabel, QFileDialog, QLineEdit, QMessageBox, QFormLayout, QHBoxLayout
+from PyQt6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget, QPushButton, QLabel, QFileDialog, QLineEdit, QMessageBox, QFormLayout, QHBoxLayout, QFrame
 from PyQt6.QtCore import Qt, QTimer, QEvent, QUrl
 from PyQt6.QtGui import QImage, QPixmap, QPainter, QPen, QColor, QDoubleValidator
 import sys
 import cv2
 import random
+import csv  # 추가: CSV 파일을 처리하기 위한 모듈
 
 class VideoPlayerApp(QMainWindow):
     def __init__(self):
@@ -17,72 +18,92 @@ class VideoPlayerApp(QMainWindow):
         self.layout = QVBoxLayout(self.central_widget)
 
         self.video_label = QLabel(self)
-        self.layout.addWidget(self.video_label, 1)
+        self.layout.addWidget(self.video_label)
 
-        self.button_group_layout = QVBoxLayout()
-
-        self.load_video_button = QPushButton("Load Video")
-        self.button_group_layout.addWidget(self.load_video_button)
-        self.load_video_button.clicked.connect(self.load_video)
-
-        self.run_ai_model_button = QPushButton("Run AI models")
-        self.button_group_layout.addWidget(self.run_ai_model_button)
-        self.run_ai_model_button.clicked.connect(self.run_ai_models)
-        self.run_ai_model_button.hide()
+        # 프레임 라벨 구분선 추가
+        self.line = QFrame()
+        self.line.setFrameShape(QFrame.Shape.HLine)
+        self.line.setFrameShadow(QFrame.Shadow.Sunken)
+        self.layout.addWidget(self.line)
 
         button_row_layout = QHBoxLayout()
 
-        self.skip_backward_button = QPushButton("<< 10seconds")
-        button_row_layout.addWidget(self.skip_backward_button)
+        self.load_video_button = QPushButton("Load Video")
+        button_row_layout.addWidget(self.load_video_button)
+        self.load_video_button.clicked.connect(self.load_video)
+
+        self.load_log_button = QPushButton("Load Log File")
+        button_row_layout.addWidget(self.load_log_button)
+        self.load_log_button.clicked.connect(self.upload_log_file)
+
+        self.run_ai_model_button = QPushButton("Run AI Model")
+        button_row_layout.addWidget(self.run_ai_model_button)
+        self.run_ai_model_button.clicked.connect(self.run_ai_models)
+        self.run_ai_model_button.hide()
+
+        self.layout.addLayout(button_row_layout)
+
+        self.add_info_button = QPushButton("Add Information")
+        self.layout.addWidget(self.add_info_button)
+        self.add_info_button.clicked.connect(self.add_information)
+        self.add_info_button.hide()
+
+        # 프레임 라벨 구분선 추가
+        self.layout.addWidget(self.line)
+
+        self.controls_layout = QHBoxLayout()
+        self.skip_backward_button = QPushButton("<< 10s backward")
+        self.controls_layout.addWidget(self.skip_backward_button)
         self.skip_backward_button.clicked.connect(self.skip_backward)
         self.skip_backward_button.hide()
 
         self.play_pause_button = QPushButton("Play")
-        button_row_layout.addWidget(self.play_pause_button)
+        self.controls_layout.addWidget(self.play_pause_button)
         self.play_pause_button.clicked.connect(self.toggle_play_pause)
         self.play_pause_button.hide()
 
-        self.skip_forward_button = QPushButton("10seconds >>")
-        button_row_layout.addWidget(self.skip_forward_button)
+        self.skip_forward_button = QPushButton("10s forward >>")
+        self.controls_layout.addWidget(self.skip_forward_button)
         self.skip_forward_button.clicked.connect(self.skip_forward)
         self.skip_forward_button.hide()
 
-        self.button_group_layout.addLayout(button_row_layout)
+        self.layout.addLayout(self.controls_layout)
+
+        # 추가 정보 입력을 위한 폼 레이아웃
+        self.form_layout = QFormLayout()
+        self.distance_text_fields = []
 
         self.add_info_button = QPushButton("Add Information")
-        self.button_group_layout.addWidget(self.add_info_button)
         self.add_info_button.clicked.connect(self.add_information)
+        self.layout.addWidget(self.add_info_button)
         self.add_info_button.hide()
 
-        self.button_group_layout.addStretch(1)
-
-        # distance_layout 인스턴스 변수 초기화
-        self.distance_layout = None
-
+        # Done 버튼 추가
         self.done_button = QPushButton("Done")
-        self.button_group_layout.addWidget(self.done_button)
-        self.done_button.setEnabled(False)  # 처음에 비활성화 상태로 설정
         self.done_button.clicked.connect(self.calculate_distances)
         self.done_button.hide()
+        self.layout.addWidget(self.done_button)
 
-        self.layout.addLayout(self.button_group_layout)
-
+        # 비디오 관련 변수
         self.video_capture = cv2.VideoCapture()
         self.playing = False
-
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.read_frame)
-
         self.frame = None
-        self.info_dialog_shown = False  # 다이얼로그가 한 번 떴는지 여부를 나타내는 플래그
+
+        # 추가 정보 입력 모드 관련 변수
         self.adding_info = False
         self.points = []
         self.point_colors = []
         self.point_text_fields = []
         self.point_distances = []
-
-        # 마우스 이벤트를 처리할 변수
+        self.distance_line_edits = []
+        self.log_data = None
+        self.info_dialog_shown = False
         self.mouse_pressed = False
+
+        # distance_layout 변수 추가
+        self.distance_layout = None
 
     def toggle_play_pause(self):
         if not self.playing:
@@ -104,10 +125,14 @@ class VideoPlayerApp(QMainWindow):
         _, self.frame = self.video_capture.read()
         frame = cv2.cvtColor(self.frame, cv2.COLOR_BGR2RGB)
         h, w, ch = frame.shape
-        bytes_per_line = ch * w
-        q_image = QImage(frame.data, w, h, bytes_per_line, QImage.Format.Format_RGB888)
-        pixmap = QPixmap.fromImage(q_image)
-        self.video_label.setPixmap(pixmap.scaled(self.video_label.size(), Qt.AspectRatioMode.KeepAspectRatio))
+        
+        # 고정된 크기로 QImage 및 QPixmap 생성
+        fixed_width = self.video_label.width()
+        fixed_height = self.video_label.height()
+        q_image = QImage(frame.data, w, h, QImage.Format.Format_RGB888)
+        pixmap = QPixmap.fromImage(q_image).scaled(fixed_width, fixed_height, Qt.AspectRatioMode.KeepAspectRatio)
+
+        self.video_label.setPixmap(pixmap)
 
         pixmap = self.video_label.pixmap()
         painter = QPainter(pixmap)
@@ -182,6 +207,17 @@ class VideoPlayerApp(QMainWindow):
             self.video_capture.open(file_path)
             self.read_frame()
             self.run_ai_model_button.show()
+    
+    def upload_log_file(self):
+        file_info, _ = QFileDialog.getOpenFileName(self, "Upload Log File", "", "CSV Files (*.csv);;All Files (*)")
+        
+        if file_info:
+            with open(file_info, "r") as csv_file:
+                csv_reader = csv.reader(csv_file)
+                self.log_data = list(csv_reader)
+                print(self.log_data[:10])
+            # self.upload_log_button.hide()  # 파일 업로드 후 버튼 숨김
+            # self.load_video_button.show()  # 로그 파일이 업로드되면 비디오 로드 버튼 표시
 
     def skip_forward(self):
         current_frame = self.video_capture.get(cv2.CAP_PROP_POS_FRAMES)
@@ -231,14 +267,8 @@ class VideoPlayerApp(QMainWindow):
 
     def create_distance_text_fields(self):
         # 이전 텍스트 필드 및 레이블 제거
-        if self.distance_layout:
-            while self.distance_layout.count():
-                item = self.distance_layout.takeAt(0)
-                widget = item.widget()
-                if widget:
-                    widget.deleteLater()
-            self.distance_layout = None
-            self.point_text_fields = []  # 이전 텍스트 필드 초기화
+        self.distance_layout = None
+        self.point_text_fields = []  # 이전 텍스트 필드 초기화
 
         # 이전 distance_container_widget을 삭제
         if hasattr(self, 'distance_container_widget') and self.distance_container_widget:
@@ -266,7 +296,7 @@ class VideoPlayerApp(QMainWindow):
     def check_text_fields(self):
         all_filled = all(text_field.hasAcceptableInput() for text_field in self.point_text_fields)
         self.done_button.setEnabled(all_filled)  # 모든 텍스트 필드에 숫자가 있을 때만 Done 버튼 활성화
-
+    
     def calculate_distances(self):
         self.add_info_button.setEnabled(True)
         distances_meters = []
@@ -309,7 +339,11 @@ class VideoPlayerApp(QMainWindow):
             while self.distance_layout.rowCount() > 0:
                 self.distance_layout.removeRow(0)
 
-        self.distance_layout = None  # distance_layout을 초기화
+        # 이전 distance_container_widget을 삭제
+        if hasattr(self, 'distance_container_widget') and self.distance_container_widget:
+            self.distance_container_widget.deleteLater()
+            self.distance_container_widget = None
+
         self.done_button.setEnabled(False)  # Done 버튼을 다시 비활성화
         self.draw_frame()
 
