@@ -66,7 +66,7 @@ class RGLARE:
                     if self.frame_queue_done == self.queue_len:
                         break
                 else:
-                    frame = cv2.medianBlur(frame,1)
+                    frame = cv2.medianBlur(frame,3)
                     hsv_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
                 if self.queue_full:
                     if hsv_frame is None:
@@ -110,7 +110,7 @@ class RGLARE:
                     np.stack(self.frame_queue) * self.weight[:len(self.frame_queue),:,:,:],
                     axis=0)
             else:
-                frame = cv2.medianBlur(frame,1)
+                frame = cv2.medianBlur(frame,3)
                 hsv_frame = cv2.cvtColor(frame,cv2.COLOR_BGR2HSV)
                 self.frame_queue.append(hsv_frame/255.0)
                 fused_frame = np.min(
