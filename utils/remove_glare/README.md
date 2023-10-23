@@ -20,6 +20,10 @@ main = RGLARE(args.video, args.ql, args.save, args.gamma)
 frame = main.f_run()
 if frame is not None:
 	cv2.imwrite('Remove.jpg', frame)
+
+or
+
+python example.py
 ```
 
 **Save Video**
