@@ -127,7 +127,7 @@ class RGLARE:
             out_frame = cv2.cvtColor(out_frame.astype('uint8'), cv2.COLOR_HSV2BGR)
             return out_frame
         else:
-            while len(self.frame_queue) == self.queue_len-1:
+            while len(self.frame_queue) != self.queue_len-1:
                 ret, frame = self.cap.read()
                 hsv_frame = cv2.cvtColor(frame,cv2.COLOR_BGR2HSV)
                 self.frame_queue.append(hsv_frame/255.0)
