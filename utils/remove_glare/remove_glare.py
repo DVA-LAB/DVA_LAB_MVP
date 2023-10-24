@@ -80,7 +80,7 @@ class RGLARE:
                             axis=0)
                     out_frame = self.frame_queue.popleft()
                     if self.gamma is True:
-                        out_frame[:,:,2] = self.gamma_st(fused_frame)
+                        out_frame[:,:,2] = self.gamma_correction(fused_frame)
                     else:
                         out_frame[:,:,2] = fused_frame[:,:,2]
                     out_frame = np.clip(out_frame * 255.0, 0, 255)
@@ -119,7 +119,7 @@ class RGLARE:
             out_frame = self.frame_queue.popleft()
 
             if self.gamma is True:
-                out_frame[:,:,2] = self.gamma_st(fused_frame)
+                out_frame[:,:,2] = self.gamma_correction(fused_frame)
             else:
                 out_frame[:,:,2] = fused_frame[:,:,2]
 
@@ -146,6 +146,4 @@ if __name__ == '__main__':
     parser.add_argument('--gamma', default=False, type=bool, required=True)
     args = parser.parse_args()
     s = RGLARE(args.video, args.ql, args.save, args.gamma)
-    k = s.f_run()
-    cv2.imshow('test',k)
-    cv2.waitKey()
+    k = s.t_run()
