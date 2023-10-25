@@ -1,0 +1,4 @@
+datasets[vision]
+opencv-python
+transformers
+fastapi
