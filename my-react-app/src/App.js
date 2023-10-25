@@ -1,6 +1,8 @@
 import React, { Component, useRef, useEffect } from 'react';
 import './App.css';
 import DownloadModal from './DownloadModal';
+import { Button, Modal, Space, Upload, Typography } from 'antd';
+const { Title } = Typography;
 
 class App extends Component {
   constructor(props) {
@@ -104,22 +106,22 @@ class App extends Component {
   saveFrame = async () => {
     const canvas = this.canvasRef.current;
     const video = this.videoRef.current;
-  
+
     if (canvas && video) {
       const tempCanvas = document.createElement('canvas');
       const tempContext = tempCanvas.getContext('2d');
       tempCanvas.width = video.videoWidth;
       tempCanvas.height = video.videoHeight;
-  
+
       // 비디오 프레임 그리기
       tempContext.drawImage(video, 0, 0, video.videoWidth, video.videoHeight, 0, 0, tempCanvas.width, tempCanvas.height);
-  
+
       // 캔버스에 그려진 내용 그리기
       tempContext.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, tempCanvas.width, tempCanvas.height);
-  
+
       // 이미지 데이터를 다운로드
       const dataUrl = tempCanvas.toDataURL('image/jpeg');
-  
+
       const link = document.createElement('a');
       link.href = dataUrl;
       link.download = `${this.state.videoFileName}_frame${this.state.frameNumber}.JPG`;
@@ -127,37 +129,13 @@ class App extends Component {
     }
   };
 
-  // saveFrame = () => {
-  //   const canvas = this.canvasRef.current;
-  //   const video = this.videoRef.current;
-
-  //   if (canvas && video) {
-  //     const tempCanvas = document.createElement('canvas');
-  //     const tempContext = tempCanvas.getContext('2d');
-  //     tempCanvas.width = video.videoWidth;
-  //     tempCanvas.height = video.videoHeight;
-
-  //     // 비디오 프레임 그리기
-  //     tempContext.drawImage(video, 0, 0, video.videoWidth, video.videoHeight, 0, 0, tempCanvas.width, tempCanvas.height);
-
-  //     // 캔버스에 그려진 내용 그리기
-  //     tempContext.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, tempCanvas.width, tempCanvas.height);
-
-  //     video.crossOrigin .crossOrigin = "anonymous"; // CORS 해결을 위한 설정
-  //     const dataUrl = tempCanvas.toDataURL('image/jpeg');
-
-  //     const link = document.createElement('a');
-  //     link.href = dataUrl;
-  //     link.download = `${this.state.videoFileName}_frame${this.state.frameNumber}.JPG`;  // 수정된 부분
-  //     link.click();
-  //   }
-  // };
-
   saveVideo = () => {
     const video = this.videoRef.current;
     const canvas = this.canvasRef.current;
 
     if (video && canvas) {
+      this.openDownloadModal();
+
       const tempCanvas = document.createElement('canvas');
       const tempContext = tempCanvas.getContext('2d');
       tempCanvas.width = video.videoWidth;
@@ -181,6 +159,8 @@ class App extends Component {
         link.download = `${this.state.videoFileName}_with_canvas.webm`;  // 수정된 부분
         link.click();
         URL.revokeObjectURL(url);
+
+        this.closeDownloadModal();
       };
 
       mediaRecorder.start();
@@ -206,8 +186,7 @@ class App extends Component {
   };
 
   // 파일 업로드 핸들러
-  handleFileUpload = (e) => {
-    const file = e.target.files[0];
+  handleFileUpload = (file) => {
     if (file) {
       const videoFileName = file.name.split('.')[0];  // 파일 이름 가져오기
       this.setState({ videoSrc: file, videoFileName }, () => {  // videoFileName 상태 추가
@@ -217,8 +196,7 @@ class App extends Component {
   };
 
   // 로그 파일 업로드 핸들러
-  handleLogFileUpload = (e) => {
-    const file = e.target.files[0];
+  handleLogFileUpload = (file) => {
     if (file) {
       this.setState({ logFile: file });
       this.setState({ allFillUpload: true });
@@ -401,31 +379,31 @@ class App extends Component {
   };
 
   /// 비디오를 미리보기로 보여주는 함수
-reLoadVideo = async (newVideoPath) => {
-  // 모달 열기
-  this.openDownloadModal();
-  // Set the initial state
-  this.setState({ videoPlaying: false });
+  reLoadVideo = async (newVideoPath) => {
+    // 모달 열기
+    this.openDownloadModal();
+    // Set the initial state
+    this.setState({ videoPlaying: false });
 
-  try {
-    // Now, you can replace the video source with the downloaded video URL
-    const video = this.videoRef.current;
-    if (video) {
-      video.src = newVideoPath;
-      video.crossOrigin = "anonymous"; // CORS 설정
-      video.load();
-      video.addEventListener('loadeddata', () => {
-        video.currentTime = 0;
-        this.setState({ videoPlaying: false });
-      });
+    try {
+      // Now, you can replace the video source with the downloaded video URL
+      const video = this.videoRef.current;
+      if (video) {
+        video.src = newVideoPath;
+        video.crossOrigin = "anonymous"; // CORS 설정
+        video.load();
+        video.addEventListener('loadeddata', () => {
+          video.currentTime = 0;
+          this.setState({ videoPlaying: false });
+        });
 
+        this.closeDownloadModal();
+      }
+    } catch (error) {
+      console.error('Error downloading and saving video:', error);
       this.closeDownloadModal();
     }
-  } catch (error) {
-    console.error('Error downloading and saving video:', error);
-    this.closeDownloadModal();
-  }
-};
+  };
 
   // 점과 선 그리기 함수
   drawPointsAndLines() {
@@ -502,114 +480,81 @@ reLoadVideo = async (newVideoPath) => {
     const buttonHeightSize = screenHeight / 40;  // 버튼 크기를 화면 크기에 따라 조절합니다.
     const buttonWidthSize = screenWidth / 10;  // 버튼 크기를 화면 크기에 따라 조절합니다.
     const buttonSize = Math.min(screenHeight, screenWidth) / 10;
-    const buttonStyle = {  // 버튼 스타일을 정의합니다.
-      width: buttonWidthSize + 'px',
-      height: buttonHeightSize + 'px',
-      margin: buttonSize / 8 + 'px',  // 버튼 간격을 조절합니다.
-      fontSize: 30 + 'px',  // 글자 크기를 버튼 크기에 맞게 조절합니다.
-    };
-    const buttonSpace = {  // 버튼 사이의 공간을 만듭니다.
-      width: 20 + 'px',
-      display: 'inline-block'
-    };
 
     const { videoPlaying, frameNumber, addingInfo, pointColors, pointDistances, allFillUpload, aiModelActive } = this.state;
 
     return (
       <div className="App" style={{ height: screenHeight + 'px', position: 'relative' }}>
-        <div style={{ marginTop: '40px', fontSize: 50 + 'px' }}></div>
-        <h1>Drone Video Analysis for MARC</h1>
-        <div style={{ position: 'relative' }}>
-          <video
-            ref={this.videoRef}
-            onTimeUpdate={this.updateFrameNumber}
-            onClick={this.handleVideoClick}
-            style={videoStyle}
-          />
-          {this.state.addingInfo && this.videoRef.current && (
-            <canvas
-              ref={this.canvasRef}
-              style={{ position: 'absolute', top: '0', left: '0', zIndex: 1, width: '100%', height: '100%' }}
+        <Space direction="vertical" style={{ marginTop: '40px', marginLeft: '20px' }}>
+          <Title level={1}>Drone Video Analysis for MARC</Title>
+          <div style={{ position: 'relative' }}>
+            <video
+              ref={this.videoRef}
+              onTimeUpdate={this.updateFrameNumber}
               onClick={this.handleVideoClick}
+              style={videoStyle}
             />
-          )}
-        </div>
-        <div>
-          {this.videoRef.current && this.canvasRef.current && (
-            <div>
-              <button
-                style={{
-                  display: 'inline-block',
-                  marginRight: '10px', // 버튼 간격 조절
-                  fontSize: '25px'
-                }}
-                onClick={this.saveFrame}  // saveFrame 핸들러에 연결
+            {this.state.addingInfo && this.videoRef.current && (
+              <canvas
+                ref={this.canvasRef}
+                style={{ position: 'absolute', top: '0', left: '0', zIndex: 1, width: '100%', height: '100%' }}
+                onClick={this.handleVideoClick}
+              />
+            )}
+          </div>
+          <Space>
+            {this.videoRef.current && this.canvasRef.current && (
+              <>
+                <Button type="primary" onClick={this.saveFrame}>Save Frame</Button>
+                <Button type="primary" onClick={this.saveVideo}>Save Video</Button>
+              </>
+            )}
+          </Space>
+          <div style={{ fontSize: 30 + 'px' }}>
+            <p >Frame: {frameNumber}</p>
+          </div>
+          <Space direction="vertical">
+            <Space>
+              <Upload
+                showUploadList={false}
+                accept=".mp4,.mov"
+                customRequest={({ file }) => this.handleFileUpload(file)}
               >
-                Save Frame
-              </button>
-              <button
-                style={{
-                  display: 'inline-block',
-                  fontSize: '25px'
-                }}
-                onClick={this.saveVideo}  // saveVideo 핸들러에 연결
+                <Button>Upload Video</Button>
+              </Upload>
+              <Upload
+                showUploadList={false}
+                accept=".csv"
+                customRequest={({ file }) => this.handleLogFileUpload(file)}
               >
-                Save Video
-              </button>
-            </div>
-          )}
-        </div>
-
-        <div style={{ fontSize: 30 + 'px' }}>
-          <p >Frame: {frameNumber}</p>
-        </div>
-        <div style={{ alignItems: 'center', flexWrap: 'wrap', flexDirection: 'column' }}> {/* flex-direction을 column으로 설정 */}
-          <div style={{ justifyContent: 'center', alignItems: 'center' }}> {/* 첫 번째 버튼 그룹 */}
-            <input type="file" accept=".mp4,.mov" ref={this.fileInputRef} style={{ display: 'none' }} onChange={this.handleFileUpload} />
-            <input type="file" accept=".csv" ref={this.logFileInputRef} style={{ display: 'none' }} onChange={this.handleLogFileUpload} />
-            <button style={buttonStyle} onClick={() => this.fileInputRef.current.click()}>Upload Video</button>
-            <div style={buttonSpace}></div>  {/* 버튼 사이의 공간 */}
-            <button style={buttonStyle} onClick={() => this.logFileInputRef.current.click()}>Upload Log File</button>
-            {allFillUpload && (
-              <>
-                <div style={buttonSpace}></div>  {/* 버튼 사이의 공간 */}
-                <button style={buttonStyle} onClick={this.runAIModel}>Run AI Model</button>
-              </>
-            )}
-          </div>
-          <div style={{ marginTop: '2px', justifyContent: 'center', alignItems: 'center' }}> {/* 두 번째 버튼 그룹을 margin-top으로 아래로 이동 */}
+                <Button>Upload Log File</Button>
+              </Upload>
+              {allFillUpload && <Button onClick={this.runAIModel}>Run AI Model</Button>}
+            </Space>
             {aiModelActive && (
-              <>
-                <div style={buttonSpace}></div>  {/* 버튼 사이의 공간 */}
-                <button style={buttonStyle} onClick={this.skipBackward}>{"<< 10 seconds backward"}</button>
-                <div style={buttonSpace}></div>  {/* 버튼 사이의 공간 */}
-                <button style={buttonStyle} onClick={this.togglePlayPause}>{videoPlaying ? 'Pause' : 'Play'}</button>
-                <div style={buttonSpace}></div>  {/* 버튼 사이의 공간 */}
-                <button style={buttonStyle} onClick={this.skipForward}>{">> 10 seconds forward"}</button>
-              </>
+              <Space>
+                <Button onClick={this.skipBackward}>{"<< 10 seconds backward"}</Button>
+                <Button onClick={this.togglePlayPause}>{videoPlaying ? 'Pause' : 'Play'}</Button>
+                <Button onClick={this.skipForward}>{">> 10 seconds forward"}</Button>
+              </Space>
             )}
-          </div>
-          <div style={{ marginTop: '2px', justifyContent: 'center', alignItems: 'center' }}> {/* 세 번째 버튼 그룹을 margin-top으로 아래로 이동 */}
             {aiModelActive && (
-              <>
-                <div style={buttonSpace}></div>  {/* 버튼 사이의 공간 */}
-                <button style={buttonStyle} onClick={this.toggleAddingInfo}>{addingInfo ? 'Disable Adding Info' : 'Enable Adding Info'}</button>
-              </>
+              <Button onClick={this.toggleAddingInfo}>{addingInfo ? 'Disable Adding Info' : 'Enable Adding Info'}</Button>
             )}
+          </Space>
+          <div>
+            {this.state.pointDistances.map((distance, index) => (
+              <p key={index}>Distance {index + 1}: {distance.meters} meters ({distance.pixels.toFixed(3)} pixels)</p>
+            ))}
           </div>
-        </div> {/* 여기서 div를 닫습니다 */}
-        <div>
-          {this.state.pointDistances.map((distance, index) => (
-            <p key={index}>Distance {index + 1}: {distance.meters} meters ({distance.pixels.toFixed(3)} pixels)</p>
-          ))}
-        </div>
-        <DownloadModal
-          isOpen={this.state.isDownloadModalOpen}
-          onClose={this.closeDownloadModal} // 모달 닫기 핸들러 연결
-          contentLabel="Download Modal"
-        />
+          <Modal
+            open={this.state.isDownloadModalOpen}
+            onCancel={this.closeDownloadModal}
+            title="Download Modal"
+          >
+          </Modal>
+        </Space>
       </div>
-
     );
 
   }
