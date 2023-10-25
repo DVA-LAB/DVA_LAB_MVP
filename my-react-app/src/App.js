@@ -19,20 +19,16 @@ class App extends Component {
       aiModelActive: false,
       exportOptionsVisible: false,
       isDownloadModalOpen: false, // 모달 열림/닫힘 상태 추가
-      downloadProgress: 0, // 다운로드 진행 상황 추가
     };
 
     this.videoRef = React.createRef();
+    this.canvasRef = React.createRef();
     this.fileInputRef = React.createRef();
     this.logFileInputRef = React.createRef();
     this.canvasRef = React.createRef();
     this.clearCanvas = this.clearCanvas.bind(this);
     this.drawPointsAndLines = this.drawPointsAndLines.bind(this);
   }
-  // 다운로드 진행 상황 업데이트 함수
-  updateDownloadProgress = (progress) => {
-    this.setState({ downloadProgress: progress });
-  };
 
   // 모달 열기
   openDownloadModal = () => {
@@ -43,6 +39,7 @@ class App extends Component {
   closeDownloadModal = () => {
     this.setState({ isDownloadModalOpen: false });
   };
+
   componentDidUpdate(prevProps, prevState) {
     const video = this.videoRef.current;
     const canvas = this.canvasRef.current;
@@ -92,8 +89,6 @@ class App extends Component {
     const { videoSrc } = this.state;
     if (videoSrc) {
       this.videoRef.current.src = URL.createObjectURL(videoSrc);
-      console.log("in loadVideo");
-      console.log(this.videoRef.current.src);
       this.videoRef.current.load();
       this.videoRef.current.addEventListener('loadeddata', () => {
         this.videoRef.current.currentTime = 0;
@@ -106,30 +101,57 @@ class App extends Component {
     this.setState(prevState => ({ exportOptionsVisible: !prevState.exportOptionsVisible }));
   };
 
-  // saveFrame 핸들러 구현
-  saveFrame = () => {
+  saveFrame = async () => {
     const canvas = this.canvasRef.current;
     const video = this.videoRef.current;
-
+  
     if (canvas && video) {
       const tempCanvas = document.createElement('canvas');
       const tempContext = tempCanvas.getContext('2d');
       tempCanvas.width = video.videoWidth;
       tempCanvas.height = video.videoHeight;
-
+  
       // 비디오 프레임 그리기
       tempContext.drawImage(video, 0, 0, video.videoWidth, video.videoHeight, 0, 0, tempCanvas.width, tempCanvas.height);
-
+  
       // 캔버스에 그려진 내용 그리기
       tempContext.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, tempCanvas.width, tempCanvas.height);
-
+  
+      // 이미지 데이터를 다운로드
       const dataUrl = tempCanvas.toDataURL('image/jpeg');
+  
       const link = document.createElement('a');
       link.href = dataUrl;
-      link.download = `${this.state.videoFileName}_frame${this.state.frameNumber}.JPG`;  // 수정된 부분
+      link.download = `${this.state.videoFileName}_frame${this.state.frameNumber}.JPG`;
       link.click();
     }
   };
+
+  // saveFrame = () => {
+  //   const canvas = this.canvasRef.current;
+  //   const video = this.videoRef.current;
+
+  //   if (canvas && video) {
+  //     const tempCanvas = document.createElement('canvas');
+  //     const tempContext = tempCanvas.getContext('2d');
+  //     tempCanvas.width = video.videoWidth;
+  //     tempCanvas.height = video.videoHeight;
+
+  //     // 비디오 프레임 그리기
+  //     tempContext.drawImage(video, 0, 0, video.videoWidth, video.videoHeight, 0, 0, tempCanvas.width, tempCanvas.height);
+
+  //     // 캔버스에 그려진 내용 그리기
+  //     tempContext.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, tempCanvas.width, tempCanvas.height);
+
+  //     video.crossOrigin .crossOrigin = "anonymous"; // CORS 해결을 위한 설정
+  //     const dataUrl = tempCanvas.toDataURL('image/jpeg');
+
+  //     const link = document.createElement('a');
+  //     link.href = dataUrl;
+  //     link.download = `${this.state.videoFileName}_frame${this.state.frameNumber}.JPG`;  // 수정된 부분
+  //     link.click();
+  //   }
+  // };
 
   saveVideo = () => {
     const video = this.videoRef.current;
@@ -226,7 +248,6 @@ class App extends Component {
     this.setState({ videoPlaying: !videoPlaying });
   };
 
-
   // 현재 프레임 번호 업데이트
   updateFrameNumber = () => {
     const { videoSrc } = this.state;
@@ -258,7 +279,6 @@ class App extends Component {
       this.drawPointsAndLines();
     });
   };
-
 
   // handleVideoClick 함수 수정
   handleVideoClick = (e) => {
@@ -343,7 +363,6 @@ class App extends Component {
     });
   };
 
-
   // Run AI Model 버튼 클릭 핸들러
   runAIModel = async () => {
     const { videoSrc } = this.state;
@@ -367,13 +386,11 @@ class App extends Component {
           alert("Video path uploaded successfully");
 
           // 서버에서 받은 결과 데이터에서 동영상 경로 추출
-          const videoPath = data.result.match(/Embedded Video Local Path: (.+)/)[1];
+          const newVideoPath = data.result.match(/Embedded Video Local Path: (.+)/)[1];
 
           // 추출한 경로를 사용하여 비디오를 다시 로드
-          this.setState({}, () => {  // videoFileName 상태 추가
-            this.reLoadVideo(videoPath);
-          });
-        
+          this.reLoadVideo(newVideoPath);
+
           this.setState({ aiModelActive: true });
         })
         .catch((error) => {
@@ -383,44 +400,32 @@ class App extends Component {
     }
   };
 
-  // 비디오를 미리보기로 보여주는 함수
-  reLoadVideo = (newVideoPath) => {
-    // 모달 열기
-    this.openDownloadModal();
-    // Set the initial state
-    this.setState({ videoPlaying: false });
+  /// 비디오를 미리보기로 보여주는 함수
+reLoadVideo = async (newVideoPath) => {
+  // 모달 열기
+  this.openDownloadModal();
+  // Set the initial state
+  this.setState({ videoPlaying: false });
 
-    // Fetch the video file from the S3 link
-    fetch(newVideoPath)
-      .then(response => {
-        if (!response.ok) {
-          throw new Error("Network response was not ok");
-        }
-        return response.blob(); // Retrieve the video file as a Blob
-      })
-      .then(blob => {
-        const objectURL = URL.createObjectURL(blob); // Create an object URL for the Blob
-        // Set the video source to the object URL
-        this.videoRef.current.src = objectURL;
-        console.log(this.videoRef.current.src);
-        this.videoRef.current.load();
-        this.videoRef.current.addEventListener('loadeddata', () => {
-          this.videoRef.current.currentTime = 0;
-          this.setState({ videoPlaying: false });
-        });
-
-        this.closeDownloadModal();
-      })
-      .catch(error => {
-        console.error('Error loading video:', error);
-        this.closeDownloadModal();
+  try {
+    // Now, you can replace the video source with the downloaded video URL
+    const video = this.videoRef.current;
+    if (video) {
+      video.src = newVideoPath;
+      video.crossOrigin = "anonymous"; // CORS 설정
+      video.load();
+      video.addEventListener('loadeddata', () => {
+        video.currentTime = 0;
+        this.setState({ videoPlaying: false });
       });
-  };
 
-
-
-
-
+      this.closeDownloadModal();
+    }
+  } catch (error) {
+    console.error('Error downloading and saving video:', error);
+    this.closeDownloadModal();
+  }
+};
 
   // 점과 선 그리기 함수
   drawPointsAndLines() {
@@ -436,7 +441,9 @@ class App extends Component {
       return;
     }
 
-    const { points, pointColors, addingInfo } = this.state;
+    const { points, pointColors, addingInfo, pointDistances } = this.state;
+
+    context.clearRect(0, 0, canvas.width, canvas.height); // 캔버스 지우기
 
     for (let i = 0; i < points.length; i++) {
       // 현재 점의 색상을 설정합니다.
@@ -470,8 +477,8 @@ class App extends Component {
         context.textAlign = 'center';
         context.textBaseline = 'middle';
         // 선의 중간에 라벨을 추가합니다.
-        const labelText = this.state.pointDistances[(i - 1) / 2]
-          ? `line${(i + 1) / 2} = ${this.state.pointDistances[(i - 1) / 2].meters}(m)`
+        const labelText = pointDistances[(i - 1) / 2]
+          ? `line${(i + 1) / 2} = ${pointDistances[(i - 1) / 2].meters}(m)`
           : `line${(i + 1) / 2}`;
 
         context.fillText(labelText, (points[i - 1].x + points[i].x) / 2, (points[i - 1].y + points[i].y) / 2);
@@ -598,8 +605,8 @@ class App extends Component {
         </div>
         <DownloadModal
           isOpen={this.state.isDownloadModalOpen}
-          downloadProgress={this.state.downloadProgress}
-          onClose={this.closeDownloadModal}
+          onClose={this.closeDownloadModal} // 모달 닫기 핸들러 연결
+          contentLabel="Download Modal"
         />
       </div>
 
