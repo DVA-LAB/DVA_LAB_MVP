@@ -1,7 +1,6 @@
-import React, { Component, useRef, useEffect } from 'react';
+import React, { Component } from 'react';
 import './App.css';
-import DownloadModal from './DownloadModal';
-import { Button, Modal, Space, Upload, Typography } from 'antd';
+import { Button, Modal, Alert, Spin, Space, Upload, Typography } from 'antd';
 const { Title } = Typography;
 
 class App extends Component {
@@ -13,18 +12,19 @@ class App extends Component {
       videoPlaying: false,
       frameNumber: 0,
       addingInfo: false,
+      applyFlag: false,
       points: [],
       pointColors: [],
       pointDistances: [],
       distanceInputs: [],
       allFillUpload: false,
       aiModelActive: false,
+      isLoading: false,
       exportOptionsVisible: false,
       isDownloadModalOpen: false, // 모달 열림/닫힘 상태 추가
     };
 
     this.videoRef = React.createRef();
-    this.canvasRef = React.createRef();
     this.fileInputRef = React.createRef();
     this.logFileInputRef = React.createRef();
     this.canvasRef = React.createRef();
@@ -42,7 +42,24 @@ class App extends Component {
     this.setState({ isDownloadModalOpen: false });
   };
 
-  componentDidUpdate(prevProps, prevState) {
+  // 모달 닫기
+  openSavingModal = () => {
+    this.setState({ isLoading: true });
+  };
+
+  // 모달 닫기
+  closeSavingModal = () => {
+    this.setState({ isLoading: false });
+  };
+
+
+  componentWillUnmount() {
+    const video = this.videoRef.current;
+    video && video.removeEventListener('loadeddata', this.handleVideoLoaded);
+    clearInterval(this.drawInterval);  // 이 줄은 setInterval을 정리하기 위해 추가되었습니다.
+  }
+
+  componentDidUpdate() {
     const video = this.videoRef.current;
     const canvas = this.canvasRef.current;
 
@@ -104,10 +121,9 @@ class App extends Component {
   };
 
   saveFrame = async () => {
-    const canvas = this.canvasRef.current;
     const video = this.videoRef.current;
 
-    if (canvas && video) {
+    if (video) {
       const tempCanvas = document.createElement('canvas');
       const tempContext = tempCanvas.getContext('2d');
       tempCanvas.width = video.videoWidth;
@@ -115,9 +131,6 @@ class App extends Component {
 
       // 비디오 프레임 그리기
       tempContext.drawImage(video, 0, 0, video.videoWidth, video.videoHeight, 0, 0, tempCanvas.width, tempCanvas.height);
-
-      // 캔버스에 그려진 내용 그리기
-      tempContext.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, tempCanvas.width, tempCanvas.height);
 
       // 이미지 데이터를 다운로드
       const dataUrl = tempCanvas.toDataURL('image/jpeg');
@@ -131,10 +144,9 @@ class App extends Component {
 
   saveVideo = () => {
     const video = this.videoRef.current;
-    const canvas = this.canvasRef.current;
 
-    if (video && canvas) {
-      this.openDownloadModal();
+    if (video) {
+      this.openSavingModal();
 
       const tempCanvas = document.createElement('canvas');
       const tempContext = tempCanvas.getContext('2d');
@@ -160,7 +172,7 @@ class App extends Component {
         link.click();
         URL.revokeObjectURL(url);
 
-        this.closeDownloadModal();
+        this.closeSavingModal();
       };
 
       mediaRecorder.start();
@@ -172,7 +184,6 @@ class App extends Component {
           video.onseeked = () => {
             tempContext.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
             tempContext.drawImage(video, 0, 0, video.videoWidth, video.videoHeight, 0, 0, tempCanvas.width, tempCanvas.height);
-            tempContext.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, tempCanvas.width, tempCanvas.height);
             frameNumber++;
             requestAnimationFrame(drawFrame);
           };
@@ -187,6 +198,24 @@ class App extends Component {
 
   // 파일 업로드 핸들러
   handleFileUpload = (file) => {
+    if (this.state.videoSrc) {
+      this.setState({
+        videoSrc: null,
+        logFile: null,
+        videoPlaying: false,
+        frameNumber: 0,
+        addingInfo: false,
+        points: [],
+        pointColors: [],
+        pointDistances: [],
+        distanceInputs: [],
+        allFillUpload: false,
+        aiModelActive: false,
+        exportOptionsVisible: false,
+        isDownloadModalOpen: false,
+        applyFlag: false,
+      });
+    }
     if (file) {
       const videoFileName = file.name.split('.')[0];  // 파일 이름 가져오기
       this.setState({ videoSrc: file, videoFileName }, () => {  // videoFileName 상태 추가
@@ -245,7 +274,7 @@ class App extends Component {
         return {
           addingInfo: newAddingInfo,
           pointDistances: [],
-          points: []
+          points: [],
         };
       }
 
@@ -308,10 +337,14 @@ class App extends Component {
       }
     }, 0);
   };
-
-  // << 10 seconds backward 버튼 클릭 핸들러
+  applyGSD = () => {
+    console.log('applyGSD');
+    this.setState({ applyFlag: true });
+    this.toggleAddingInfo();
+  }
+  // << 5 seconds backward 버튼 클릭 핸들러
   skipBackward = () => {
-    this.videoRef.current.currentTime -= 10;
+    this.videoRef.current.currentTime -= 5;
     this.setState(() => {
       return {
         addingInfo: false,
@@ -325,9 +358,9 @@ class App extends Component {
     });
   };
 
-  // >> 10 seconds forward 버튼 클릭 핸들러
+  // >> 5 seconds forward 버튼 클릭 핸들러
   skipForward = () => {
-    this.videoRef.current.currentTime += 10;
+    this.videoRef.current.currentTime += 5;
     this.setState(() => {
       return {
         addingInfo: false,
@@ -378,7 +411,7 @@ class App extends Component {
     }
   };
 
-  /// 비디오를 미리보기로 보여주는 함수
+  // 비디오를 미리보기로 보여주는 함수
   reLoadVideo = async (newVideoPath) => {
     // 모달 열기
     this.openDownloadModal();
@@ -444,9 +477,9 @@ class App extends Component {
         // 이전 점의 색상을 사용하여 텍스트의 색상을 설정합니다.
         context.fillStyle = 'white'; // 배경색을 흰색으로 설정
         context.fillRect(
-          (points[i - 1].x + points[i].x) / 2 - 50,
+          (points[i - 1].x + points[i].x) / 2 - 75,
           (points[i - 1].y + points[i].y) / 2 - 20,
-          100,
+          150,
           40
         );
 
@@ -468,7 +501,7 @@ class App extends Component {
   render() {
     // 화면 높이 구하기
     const screenHeight = window.innerHeight;
-    const screenWidth = window.innerWidth;
+
     // 비디오 스타일 정의
     const videoStyle = {
       width: '100%',
@@ -477,11 +510,7 @@ class App extends Component {
       zIndex: 0
     };
 
-    const buttonHeightSize = screenHeight / 40;  // 버튼 크기를 화면 크기에 따라 조절합니다.
-    const buttonWidthSize = screenWidth / 10;  // 버튼 크기를 화면 크기에 따라 조절합니다.
-    const buttonSize = Math.min(screenHeight, screenWidth) / 10;
-
-    const { videoPlaying, frameNumber, addingInfo, pointColors, pointDistances, allFillUpload, aiModelActive } = this.state;
+    const { videoPlaying, frameNumber, addingInfo, isLoading, applyFlag, allFillUpload, aiModelActive } = this.state;
 
     return (
       <div className="App" style={{ height: screenHeight + 'px', position: 'relative' }}>
@@ -503,11 +532,28 @@ class App extends Component {
             )}
           </div>
           <Space>
-            {this.videoRef.current && this.canvasRef.current && (
+            {this.videoRef.current && applyFlag && (
               <>
                 <Button type="primary" onClick={this.saveFrame}>Save Frame</Button>
-                <Button type="primary" onClick={this.saveVideo}>Save Video</Button>
+                <div>
+                  {isLoading && (
+                    <Modal
+                      title="동영상 저장 중..."
+                      open={isLoading}
+                      footer={null}
+                      closable={false}
+                    >
+                      <p>저장 작업이 진행 중입니다. 잠시만 기다려주세요.</p>
+                    </Modal>
+                  )}
+                  {!isLoading && <Button type="primary" onClick={this.saveVideo}>Save Video</Button>}
+                </div>
               </>
+            )}
+            {(this.state.pointDistances.length > 0 && !applyFlag) && (
+              <Button style={{ backgroundColor: 'red', color: 'white' }} onClick={this.applyGSD}>
+                Apply
+              </Button>
             )}
           </Space>
           <div style={{ fontSize: 30 + 'px' }}>
@@ -520,22 +566,23 @@ class App extends Component {
                 accept=".mp4,.mov"
                 customRequest={({ file }) => this.handleFileUpload(file)}
               >
-                <Button>Upload Video</Button>
+                {this.state.videoSrc ? <Button>Re-upload Video</Button> : <Button>Upload Video</Button>}
               </Upload>
               <Upload
                 showUploadList={false}
                 accept=".csv"
                 customRequest={({ file }) => this.handleLogFileUpload(file)}
               >
-                <Button>Upload Log File</Button>
+                {this.state.logFile ? <Button>Re-upload Log File</Button> : <Button>Upload Log File</Button>}
               </Upload>
               {allFillUpload && <Button onClick={this.runAIModel}>Run AI Model</Button>}
+
             </Space>
             {aiModelActive && (
               <Space>
-                <Button onClick={this.skipBackward}>{"<< 10 seconds backward"}</Button>
+                <Button onClick={this.skipBackward}>{"<< 5 seconds backward"}</Button>
                 <Button onClick={this.togglePlayPause}>{videoPlaying ? 'Pause' : 'Play'}</Button>
-                <Button onClick={this.skipForward}>{">> 10 seconds forward"}</Button>
+                <Button onClick={this.skipForward}>{">> 5 seconds forward"}</Button>
               </Space>
             )}
             {aiModelActive && (
@@ -547,12 +594,6 @@ class App extends Component {
               <p key={index}>Distance {index + 1}: {distance.meters} meters ({distance.pixels.toFixed(3)} pixels)</p>
             ))}
           </div>
-          <Modal
-            open={this.state.isDownloadModalOpen}
-            onCancel={this.closeDownloadModal}
-            title="Download Modal"
-          >
-          </Modal>
         </Space>
       </div>
     );
