@@ -1,1 +1,8 @@
 datasets[vision]
+opencv-python
+einops
+timm
+matplotlib
+moviepy
+flow_vis
+fmpeg-python
