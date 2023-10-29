@@ -18,8 +18,9 @@ response = requests.get(api_url, params={"ServiceKey": api_key, "ObsCode": obs_c
 if response.status_code == 200:
     # JSON 형태로 응답을 받아옴
     data = response.json()
+    print(data)
     # 원하는 데이터 추출
-    target_time = "2023-10-17 00:37:00"  # 가져오고자 하는 특정 시간
+    target_time = "2023-10-17 00:15:00"  # 가져오고자 하는 특정 시간
     tide_levels = data["result"]["data"]
 
     for record in tide_levels:
