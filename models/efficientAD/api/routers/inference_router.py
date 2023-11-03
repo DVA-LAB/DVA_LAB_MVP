@@ -53,7 +53,9 @@ def ad_slice_inference():
         pred_scores = result[0]["pred_scores"][0].tolist()  # -> float
         #print(img, pred_boxes, pred_scores)
 
-
+    return img, pred_boxes, pred_scores
+    
+    
 
 def ad_inference():
 
