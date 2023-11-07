@@ -6,6 +6,7 @@ from api import routers
 def create_app() -> FastAPI:
     app = FastAPI()
     app.include_router(routers.video_router.router)
+    app.include_router(routers.model_router.router)
     return app
 
 
