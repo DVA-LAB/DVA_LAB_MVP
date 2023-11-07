@@ -1,41 +1,32 @@
 # ByteTrack
 ## Installation
-### 1. Installing on the host machine
-Step1. Install ByteTrack.
+
+Step1. Create conda environment
 ```shell
-git clone https://github.com/ifzhang/ByteTrack.git
-cd ByteTrack
-pip3 install -r requirements.txt
-python3 setup.py develop
+conda create -n bytetrack python=3.7
 ```
 
-Step2. Install [pycocotools](https://github.com/cocodataset/cocoapi).
+Step2. Install pytorch and library
+``` python
+pip install torch==1.13.1+cu117 torchvision==0.14.1+cu117 torchaudio==0.13.1 --extra-index-url https://download.pytorch.org/whl/cu117
+pip install -r requirements.txt
+```
+
+Step3. Install [pycocotools](https://github.com/cocodataset/cocoapi).
 
 ```shell
 pip3 install cython; pip3 install 'git+https://github.com/cocodataset/cocoapi.git#subdirectory=PythonAPI'
 ```
 
-Step3. Others
+Step4. Others
 ```shell
 pip3 install cython_bbox
 ```
-### 2. Docker build
-```shell
-docker build -t bytetrack:latest .
 
-# Startup sample
-mkdir -p pretrained && \
-mkdir -p YOLOX_outputs && \
-xhost +local: && \
-docker run --gpus all -it --rm \
--v $PWD/pretrained:/workspace/ByteTrack/pretrained \
--v $PWD/datasets:/workspace/ByteTrack/datasets \
--v $PWD/YOLOX_outputs:/workspace/ByteTrack/YOLOX_outputs \
--v /tmp/.X11-unix/:/tmp/.X11-unix:rw \
---device /dev/video0:/dev/video0:mwr \
---net=host \
--e XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR \
--e DISPLAY=$DISPLAY \
---privileged \
-bytetrack:latest
+If above doesn't work, you can run following command instead of Step 2.
+```shell
+git clone https://github.com/ifzhang/ByteTrack.git
+cd ByteTrack
+pip3 install -r requirements.txt
+python3 setup.py develop
 ```
