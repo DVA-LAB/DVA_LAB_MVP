@@ -51,6 +51,7 @@ curl -X POST "http://localhost:8000/video/" \
      -H "Content-Type: multipart/form-data" \
      -F "file=@/path/to/your/video.mp4"
 ```
+* 파일은 backend 서버의 test_video 폴더 안에 저장됩니다.
 
 ### 포인트 거리 정보 전송
 영상에서 특정 포인트 2개와 그 사이의 실제 거리 정보를 서버로 보내려면 아래 curl 명령어를 사용하세요:
