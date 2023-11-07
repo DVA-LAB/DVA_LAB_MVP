@@ -1,2 +1,6 @@
 opencv-python
 fastapi
+autologging
+dependency-injector
+python-multipart
+uvicorn
