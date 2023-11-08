@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
+import axios from 'axios';
 import './App.css';
-import { Button, Modal, Alert, Spin, Space, Upload, Typography } from 'antd';
+import { Button, Modal, Space, Upload, Typography } from 'antd';
 const { Title } = Typography;
 
 class App extends Component {
@@ -19,8 +20,9 @@ class App extends Component {
       distanceInputs: [],
       allFillUpload: false,
       aiModelActive: false,
-      isLoading: false,
       exportOptionsVisible: false,
+      isLoading: false,
+      isSRTWarning: false,
       isDownloadModalOpen: false, // 모달 열림/닫힘 상태 추가
     };
 
@@ -42,7 +44,7 @@ class App extends Component {
     this.setState({ isDownloadModalOpen: false });
   };
 
-  // 모달 닫기
+  // 모달 열기
   openSavingModal = () => {
     this.setState({ isLoading: true });
   };
@@ -52,6 +54,9 @@ class App extends Component {
     this.setState({ isLoading: false });
   };
 
+  closeWarnigModal = () => {
+    this.setState({ isSRTWarning: false });
+  };
 
   componentWillUnmount() {
     const video = this.videoRef.current;
@@ -202,6 +207,7 @@ class App extends Component {
       this.setState({
         videoSrc: null,
         logFile: null,
+        srtFile: null,
         videoPlaying: false,
         frameNumber: 0,
         addingInfo: false,
@@ -228,7 +234,26 @@ class App extends Component {
   handleLogFileUpload = (file) => {
     if (file) {
       this.setState({ logFile: file });
-      this.setState({ allFillUpload: true });
+    }
+  };
+
+  // SRT 파일 업로드 핸들러
+  handleSRTFileUpload = (srtFile) => {
+    const videoSrcName = this.state.videoSrc ? this.state.videoSrc.name.split('.')[0] : null;
+
+    if (srtFile) {
+      const srtFileName = srtFile.name.split('.')[0];
+
+      if (videoSrcName && srtFileName === videoSrcName) {
+        // SRT 파일 이름과 MP4 파일 이름이 일치하는 경우
+        this.setState({ srtFile: srtFile });
+        this.setState({ allFillUpload: true });
+      } else {
+        // SRT 파일 이름과 MP4 파일 이름이 일치하지 않는 경우
+        this.setState({ allFillUpload: false });
+        console.log('SRT 파일 이름과 MP4 파일 이름이 일치하지 않습니다.');
+        this.setState({ isSRTWarning: true});
+      }
     }
   };
 
@@ -337,11 +362,44 @@ class App extends Component {
       }
     }, 0);
   };
+
   applyGSD = () => {
     console.log('applyGSD');
+    const { points, pointDistances } = this.state;
+    const url = "http://118.131.88.227:49001/model/inference";
+  
+    const data = {};
+
+    // 포인트와 거리 데이터를 데이터 객체에 추가
+    for (let i = 0; i < pointDistances.length; i++) {
+      data[`point${2 * i + 1}`] = { x: points[2 * i].x, y: points[2 * i].y };
+      data[`point${2 * i + 2}`] = { x: points[2 * i + 1].x, y: points[2 * i + 1].y };
+      data[`distance`] = pointDistances[i].meters.toFixed(1);
+    }    
+
+    // Assuming you want to log the data in the desired format
+    console.log(JSON.stringify(data, null, 2)); // JSON.stringify에 두 번째 인자로 null과 들여쓰기 값을 전달하여 가독성을 높임
+
+    const config = {
+      headers: { "Content-Type": 'application/json' }
+    };
+
+    // Make a POST request using Axios
+    axios.post(url, data, config)
+      .then(res => {
+        // 성공 처리
+        console.log("POST request successful:", res.data);
+      })
+      .catch(err => {
+        // 에러 처리
+        console.error("POST request failed:", err);
+      });
+
     this.setState({ applyFlag: true });
     this.toggleAddingInfo();
+
   }
+
   // << 5 seconds backward 버튼 클릭 핸들러
   skipBackward = () => {
     this.videoRef.current.currentTime -= 5;
@@ -382,7 +440,7 @@ class App extends Component {
       const formData = new FormData();
       formData.append('video_path', videoSrc);
 
-      fetch("http://localhost:8000/run-test", {
+      fetch("http://localhost:8000/points-distance", {
         method: "POST",
         body: formData, // FormData를 전송합니다.
       })
@@ -475,7 +533,7 @@ class App extends Component {
 
         // 선에 텍스트를 추가합니다.
         // 이전 점의 색상을 사용하여 텍스트의 색상을 설정합니다.
-        context.fillStyle = 'white'; // 배경색을 흰색으로 설정
+        context.fillStyle = 'rgba(255, 255, 255, 0.5)';  // 배경색을 흰색으로 설정
         context.fillRect(
           (points[i - 1].x + points[i].x) / 2 - 75,
           (points[i - 1].y + points[i].y) / 2 - 20,
@@ -484,7 +542,7 @@ class App extends Component {
         );
 
         context.fillStyle = 'black'; // 글씨색을 검정색으로 설정
-        context.font = "20px Arial";
+        context.font = "17px Arial";
         context.textAlign = 'center';
         context.textBaseline = 'middle';
         // 선의 중간에 라벨을 추가합니다.
@@ -510,11 +568,11 @@ class App extends Component {
       zIndex: 0
     };
 
-    const { videoPlaying, frameNumber, addingInfo, isLoading, applyFlag, allFillUpload, aiModelActive } = this.state;
+    const { videoPlaying, frameNumber, addingInfo, isLoading, applyFlag, allFillUpload, isSRTWarning, aiModelActive } = this.state;
 
     return (
       <div className="App" style={{ height: screenHeight + 'px', position: 'relative' }}>
-        <Space direction="vertical" style={{ marginTop: '40px', marginLeft: '20px' }}>
+        <Space direction="vertical" style={{ marginTop: '5px', marginLeft: '10px', marginRight: '10px' }}>
           <Title level={1}>Drone Video Analysis for MARC</Title>
           <div style={{ position: 'relative' }}>
             <video
@@ -556,7 +614,7 @@ class App extends Component {
               </Button>
             )}
           </Space>
-          <div style={{ fontSize: 30 + 'px' }}>
+          <div style={{ fontSize: 20 + 'px' }}>
             <p >Frame: {frameNumber}</p>
           </div>
           <Space direction="vertical">
@@ -575,17 +633,33 @@ class App extends Component {
               >
                 {this.state.logFile ? <Button>Re-upload Log File</Button> : <Button>Upload Log File</Button>}
               </Upload>
-              {allFillUpload && <Button onClick={this.runAIModel}>Run AI Model</Button>}
-
+              <Upload
+                showUploadList={false}
+                accept=".SRT"
+                customRequest={({ file }) => this.handleSRTFileUpload(file)}
+              >
+                {this.state.srtFile ? <Button>Re-upload SRT File</Button> : <Button>Upload SRT File</Button>}
+              </Upload>
+              <div>
+                <Modal
+                  title="파일명 다름"
+                  open={isSRTWarning}
+                  footer={null}
+                  onCancel={this.closeWarnigModal}
+                >
+                  <p>비디오 파일 명과 SRT 파일 명이 다릅니다. 동일한 파일명의 SRT 파일을 이용해주세요.</p>
+                </Modal>
+              </div>
+              {/* {allFillUpload && <Button onClick={this.runAIModel}>Run AI Model</Button>} */}
             </Space>
-            {aiModelActive && (
+            {allFillUpload && (
               <Space>
                 <Button onClick={this.skipBackward}>{"<< 5 seconds backward"}</Button>
                 <Button onClick={this.togglePlayPause}>{videoPlaying ? 'Pause' : 'Play'}</Button>
                 <Button onClick={this.skipForward}>{">> 5 seconds forward"}</Button>
               </Space>
             )}
-            {aiModelActive && (
+            {allFillUpload && (
               <Button onClick={this.toggleAddingInfo}>{addingInfo ? 'Disable Adding Info' : 'Enable Adding Info'}</Button>
             )}
           </Space>
