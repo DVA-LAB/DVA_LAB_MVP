@@ -105,7 +105,7 @@ def predict_video(predictor, exp, args):
 
         ret_val, frame = cap.read()
         if not ret_val:
-            continue
+            break
         
         outputs, image_info = predictor.inference(frame, timer)
         if outputs[0] is not None:
