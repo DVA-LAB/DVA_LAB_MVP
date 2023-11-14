@@ -177,7 +177,7 @@ class RGLARE:
                         fused_frame = np.min(
                             np.stack(self.frame_queue, axis=0) * self.weight,
                             axis=0)
-                    out_frame = self.frame_queue.popleft()
+                    out_frame = self.frame_queue.pop(0)
                     if self.gamma is True:
                         out_frame[:,:,2] = self.gamma_correction(fused_frame)
                     else:
@@ -215,7 +215,7 @@ class RGLARE:
                 fused_frame = np.min(
                     np.stack(self.frame_queue) * self.weight,
                     axis=0)
-            out_frame = self.frame_queue.popleft()
+            out_frame = self.frame_queue.pop(0)
 
             if self.gamma is True:
                 out_frame[:,:,2] = self.gamma_correction(fused_frame)
