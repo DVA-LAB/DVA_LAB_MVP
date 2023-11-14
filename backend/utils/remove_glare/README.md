@@ -4,6 +4,20 @@
 
 ## [1. 예시 사용](https://github.com/DVA-LAB/DVA_LAB/tree/master/utils/remove_glare#remove_glare#1-예시-사용)
 
+**Methods**
+
+```python
+단일 Frame 호출
+	f_run : CPU 기반 연산
+    frame_gpu : GPU 기반 연산
+
+Video 전체 처리 및 저장
+	t_run : CPU 기반 연산
+    video_gpu : GPU 기반 연산
+```
+
+
+
 **Retrun Frame**
 
 
