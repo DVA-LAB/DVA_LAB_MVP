@@ -1,7 +1,7 @@
-torch==1.13.1+cu116
-torchvision==0.14.1+cu116
-torchaudio==0.13.1
---extra-index-url https://download.pytorch.org/whl/cu116
+# torch==1.13.1+cu116
+# torchvision==0.14.1+cu116
+# torchaudio==0.13.1
+# --extra-index-url https://download.pytorch.org/whl/cu116
 
 pytorch-lightning>=1.7.0,<1.10.0
 opencv-python>=4.5.3.56
@@ -16,3 +16,9 @@ einops>=0.3.2
 freia>=0.2
 jsonargparse[signatures]>=4.3
 timm>=0.5.4,<=0.6.13
+fastapi
+uvicorn
+autologging
+dependency_injector
+chardet
+opencv_python
