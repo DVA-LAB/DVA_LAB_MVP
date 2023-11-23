@@ -263,10 +263,13 @@ class EfficientAd(AnomalyModule):
         del args, kwargs  # These variables are not used.
         
         #################################################
-        ''' api version | train 시 원복 필요 (해당부분 삭제)'''
-        i = batch
-        batch = {}
-        batch["image"] = i 
+        
+        ''' api version '''
+        if type(batch) == torch.Tensor:
+            i = batch
+            batch = {}
+            batch["image"] = i 
+            
         #################################################
 
         batch["anomaly_maps"] = self.model(batch["image"])["anomaly_map_combined"]
