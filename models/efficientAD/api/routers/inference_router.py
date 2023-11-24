@@ -5,6 +5,7 @@ from anomalib.config import get_configurable_parameters
 from anomalib.data.inference import InferenceDataset
 from anomalib.data.utils import InputNormalizationMethod, get_transforms
 from anomalib.models import get_model
+
 from anomalib.utils import slicing, merge_tensors_max  # 추가
 from anomalib.utils.callbacks import get_callbacks
 from autologging import logged
@@ -26,7 +27,6 @@ router = APIRouter(tags=["anomaly"])
 async def anomaly_inference(request_body: SegRequest):
     res_img, res_boxes, res_scores = ad_slice_inference(request_body.frame_path)
     return res_img, res_boxes, res_scores
-
 
 def ad_slice_inference(frame_path):
     config = get_configurable_parameters("efficient_ad")
@@ -52,6 +52,7 @@ def ad_slice_inference(frame_path):
         if "transform_config" in config.dataset.keys()
         else None
     )
+    
     image_size = (patch_size*resize_rate, patch_size*resize_rate)
     center_crop = config.dataset.get("center_crop")
     if center_crop is not None:
@@ -66,8 +67,8 @@ def ad_slice_inference(frame_path):
 
     inf = []
     for i in range(len(slice_frame)):
-        input_frame = slice_frame[i]   
-        t = transform(image=input_frame)['image']
+        input_frame = slice_frame[i]
+        t = transform(image=input_frame)["image"]
         dataloader = DataLoader(t)
         result = trainer.predict(model=efficient_ad, dataloaders=[dataloader])         
         pred_mask = result[0]["pred_masks"][0]
