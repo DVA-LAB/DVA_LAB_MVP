@@ -1,121 +1,126 @@
 import cv2
+import math
 import argparse
 import numpy as np
-from PIL import ImageFont, ImageDraw, Image
-from utils.extract_meta import extract_date_from_srt, extract_video_metadata
-from ultralytics import YOLO
+from PIL import Image, ImageDraw, ImageFont
+from backend.utils.extract_meta import extract_date_from_srt, extract_video_metadata
 
+LEGAL_SPEED = 50
+LEGAL_DISTANCE = 50
 
-LEGAL_SPEED     = 50
-LEGAL_DISTANCE  = 50
-TARGET_SIZE     = (1920, 1080)
+def read_bbox_data(file_path):
+    # bbox.txt 파일을 읽고 프레임별 bounding box 데이터를 저장합니다.
+    data = {}
+    with open(file_path, 'r') as file:
+        for line in file:
+            frame_id, track_id, x, y, w, h, conf, _, _, _ = map(float, line.split(','))
+            if frame_id not in data:
+                data[frame_id] = []
+            data[frame_id].append({'track_id': int(track_id), 'bbox': (x, y, w, h), 'conf': conf})
+    return data
 
+def draw_lines_and_distances(draw, centers, font, line_color=(255, 0, 0)):
+    """
+    모든 중심점들 사이에 선을 그리고 픽셀 거리를 표시합니다.
+    """
+    for i in range(len(centers)):
+        for j in range(i + 1, len(centers)):
+            # 두 중심점 사이에 선을 그립니다.
+            start, end = centers[i], centers[j]
+            draw.line([start, end], fill=line_color, width=2)
 
-if __name__ == "__main__":
+            # 두 점 사이의 거리를 계산합니다.
+            distance = math.sqrt((end[0] - start[0]) ** 2 + (end[1] - start[1]) ** 2)
+            mid_point = ((start[0] + end[0]) / 2, (start[1] + end[1]) / 2)
+            draw.text(mid_point, f"{int(distance)}px", font=font, fill=line_color)
+
+def draw_radius_circles(draw, center, radii_info, font):
+    """
+    주어진 중심점에서 지정된 반지름으로 원을 그리고 반지름 값을 표시합니다.
+    radii_info는 (반지름, 색상) 튜플의 리스트입니다.
+    """
+    for radius, color in radii_info:
+        # 원을 그립니다.
+        draw.ellipse([center[0] - radius, center[1] - radius, center[0] + radius, center[1] + radius], outline=color, width=2)
+        # 원의 선 위에 텍스트를 표시합니다.
+        draw.text((center[0] + radius + 10, center[1] - 10), f"{radius}m", font=font, fill=color)
+
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--srt_path', type=str, default='data/DJI_0010.srt')
-    parser.add_argument('--video_path', type=str, default='data/DJI_0010.mp4')
-    parser.add_argument('--model_name', type=str, default='yolov8n.pt')
-    parser.add_argument('--output_video', type=str, default='data/output.avi')
-    parser.add_argument('--font_path', type=str, default='data/font/NanumSquareRoundR.ttf')
+    parser.add_argument('--video_path', type=str, default='input/DJI_0119_30.MP4')
+    parser.add_argument('--output_video', type=str, default='output/DJI_0119_30.MP4')
+    parser.add_argument('--bbox_path', type=str, default='input/bbox.txt')
     args = parser.parse_args()
-    
-    dates = extract_date_from_srt(args.srt_path)
-    model = YOLO(args.model_name)
-    
-    frame_count = -1
+
+    # bbox 데이터를 읽어옵니다.
+    bbox_data = read_bbox_data(args.bbox_path)
     frame_rate, total_frames, frame_width, frame_height = extract_video_metadata(args.video_path)
     
-    if total_frames > len(dates):
-        for i in range(total_frames - len(dates)):
-            dates.append(dates[-1])
-
-    fourcc = cv2.VideoWriter_fourcc(*'DIVX')
-    out = cv2.VideoWriter(args.output_video, fourcc, frame_rate, TARGET_SIZE)
+    font = ImageFont.truetype('AppleGothic.ttf', 40)
+    fourcc = cv2.VideoWriter_fourcc(*'MP4V')
+    out = cv2.VideoWriter(args.output_video, fourcc, frame_rate, (frame_width, frame_height))
     
     cap = cv2.VideoCapture(args.video_path)
+    frame_count = 0
+
     while cap.isOpened():
         success, frame = cap.read()
         if not success:
             break
-        
-        frame_count += 1
-        frame = cv2.resize(frame, TARGET_SIZE)
-        
-        # 객체 탐지 결과를 추출합니다.
-        results     = model(frame)[0]
-        boxes       = results.boxes
-        names       = results.names
-        cls         = boxes.cls
-        conf        = boxes.conf
-        xywh        = boxes.xywh
-        boats       = 0
-        dolphins    = 0
 
-        # 객체 추적 결과를 추출합니다. (구현 필요)
-        max_ship_speed      = 0
+        frame_bboxes = bbox_data.get(frame_count, [])
+        image = Image.fromarray(frame)
+        draw = ImageDraw.Draw(image)
 
-        # 카메라 캘리브레이션 결과를 추출합니다. (구현 필요)
-        nearest_distance    = 0
+        # 좌상단에 흰색 배경 사각형을 그립니다.
+        dashboard_background = (0, 0, 700, 300)  # 좌표 (x0, y0, x1, y1)
+        draw.rectangle(dashboard_background, fill=(255, 255, 255))
 
-        # 대시보드 시각화를 위해 현재 프레임 좌측 상단에 흰색 배경을 추가합니다.
-        background_color    = (255, 255, 255)
-        background_width    = 400
-        background_height   = 200
-        background          = np.ones((background_height, background_width, 3), dtype=np.uint8) * background_color
-        x_position          = 0
-        y_position          = 0
-        frame[y_position:y_position + background_height, x_position:x_position + background_width] = background
+        centers = []  # bbox 중심점들을 저장합니다.
 
-        # 한글 텍스트 시각화를 위해 폰트 설정과 CV2 → PIL 변환을 수행합니다.
-        font    = ImageFont.truetype(args.font_path, size=24)
-        image   = Image.fromarray(frame)
-        draw    = ImageDraw.Draw(image)
-
-        # 현재 프레임에 bounding box 정보를 추가하고, 탐지된 선박과 돌고래의 수를 카운트합니다.
-        for i in range(len(xywh)):
-            x, y, w, h  = xywh[i]
-            class_name    = names[cls[i].item()]
-            conf_score    = round(conf[i].item(), 2)
-            if class_name == "boat":
-                boats += 1
-                title = f"{class_name}({conf_score}), 0km/h"
-            elif class_name == "dolphin":
-                dolphins += 1
-                title = f"{class_name}({conf_score})"
-            else:
-                title = ""
-
-            x, y, w, h = x.item(), y.item(), w.item(), h.item()
-            draw.rectangle(xy=(x, y, x+w, y+h), width=5, outline=(0, 255, 0))
-            draw.text(xy=(x, y-50), text=title, font=font, align='left', fill=(0, 255, 0, 0))
+        for bbox_info in frame_bboxes:
+            x, y, w, h = bbox_info['bbox']
+            conf_score = round(bbox_info['conf'], 2)
+            # bbox의 중심점을 계산합니다.
+            center_x, center_y = x + w / 2, y + h / 2
+            # bbox 중심점을 추가합니다.
+            centers.append((center_x, center_y))
+            draw.rectangle(xy=(x, y, x + w, y + h), width=5, outline=(0, 255, 0))
+            draw_radius_circles(draw, (center_x, center_y), [(50, "yellow"), (300, "purple")], font)
+            # draw.text(xy=(x, y - 20), text=f"Conf: {conf_score}", font=font, fill=(0, 255, 0))
 
         # 대시보드에 표시할 텍스트 정보를 생성합니다.
-        if (LEGAL_DISTANCE > nearest_distance) or (LEGAL_SPEED < max_ship_speed):
-            violation  = True
-            font_color = (0, 0, 255, 0)
-        else:
-            violation  = False
-            font_color = (0, 255, 0, 0)
+        max_ship_speed, nearest_distance = 0, 0  # 구현 필요
+        violation = (LEGAL_DISTANCE > nearest_distance) or (LEGAL_SPEED < max_ship_speed)
+        font_color = (0, 0, 255) if violation else (0, 255, 0)
 
-        # 현재 프레임에 텍스트를 추가합니다.
-        draw.text(xy=(10, 0),   text=f"촬영 일시: {dates[frame_count]}",    font=font, align='left', fill=font_color)
-        draw.text(xy=(10, 30),  text=f"위반여부: {violation}",              font=font, align='left', fill=font_color)
-        draw.text(xy=(10, 60),  text=f"최근접거리: {nearest_distance}m",    font=font, align='left', fill=font_color)
-        draw.text(xy=(10, 90),  text=f"최고선박속도: {max_ship_speed}km/s", font=font, align='left', fill=font_color)
-        draw.text(xy=(10, 120), text=f"선박 수: {boats}",                   font=font, align='left', fill=font_color)
-        draw.text(xy=(10, 150), text=f"돌고래 수: {dolphins}",              font=font, align='left', fill=font_color)
+         # 모든 bbox 중심점들 사이에 선을 그리고 거리를 표시합니다.
+        draw_lines_and_distances(draw, centers, font)
+        
+        # 텍스트를 흰색 배경 사각형 위에 그립니다.
+        text_positions = [(30, 30), (30, 80), (30, 130)]
+        texts = [
+            f"Violation: {violation}",
+            f"Nearest distance: {nearest_distance}m",
+            f"Max ship speed: {max_ship_speed}km/s"
+        ]
 
-        # 비디오를 생성합니다.
+        for text, pos in zip(texts, text_positions):
+            draw.text(pos, text, font=font, fill=font_color)
+        
+        # 나머지 코드
         img = np.array(image)
         out.write(img)
-        
-        # 프레임을 윈도우에 띄웁니다.
         cv2.imshow(args.video_path, img)
         if cv2.waitKey(1) & 0xFF == ord("q"):
             break
-        
+
+        frame_count += 1
         
     cap.release()
     out.release()
     cv2.destroyAllWindows()
+
+if __name__ == "__main__":
+    main()
