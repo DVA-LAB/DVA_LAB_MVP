@@ -2,4 +2,4 @@ from autologging import logged
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, BackgroundTasks, Depends, Response, status
 
-from . import video_router, model_router  # noqa
+from . import data_router, model_router  # noqa
