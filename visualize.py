@@ -13,26 +13,29 @@ def read_bbox_data(file_path):
     data = {}
     with open(file_path, 'r') as file:
         for line in file:
-            frame_id, track_id, x, y, w, h, conf, _, _, _ = map(float, line.split(','))
+            frame_id, track_id, label, x, y, w, h, conf, _, _, _ = map(float, line.split(','))
             if frame_id not in data:
                 data[frame_id] = []
-            data[frame_id].append({'track_id': int(track_id), 'bbox': (x, y, w, h), 'conf': conf})
+            data[frame_id].append({'track_id': int(track_id), 'bbox': (x, y, w, h), 'class': label, 'conf': conf})
     return data
 
-def draw_lines_and_distances(draw, centers, font, line_color=(255, 0, 0)):
+def draw_lines_and_distances(draw, centers, classes, font, line_color=(255, 0, 0)):
     """
-    모든 중심점들 사이에 선을 그리고 픽셀 거리를 표시합니다.
+    지정된 두 클래스(여기서는 보트와 돌고래) 간의 거리만을 그립니다.
     """
     for i in range(len(centers)):
         for j in range(i + 1, len(centers)):
-            # 두 중심점 사이에 선을 그립니다.
-            start, end = centers[i], centers[j]
-            draw.line([start, end], fill=line_color, width=2)
+            # 클래스 확인: 하나는 보트이고 다른 하나는 돌고래여야 합니다.
+            if (classes[i] == 1 and classes[j] == 0) or (classes[i] == 0 and classes[j] == 1):
+                # 두 중심점 사이에 선을 그립니다.
+                start, end = centers[i], centers[j]
+                draw.line([start, end], fill=line_color, width=2)
 
-            # 두 점 사이의 거리를 계산합니다.
-            distance = math.sqrt((end[0] - start[0]) ** 2 + (end[1] - start[1]) ** 2)
-            mid_point = ((start[0] + end[0]) / 2, (start[1] + end[1]) / 2)
-            draw.text(mid_point, f"{int(distance)}px", font=font, fill=line_color)
+                # 두 점 사이의 거리를 계산합니다.
+                distance = math.sqrt((end[0] - start[0]) ** 2 + (end[1] - start[1]) ** 2)
+                mid_point = ((start[0] + end[0]) / 2, (start[1] + end[1]) / 2)
+                draw.text(mid_point, f"{int(distance)}px", font=font, fill=line_color)
+
 
 def draw_radius_circles(draw, center, radii_info, font):
     """
@@ -48,9 +51,9 @@ def draw_radius_circles(draw, center, radii_info, font):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--srt_path', type=str, default='data/DJI_0010.srt')
-    parser.add_argument('--video_path', type=str, default='input/DJI_0119_30.MP4')
-    parser.add_argument('--output_video', type=str, default='output/DJI_0119_30.MP4')
-    parser.add_argument('--bbox_path', type=str, default='input/bbox.txt')
+    parser.add_argument('--video_path', type=str, default='in/DJI_0119_30.MP4')
+    parser.add_argument('--output_video', type=str, default='out/DJI_0119_30.MP4')
+    parser.add_argument('--bbox_path', type=str, default='in/bbox.txt')
     args = parser.parse_args()
 
     # bbox 데이터를 읽어옵니다.
@@ -78,14 +81,17 @@ def main():
         draw.rectangle(dashboard_background, fill=(255, 255, 255))
 
         centers = []  # bbox 중심점들을 저장합니다.
+        classes = []  # bbox의 클래스 정보를 저장합니다.
 
         for bbox_info in frame_bboxes:
             x, y, w, h = bbox_info['bbox']
+            class_id = bbox_info['class']
             conf_score = round(bbox_info['conf'], 2)
             # bbox의 중심점을 계산합니다.
             center_x, center_y = x + w / 2, y + h / 2
-            # bbox 중심점을 추가합니다.
+            # bbox 중심점과 클래스 정보를 추가합니다.
             centers.append((center_x, center_y))
+            classes.append(class_id)
             draw.rectangle(xy=(x, y, x + w, y + h), width=5, outline=(0, 255, 0))
             draw_radius_circles(draw, (center_x, center_y), [(50, "yellow"), (300, "purple")], font)
             # draw.text(xy=(x, y - 20), text=f"Conf: {conf_score}", font=font, fill=(0, 255, 0))
@@ -95,9 +101,9 @@ def main():
         violation = (LEGAL_DISTANCE > nearest_distance) or (LEGAL_SPEED < max_ship_speed)
         font_color = (0, 0, 255) if violation else (0, 255, 0)
 
-         # 모든 bbox 중심점들 사이에 선을 그리고 거리를 표시합니다.
-        draw_lines_and_distances(draw, centers, font)
-        
+        # 모든 bbox 중심점들 사이에 선을 그리고 거리를 표시합니다.
+        draw_lines_and_distances(draw, centers, classes, font)
+
         # 텍스트를 흰색 배경 사각형 위에 그립니다.
         text_positions = [(30, 30), (30, 80), (30, 130)]
         texts = [
