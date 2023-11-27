@@ -46,7 +46,7 @@ def draw_radius_circles(draw, center, radii_info, font):
         # 원을 그립니다.
         draw.ellipse([center[0] - radius, center[1] - radius, center[0] + radius, center[1] + radius], outline=color, width=2)
         # 원의 선 위에 텍스트를 표시합니다.
-        draw.text((center[0] + radius + 10, center[1] - 10), f"{radius}m", font=font, fill=color)
+        draw.text((center[0] + radius + 10, center[1] - 10), f"{radius/4}m", font=font, fill=color)
 
 def main():
     parser = argparse.ArgumentParser()
@@ -93,7 +93,8 @@ def main():
             centers.append((center_x, center_y))
             classes.append(class_id)
             draw.rectangle(xy=(x, y, x + w, y + h), width=5, outline=(0, 255, 0))
-            draw_radius_circles(draw, (center_x, center_y), [(50, "yellow"), (300, "purple")], font)
+            if class_id == 0:
+                draw_radius_circles(draw, (center_x, center_y), [(200, "yellow"), (1200, "purple")], font)
             # draw.text(xy=(x, y - 20), text=f"Conf: {conf_score}", font=font, fill=(0, 255, 0))
 
         # 대시보드에 표시할 텍스트 정보를 생성합니다.
