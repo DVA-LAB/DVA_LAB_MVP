@@ -26,32 +26,42 @@ cd backend
 pip install -r requirements.txt
 ```
 
-### 환경 설정
-환경변수 및 구성 설정을 위한 .env 파일을 생성하고 예제에 맞게 수정합니다.
-```text
-# 예시 .env 파일
-VIDEO_PATH=/path/to/video
-MODEL_ENDPOINT=http://model-service
-```
-
 ### 실행
 ```bash
 # Uvicorn을 사용하여 애플리케이션을 실행합니다.
-uvicorn main:app --reload
+python app.py  # backend/app.py
 ```
 
 ## 사용방법
 DVA 백엔드는 프론트엔드와 통신하기 위한 RESTful API를 제공합니다. 이 서버를 사용하여 비디오 파일을 업로드하고 처리 결과를 받을 수 있습니다.
 
-### 비디오 파일 전송
-비디오 파일을 서버에 업로드하려면, 다음 curl 명령어를 사용합니다:
+### 파일 전송
+* 비디오 파일 업로드 (저장위치: backend 서버의 test/video_origin)
 ```bash
-curl -X POST "http://localhost:8000/video/" \
-     -H "accept: application/json" \
-     -H "Content-Type: multipart/form-data" \
-     -F "file=@/path/to/your/video.mp4"
+curl -X 'POST' \
+  'http://112.216.237.124:8000/video/' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: multipart/form-data' \
+  -F 'file=@{your_video_path};type=video/mp4'
 ```
-* 파일은 backend 서버의 test_video 폴더 안에 저장됩니다.
+
+* CSV 파일 업로드 (저장위치: backend 서버의 test/csv)
+```bash
+curl -X 'POST' \
+  'http://112.216.237.124:8000/csv/' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: multipart/form-data' \
+  -F 'file=@{your_csv_path};type=text/csv'
+```
+
+* SRT 파일 업로드 (저장위치: backend 서버의 test/srt)
+```bash
+curl -X 'POST' \
+  'http://112.216.237.124:8000/srt/' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: multipart/form-data' \
+  -F 'file=@{your_srt_path}'
+```
 
 ### 포인트 거리 정보 전송
 영상에서 특정 포인트 2개와 그 사이의 실제 거리 정보를 서버로 보내려면 아래 curl 명령어를 사용하세요:
