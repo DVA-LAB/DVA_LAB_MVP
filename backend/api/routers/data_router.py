@@ -7,7 +7,7 @@ import shutil
 router = APIRouter(tags=["data"])
 
 
-@router.post("/videos/")
+@router.post("/video/")
 async def upload_video(file: UploadFile = File(...)):
     video_storage_path = os.path.join('test', 'video_origin')
     os.makedirs(video_storage_path, exist_ok=True)
