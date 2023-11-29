@@ -60,7 +60,7 @@ class Refiner:
 
     def save_update(self, coco_data, save_path):
         with open(save_path, "w") as file:
-            json.dump(coco_data, file, indent=4)정
+            json.dump(coco_data, file, indent=4)
 
     def _get_horizontal_bbox_from_mask(self, mask, bbox):
         mask = mask[0, :, :]
