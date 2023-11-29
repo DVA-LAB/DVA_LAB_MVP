@@ -1,11 +1,11 @@
 import json
 import os
-import tqdm
 
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
+import tqdm
 from transformers import SamModel, SamProcessor
 
 
@@ -24,15 +24,14 @@ class Refiner:
             coco_data = json.load(file)
 
         images = {image["id"]: image["file_name"] for image in coco_data["images"]}
-        annotations = {anno["image_id"]: [] for anno in coco_data["annotations"]}
-        for anno in coco_data["annotations"]:
-            annotations[anno["image_id"]].append(anno["bbox"])
 
-        for image_id, file_name in images.items():
-            image_path = os.path.join(image_folder, file_name)
+        for anno in coco_data["annotations"]:
+            img_name = images[anno["image_id"]]
+            image_path = os.path.join(image_folder, img_name)
             image = cv2.imread(image_path)
-            bboxes = annotations.get(image_id, [])
-            yield image, bboxes, image_id
+            bbox = anno["bbox"]
+            anno_id = anno["id"]
+            yield image, bbox, anno_id
 
     def do_refine(self, json_path, image_folder):
         loader = self._get_loader(json_path, image_folder)
@@ -40,42 +39,31 @@ class Refiner:
         with open(json_path, "r") as file:
             coco_data = json.load(file)
 
-        for img, bboxes, img_id in tqdm.tqdm(loader):
-            if len(bboxes) > 1:
-                int_bboxes = [
-                    [int(coord) for coord in self.convert_to_xyxy(bbox)]
-                    for bbox in bboxes
-                ]
-                masks = self._do_seg(img, int_bboxes)
-                new_bboxes = self.update_bboxes_with_masks(masks, bboxes)
+        for idx, (img, bbox, anno_id) in tqdm.tqdm(enumerate(loader)):
+            int_bbox = [int(coord) for coord in self.convert_to_xyxy(bbox)]
+            mask = self._do_seg(img, [int_bbox])
+            updated_bbox = self.update_bbox_with_mask(mask, bbox)
 
-                for i, anno in enumerate(coco_data["annotations"]):
-                    if anno["image_id"] == img_id:
-                        try:
-                            coco_data["annotations"][i]["bbox"] = new_bboxes[i]
-                        except:
-                            print(new_bboxes)
-                            print(coco_data["annotations"][i])
+            for i, anno in enumerate(coco_data["annotations"]):
+                if anno["id"] == anno_id:
+                    coco_data["annotations"][i]["bbox"] = updated_bbox
 
+            if idx == 1:
+                self.show_mask_bbox(
+                    [mask],
+                    [int_bbox],
+                    [self.convert_to_xyxy(updated_bbox)],
+                    random_color=False,
+                    save="test_single_box.jpg",
+                )
         return coco_data
 
     def save_update(self, coco_data, save_path):
         with open(save_path, "w") as file:
-            json.dump(coco_data, file, indent=4)
-
-    def update_json_with_new_bboxes(self, json_path, updated_annotations):
-        with open(json_path, "r") as file:
-            coco_data = json.load(file)
-
-        for anno in coco_data["annotations"]:
-            image_id = anno["image_id"]
-            if image_id in updated_annotations:
-                anno["bbox"] = updated_annotations[image_id]
-
-        with open(json_path, "w") as file:
-            json.dump(coco_data, file, indent=4)
+            json.dump(coco_data, file, indent=4)정
 
     def _get_horizontal_bbox_from_mask(self, mask, bbox):
+        mask = mask[0, :, :]
         if mask.any():
             y_indices, x_indices = mask.nonzero(as_tuple=True)
             x_min, x_max = x_indices.min().item(), x_indices.max().item()
@@ -84,12 +72,9 @@ class Refiner:
         else:
             return bbox
 
-    def update_bboxes_with_masks(self, masks, bboxes):
-        updated_bboxes = []
-        for mask, bbox in zip(masks, bboxes):
-            bbox = self._get_horizontal_bbox_from_mask(mask[0], bbox)
-            updated_bboxes.append(bbox)
-        return updated_bboxes
+    def update_bbox_with_mask(self, mask, bbox):
+        updated_bbox = self._get_horizontal_bbox_from_mask(mask[0], bbox)
+        return updated_bbox
 
     def _do_seg(self, bgr_img, boxes):
         self.rgb_img = cv2.cvtColor(bgr_img, cv2.COLOR_BGR2RGB)
