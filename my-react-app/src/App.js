@@ -1,7 +1,14 @@
 import React, { Component } from 'react';
-import axios from 'axios';
 import './App.css';
-import { Button, Modal, Space, Upload, Typography } from 'antd';
+import { Button, Modal, Alert, Spin, Space, Upload, Typography } from 'antd';
+import { 
+  PlayCircleOutlined, 
+  PauseCircleOutlined, 
+  FastBackwardOutlined, 
+  FastForwardOutlined 
+} from '@ant-design/icons';
+import axios from 'axios';
+
 const { Title } = Typography;
 
 class App extends Component {
@@ -10,6 +17,7 @@ class App extends Component {
     this.state = {
       videoSrc: null,
       logFile: null,
+      srtFile: null,
       videoPlaying: false,
       frameNumber: 0,
       addingInfo: false,
@@ -20,19 +28,32 @@ class App extends Component {
       distanceInputs: [],
       allFillUpload: false,
       aiModelActive: false,
-      exportOptionsVisible: false,
       isLoading: false,
-      isSRTWarning: false,
+      exportOptionsVisible: false,
       isDownloadModalOpen: false, // 모달 열림/닫힘 상태 추가
+      bevImageSrc : null, //BEV image 경로 추가
+      showBEV : false, // BEV 이미지 보여주기
+      showDrawLineButton : false,
+      startPoint: null,
+      endPoint : null,
+      canvasWidth: 0,
+      canvasHeight: 0,
+      textBoxPosition : {x:0, y:0},
+      showTextBox: false,
+      lines: [],
     };
 
     this.videoRef = React.createRef();
     this.fileInputRef = React.createRef();
     this.logFileInputRef = React.createRef();
     this.canvasRef = React.createRef();
+    this.imageRef = React.createRef();
     this.clearCanvas = this.clearCanvas.bind(this);
-    this.drawPointsAndLines = this.drawPointsAndLines.bind(this);
+    this.drawLine = this.drawLine.bind(this);
+    // this.drawPointsAndLines = this.drawPointsAndLines.bind(this);
   }
+
+  
 
   // 모달 열기
   openDownloadModal = () => {
@@ -44,7 +65,7 @@ class App extends Component {
     this.setState({ isDownloadModalOpen: false });
   };
 
-  // 모달 열기
+  // 모달 닫기
   openSavingModal = () => {
     this.setState({ isLoading: true });
   };
@@ -53,32 +74,6 @@ class App extends Component {
   closeSavingModal = () => {
     this.setState({ isLoading: false });
   };
-
-  closeWarnigModal = () => {
-    this.setState({ isSRTWarning: false });
-  };
-
-  componentWillUnmount() {
-    const video = this.videoRef.current;
-    video && video.removeEventListener('loadeddata', this.handleVideoLoaded);
-    clearInterval(this.drawInterval);  // 이 줄은 setInterval을 정리하기 위해 추가되었습니다.
-  }
-
-  componentDidUpdate() {
-    const video = this.videoRef.current;
-    const canvas = this.canvasRef.current;
-
-    if (canvas && video) {
-      if (!this.context) {
-        this.context = canvas.getContext('2d');
-        video.addEventListener('loadeddata', this.handleVideoLoaded);
-      }
-      canvas.width = video.offsetWidth;
-      canvas.height = video.offsetHeight;
-    } else {
-      console.error("Canvas or Video element is not available.");
-    }
-  }
 
   handleVideoLoaded = () => {
     const video = this.videoRef.current;
@@ -112,7 +107,7 @@ class App extends Component {
   loadVideo = () => {
     const { videoSrc } = this.state;
     if (videoSrc) {
-      this.videoRef.current.src = URL.createObjectURL(videoSrc);
+      this.videoRef.current.src = videoSrc;
       this.videoRef.current.load();
       this.videoRef.current.addEventListener('loadeddata', () => {
         this.videoRef.current.currentTime = 0;
@@ -202,58 +197,88 @@ class App extends Component {
   };
 
   // 파일 업로드 핸들러
-  handleFileUpload = (file) => {
-    if (this.state.videoSrc) {
-      this.setState({
-        videoSrc: null,
-        logFile: null,
-        srtFile: null,
-        videoPlaying: false,
-        frameNumber: 0,
-        addingInfo: false,
-        points: [],
-        pointColors: [],
-        pointDistances: [],
-        distanceInputs: [],
-        allFillUpload: false,
-        aiModelActive: false,
-        exportOptionsVisible: false,
-        isDownloadModalOpen: false,
-        applyFlag: false,
+  handleFileUpload = async (file) => {
+    this.setState({
+      // Reset states before upload
+      videoSrc: null,
+      logFile: null,
+      videoPlaying: false,
+      frameNumber: 0,
+      addingInfo: false,
+      points: [],
+      pointColors: [],
+      pointDistances: [],
+      distanceInputs: [],
+      allFillUpload: false,
+      aiModelActive: false,
+      exportOptionsVisible: false,
+      isDownloadModalOpen: false,
+      applyFlag: false,
+      lastVideoFilename: null,
+    });
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await axios.post('http://112.216.237.124:8000/videos/', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       });
+      console.log(response.data);
+      if(response.data && response.data.filename){
+        this.setState({
+          videoSrc: `http://112.216.237.124:8000/videos/${response.data.filename}`,
+          lastVideoFilename : response.data.filename,
+          // other states you want to set
+        },()=>{
+          this.loadVideo();
+        });
+      };
+
+      // Handle the response as needed...
+    } catch (error) {
+      console.error('Error uploading file:', error);
     }
-    if (file) {
-      const videoFileName = file.name.split('.')[0];  // 파일 이름 가져오기
-      this.setState({ videoSrc: file, videoFileName }, () => {  // videoFileName 상태 추가
-        this.loadVideo();
-      });
-    }
+    // if (this.state.videoSrc) {
+    //   this.setState({
+    //     videoSrc: null,
+    //     logFile: null,
+    //     videoPlaying: false,
+    //     frameNumber: 0,
+    //     addingInfo: false,
+    //     points: [],
+    //     pointColors: [],
+    //     pointDistances: [],
+    //     distanceInputs: [],
+    //     allFillUpload: false,
+    //     aiModelActive: false,
+    //     exportOptionsVisible: false,
+    //     isDownloadModalOpen: false,
+    //     applyFlag: false,
+
+    //   });
+    // }
+    // if (file) {
+    //   const videoFileName = file.name.split('.')[0];  // 파일 이름 가져오기
+    //   this.setState({ videoSrc: file, videoFileName }, () => {  // videoFileName 상태 추가
+    //     this.loadVideo();
+    //   });
+    // }
   };
 
   // 로그 파일 업로드 핸들러
   handleLogFileUpload = (file) => {
     if (file) {
       this.setState({ logFile: file });
+      this.setState({ allFillUpload: true });
     }
   };
 
-  // SRT 파일 업로드 핸들러
-  handleSRTFileUpload = (srtFile) => {
-    const videoSrcName = this.state.videoSrc ? this.state.videoSrc.name.split('.')[0] : null;
-
-    if (srtFile) {
-      const srtFileName = srtFile.name.split('.')[0];
-
-      if (videoSrcName && srtFileName === videoSrcName) {
-        // SRT 파일 이름과 MP4 파일 이름이 일치하는 경우
-        this.setState({ srtFile: srtFile });
-        this.setState({ allFillUpload: true });
-      } else {
-        // SRT 파일 이름과 MP4 파일 이름이 일치하지 않는 경우
-        this.setState({ allFillUpload: false });
-        console.log('SRT 파일 이름과 MP4 파일 이름이 일치하지 않습니다.');
-        this.setState({ isSRTWarning: true});
-      }
+  handleSrtFileUpload = (file) => {
+    if (file) {
+      this.setState({ srtFile: file });
+      this.setState({ allFillUpload: true });
     }
   };
 
@@ -298,46 +323,253 @@ class App extends Component {
       if (!newAddingInfo) {
         return {
           addingInfo: newAddingInfo,
-          pointDistances: [],
-          points: [],
+          // pointDistances: [],
+          // points: [],
         };
       }
 
+      console.log(this.points, this.pointDistances);
+
       // addingInfo 상태가 true로 바뀌면 상태를 그대로 유지합니다.
       return { addingInfo: newAddingInfo };
-    }, () => {
-      // 상태 업데이트 후에 캔버스를 지우고 점과 선을 다시 그립니다.
-      this.clearCanvas();
-      this.drawPointsAndLines();
     });
   };
 
-  // handleVideoClick 함수 수정
-  handleVideoClick = (e) => {
-    if (this.state.addingInfo) {
-      const rect = this.canvasRef.current.getBoundingClientRect();
-      const { clientX, clientY } = e.nativeEvent;
-      const x = clientX - rect.left;
-      const y = clientY - rect.top;
+  captureAndSendFrame = async () => {
+    const { lastVideoFilename } = this.state;
+    const video = this.videoRef.current;
 
-      this.setState((prevState) => {
-        const points = [...prevState.points, { x, y }];
-        const pointColors = [...prevState.pointColors, `rgb(${Math.random() * 255},${Math.random() * 255},${Math.random() * 255})`];
+    // Capture the current frame of the video
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-        return { points, pointColors };
-      }, () => {
-        // Check if there are even points and more than 1 point
-        if (this.state.points.length % 2 === 0 && this.state.points.length > 1) {
-          const lastPointIndex = this.state.points.length - 1;
-          // Calculate the distance for the last two points
-          this.calculateDistance(lastPointIndex); // Calculate distance for the previous pair of points
+    // Convert canvas to Blob
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg'));
+    const file = new File([blob], `frame-${Date.now()}.jpg`, { type: 'image/jpeg' });
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+        const response = await axios.post(`http://112.216.237.124:8000/bev/${lastVideoFilename}`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        if (response.data && response.data.framePath) {
+            const framePath = response.data.framePath.split('/').pop();
+            const getImageUrl = `http://112.216.237.124:8000/extracted_frames/${framePath}`;
+            console.log(getImageUrl);
+            return getImageUrl;
         }
+    } catch (error) {
+        console.error('Error sending frame for BEV conversion:', error);
+    }
+};
 
-        // Draw points and lines after adding the second point
-        this.drawPointsAndLines();
+
+  
+  
+  
+  
+
+  // // handleVideoClick 함수 수정
+  // handleVideoClick = (e) => {
+  //   if (this.state.addingInfo) {
+  //     const rect = this.canvasRef.current.getBoundingClientRect();
+  //     const { clientX, clientY } = e.nativeEvent;
+  //     const x = clientX - rect.left;
+  //     const y = clientY - rect.top;
+
+  //     this.setState((prevState) => {
+  //       const points = [...prevState.points, { x, y }];
+  //       const pointColors = [...prevState.pointColors, `rgb(${Math.random() * 255},${Math.random() * 255},${Math.random() * 255})`];
+
+  //       return { points, pointColors };
+  //     }, () => {
+  //       // Check if there are even points and more than 1 point
+  //       if (this.state.points.length % 2 === 0 && this.state.points.length > 1) {
+  //         const lastPointIndex = this.state.points.length - 1;
+  //         // Calculate the distance for the last two points
+  //         this.calculateDistance(lastPointIndex); // Calculate distance for the previous pair of points
+  //       }
+
+  //       // Draw points and lines after adding the second point
+  //       this.drawPointsAndLines();
+  //     });
+  //   }
+  // };
+
+  toggleBEVView = async () => {
+    const { showBEV, lastVideoFilename } = this.state;
+    
+    if (!showBEV) {
+      this.setState({isLoading: true});
+      const bevImageSrcPath = await this.captureAndSendFrame();
+      if (bevImageSrcPath) {
+        // Construct the full URL
+        this.setState({
+          showBEV: true,
+          showDrawLineButton: true,
+          bevImageSrc: bevImageSrcPath,
+          isLoading: false,
+        });
+      } else{
+        console.log("Cannot find bevImageSrcPath");
+        this.setState({ isLoading: false });
+      }
+    } else {
+      // Return to video view
+      this.setState({
+        showBEV: false,
+        showDrawLineButton: false,
+        videoSrc: `http://112.216.237.124:8000/videos/${lastVideoFilename}`
+      }, () => {
+        this.loadVideo();
       });
     }
   };
+  
+  
+  
+  
+  // enableDrawing = () => {
+  //   this.setState({ 
+  //     drawingLine: !this.state.drawingLine,
+  //     startPoint: null,
+  //     endPoint: null,
+  //     points: [], // reset points if you're starting a new line
+  //   });
+  // };
+  
+
+  handleMouseDown = (event) => {
+    
+    event.stopPropagation();
+    
+    const canvas = this.canvasRef.current;
+    if (!canvas || !this.state.addingInfo) return;
+
+    // if(!this.state.addingInfo) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    
+    const x = (event.clientX - rect.left) * scaleX;
+    const y = (event.clientY - rect.top) * scaleY;
+
+    const newPoint = { x, y };
+
+    console.log("New Point:", newPoint);
+
+    this.drawPoint(newPoint, canvas); // Draw the point
+
+    this.setState(prevState => {
+      const newPoints = [...prevState.points, newPoint];
+      
+      console.log("Points after adding new point:", newPoints);
+      if (newPoints.length === 2) {
+        // If two points are selected, draw line and reset points
+        this.drawLine(newPoints[0], newPoints[1]);
+        // const distance = prompt("Enter the distance (m):");
+        // const distance = prompt("Enter the distance (m):");
+        // this.drawLabel(newPoints[0], newPoints[1], distance);
+
+        return { 
+          points: newPoints,
+          // showTextBox: true,
+          // textBoxPosition: {x:screenX,y: screenY} 
+          // pointDistances: [...prevState.pointDistances, distance],
+        }; // reset points
+      }
+      console.log(newPoints,);
+      return { points: newPoints };
+    });
+  };
+
+drawPoint = (point, canvas) => {
+  // const canvas = this.canvasRef.current;
+  const ctx = canvas.getContext('2d');
+
+  ctx.beginPath();
+  ctx.arc(point.x, point.y, 1, 0, 2 * Math.PI, true); // Draw a circle
+  ctx.fillStyle = '#FF0000';
+  ctx.fill();
+};
+
+drawLine = (startPoint, endPoint) => {
+  const canvas = this.canvasRef.current;
+  const ctx = canvas.getContext('2d');
+
+  ctx.beginPath();
+  ctx.moveTo(startPoint.x, startPoint.y);
+  ctx.lineTo(endPoint.x, endPoint.y);
+  ctx.stroke();
+};
+
+handleDistanceInput = (event) => {
+  const distance = event.target.value;
+  if (distance && !isNaN(distance)) {
+      this.setState(prevState => {
+          const { points } = prevState;
+          this.drawLabel(points[0], points[1], distance);
+          return { pointDistances: [...prevState.pointDistances, distance], points: [] }; // Reset points
+      });
+  }
+};
+
+drawLabel = (startPoint, endPoint, text) => {
+  const canvas = this.canvasRef.current;
+  const context = canvas.getContext('2d');
+
+  const midX = (startPoint.x + endPoint.x) / 2;
+  const midY = (startPoint.y + endPoint.y) / 2;
+
+  // Adjust the size of the label box
+  const labelWidth = 20; // reduced from 150
+  const labelHeight = 10; // reduced from 40
+
+  // Draw label background with reduced size
+  // context.globalAlpha = 0.5;
+  context.fillStyle = 'transparent';
+  context.fillRect(midX - labelWidth / 2, midY - labelHeight / 2, labelWidth, labelHeight);
+
+  // Draw label text with smaller font
+  context.fillStyle = 'red';
+  context.font = "8px Arial"; // reduced font size
+  context.textAlign = 'center';
+  context.textBaseline = 'middle';
+  context.fillText(`${text}m`, midX, midY);
+};
+
+
+  handleMouseMove = (e) => {
+    if (!this.state.isDrawing) return;
+  
+    const canvas = this.canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const lastPoint = this.state.lastPoint;
+  
+    ctx.beginPath();
+    ctx.moveTo(lastPoint.x, lastPoint.y);
+    ctx.lineTo(x, y);
+    ctx.stroke();
+  
+    this.setState({ lastPoint: { x, y } });
+  };
+  
+  handleMouseUp = () => {
+    this.setState({ isDrawing: false, lastPoint: null });
+  };
+  
+
 
   // calculateDistance 함수 수정
   calculateDistance = (pointIndex) => {
@@ -362,44 +594,11 @@ class App extends Component {
       }
     }, 0);
   };
-
   applyGSD = () => {
     console.log('applyGSD');
-    const { points, pointDistances } = this.state;
-    const url = "http://118.131.88.227:49001/model/inference";
-  
-    const data = {};
-
-    // 포인트와 거리 데이터를 데이터 객체에 추가
-    for (let i = 0; i < pointDistances.length; i++) {
-      data[`point${2 * i + 1}`] = { x: points[2 * i].x, y: points[2 * i].y };
-      data[`point${2 * i + 2}`] = { x: points[2 * i + 1].x, y: points[2 * i + 1].y };
-      data[`distance`] = pointDistances[i].meters.toFixed(1);
-    }    
-
-    // Assuming you want to log the data in the desired format
-    console.log(JSON.stringify(data, null, 2)); // JSON.stringify에 두 번째 인자로 null과 들여쓰기 값을 전달하여 가독성을 높임
-
-    const config = {
-      headers: { "Content-Type": 'application/json' }
-    };
-
-    // Make a POST request using Axios
-    axios.post(url, data, config)
-      .then(res => {
-        // 성공 처리
-        console.log("POST request successful:", res.data);
-      })
-      .catch(err => {
-        // 에러 처리
-        console.error("POST request failed:", err);
-      });
-
     this.setState({ applyFlag: true });
     this.toggleAddingInfo();
-
   }
-
   // << 5 seconds backward 버튼 클릭 핸들러
   skipBackward = () => {
     this.videoRef.current.currentTime -= 5;
@@ -434,13 +633,25 @@ class App extends Component {
 
   // Run AI Model 버튼 클릭 핸들러
   runAIModel = async () => {
-    const { videoSrc } = this.state;
-    if (videoSrc) {
+    const { points, pointDistances, videoSrc } = this.state;
+    if (videoSrc && points.length === 2 && pointDistances.length > 0) {
+      
+      const payload = {
+        point1: points[0],
+        point2: points[1],
+        distance: parseFloat(pointDistances[0])
+      };
+      
+      
       // FormData를 사용하여 파일을 업로드합니다.
+      
+      
       const formData = new FormData();
+      
+      
       formData.append('video_path', videoSrc);
 
-      fetch("http://localhost:8000/points-distance", {
+      fetch("http://112.216.237.124:8000/", {
         method: "POST",
         body: formData, // FormData를 전송합니다.
       })
@@ -533,7 +744,7 @@ class App extends Component {
 
         // 선에 텍스트를 추가합니다.
         // 이전 점의 색상을 사용하여 텍스트의 색상을 설정합니다.
-        context.fillStyle = 'rgba(255, 255, 255, 0.5)';  // 배경색을 흰색으로 설정
+        context.fillStyle = 'white'; // 배경색을 흰색으로 설정
         context.fillRect(
           (points[i - 1].x + points[i].x) / 2 - 75,
           (points[i - 1].y + points[i].y) / 2 - 20,
@@ -542,7 +753,7 @@ class App extends Component {
         );
 
         context.fillStyle = 'black'; // 글씨색을 검정색으로 설정
-        context.font = "17px Arial";
+        context.font = "20px Arial";
         context.textAlign = 'center';
         context.textBaseline = 'middle';
         // 선의 중간에 라벨을 추가합니다.
@@ -568,26 +779,52 @@ class App extends Component {
       zIndex: 0
     };
 
-    const { videoPlaying, frameNumber, addingInfo, isLoading, applyFlag, allFillUpload, isSRTWarning, aiModelActive } = this.state;
+    const { videoSrc, videoPlaying, frameNumber, addingInfo, isLoading, applyFlag, allFillUpload, aiModelActive, showBEV, showDrawLineButton, points } = this.state;
 
     return (
       <div className="App" style={{ height: screenHeight + 'px', position: 'relative' }}>
-        <Space direction="vertical" style={{ marginTop: '5px', marginLeft: '10px', marginRight: '10px' }}>
+        <Space direction="vertical" style={{ marginTop: '40px', marginLeft: '20px' }}>
           <Title level={1}>Drone Video Analysis for MARC</Title>
-          <div style={{ position: 'relative' }}>
-            <video
-              ref={this.videoRef}
-              onTimeUpdate={this.updateFrameNumber}
-              onClick={this.handleVideoClick}
-              style={videoStyle}
-            />
-            {this.state.addingInfo && this.videoRef.current && (
-              <canvas
-                ref={this.canvasRef}
-                style={{ position: 'absolute', top: '0', left: '0', zIndex: 1, width: '100%', height: '100%' }}
-                onClick={this.handleVideoClick}
+         
+          <div className='video-bev-container' style={{position: 'relative', ...videoStyle}}>
+            {this.state.isLoading && (
+                <div className="loader"></div> // This will display the loading spinner
+              )}
+            {!showBEV ? (
+              <video
+                ref={this.videoRef}
+                crossOrigin='anonymous'
+                src={this.state.videoSrc} // Set the src attribute to use videoSrc from the state
+                onTimeUpdate={this.updateFrameNumber}
+                // onClick={this.handleVideoClick}
+                style={videoStyle}
+                // src={this.state.videoSrc?URL.createObjectURL(this.state.videoSrc)}
+                // onLoadedData={this.handleVideoLoaded}
               />
+            ):(
+              <img 
+                src={this.state.bevImageSrc} 
+                style={videoStyle} 
+                alt="Bird's Eye View" 
+                ref={this.imageRef} 
+                onClick={this.handleMouseDown}/>
             )}
+              {showBEV && (
+                <canvas
+                ref={this.canvasRef}
+                onMouseDown={this.handleMouseDown}
+                style={{ position: 'absolute', top: '0', left: '0', zIndex: 1, width: '100%', height: '100%' }}
+              />
+              
+              )}
+              {showBEV && points.length === 2 && (
+            <input
+                type="text"
+                placeholder="Enter distance (m)"
+                onBlur={this.handleDistanceInput}
+                style={{ position: 'absolute', left: '10px', top: '10px', zIndex:2 }} // Adjust position as needed
+            />
+        )}
           </div>
           <Space>
             {this.videoRef.current && applyFlag && (
@@ -608,14 +845,53 @@ class App extends Component {
                 </div>
               </>
             )}
-            {(this.state.pointDistances.length > 0 && !applyFlag) && (
-              <Button style={{ backgroundColor: 'red', color: 'white' }} onClick={this.applyGSD}>
-                Apply
+            
+          </Space>
+          <div style={{ fontSize: 30 + 'px' }}>
+           {videoSrc && <p >Frame: {frameNumber}</p>}
+          </div>
+          {showBEV && this.state.pointDistances.length > 0 && (
+              <Button style={{ backgroundColor: 'red', color: 'white' }} onClick={this.runAIModel}>
+                Run AI Model
               </Button>
             )}
+          <Space>
+          {videoSrc && !showBEV && (
+              <Space>
+                <Button onClick={this.skipBackward} icon={<FastBackwardOutlined />} />
+                <Button onClick={this.togglePlayPause} icon={videoPlaying ? <PauseCircleOutlined /> : <PlayCircleOutlined />} />
+                <Button onClick={this.skipForward} icon={<FastForwardOutlined />} />
+              </Space>
+            )}
           </Space>
-          <div style={{ fontSize: 20 + 'px' }}>
-            <p >Frame: {frameNumber}</p>
+          <div>
+            {!videoPlaying && videoSrc && (
+            <Button type="primary" onClick={this.toggleBEVView}>
+              {showBEV ? 'Return to Video' : 'Convert to BEV'}
+            </Button>
+            )}
+
+            {/* {showDrawLineButton && (
+              <Button type="primary" onClick={this.handleMouseDown}>Draw Line</Button>
+              )
+            } */}
+            {showDrawLineButton &&(
+              <Button onClick={this.toggleAddingInfo}>{addingInfo ? 'Disable Adding Info' : 'Enable Adding Info'}</Button>
+            )}
+            {/* {
+              lines.map((line,index)=>
+              <input 
+                key={index}
+                type="text" 
+                placeholder="Real distance (m)" 
+                style={{ 
+                  position: 'absolute', 
+                  left: `${line.textBoxPosition.x}px`, // These are relative to the parent div
+                  top: `${line.textBoxPosition.y}px`, // These are relative to the parent div
+                  zIndex: 2,
+                }} 
+                />
+                )} */}
           </div>
           <Space direction="vertical">
             <Space>
@@ -624,7 +900,7 @@ class App extends Component {
                 accept=".mp4,.mov"
                 customRequest={({ file }) => this.handleFileUpload(file)}
               >
-                {this.state.videoSrc ? <Button>Re-upload Video</Button> : <Button>Upload Video</Button>}
+                {videoSrc ? <Button>Re-upload Video</Button> : <Button>Upload Video</Button>}
               </Upload>
               <Upload
                 showUploadList={false}
@@ -635,39 +911,22 @@ class App extends Component {
               </Upload>
               <Upload
                 showUploadList={false}
-                accept=".SRT"
-                customRequest={({ file }) => this.handleSRTFileUpload(file)}
+                accept=".srt"
+                customRequest={({ file }) => this.handleSrtFileUpload(file)}
               >
                 {this.state.srtFile ? <Button>Re-upload SRT File</Button> : <Button>Upload SRT File</Button>}
               </Upload>
-              <div>
-                <Modal
-                  title="파일명 다름"
-                  open={isSRTWarning}
-                  footer={null}
-                  onCancel={this.closeWarnigModal}
-                >
-                  <p>비디오 파일 명과 SRT 파일 명이 다릅니다. 동일한 파일명의 SRT 파일을 이용해주세요.</p>
-                </Modal>
-              </div>
               {/* {allFillUpload && <Button onClick={this.runAIModel}>Run AI Model</Button>} */}
+
             </Space>
-            {allFillUpload && (
-              <Space>
-                <Button onClick={this.skipBackward}>{"<< 5 seconds backward"}</Button>
-                <Button onClick={this.togglePlayPause}>{videoPlaying ? 'Pause' : 'Play'}</Button>
-                <Button onClick={this.skipForward}>{">> 5 seconds forward"}</Button>
-              </Space>
-            )}
-            {allFillUpload && (
-              <Button onClick={this.toggleAddingInfo}>{addingInfo ? 'Disable Adding Info' : 'Enable Adding Info'}</Button>
-            )}
+            
+            
           </Space>
-          <div>
+          {/* <div>
             {this.state.pointDistances.map((distance, index) => (
               <p key={index}>Distance {index + 1}: {distance.meters} meters ({distance.pixels.toFixed(3)} pixels)</p>
             ))}
-          </div>
+          </div> */}
         </Space>
       </div>
     );
