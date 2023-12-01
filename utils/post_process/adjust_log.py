@@ -1,15 +1,18 @@
 import os
-import glob
 import sys
+import glob
 import cv2
 import datetime
 import pandas as pd
 from haversine import haversine
+import adjust_height
 
 use_cols = ['OSD.latitude', 'OSD.longitude', 'OSD.height [ft]', 'OSD.altitude [ft]',
             'OSD.xSpeed [MPH]', 'OSD.ySpeed [MPH]', 'OSD.zSpeed [MPH]', 'OSD.directionOfTravel',
-            'OSD.pitch', 'OSD.roll', 'OSD.yaw', 'GIMBAL.pitch', 'GIMBAL.roll', 'GIMBAL.yaw',
-            'CAMERA.isVideo', 'OSD.flyTime [s]']
+            'OSD.pitch', 'OSD.roll', 'OSD.yaw', 'OSD.droneType', 'GIMBAL.pitch', 'GIMBAL.roll', 'GIMBAL.yaw',
+            'HOME.longitude', 'HOME.latitude', 'CAMERA.isVideo', 'OSD.flyTime [s]']
+
+drone_type = {'Mavic 2':'mavic2zoom', 'Mavic Pro':'mavicpro', 'Mavic 3':'mavic2procine', 'Mavic Mini':'mavicmini'}
 
 
 # log csv --> dataframe
@@ -28,7 +31,7 @@ def get_log(csv_path):
     pd_use_log.insert(0, 'CUSTOM.date [local]', record_time)
     pd_use_log = pd_use_log.drop(columns='OSD.flyTime [s]')
 
-    return pd_use_log
+    return pd_use_log, base_time.strftime('%Y%m%d%H%M%S')
 
 
 # log srt --> dataframe
@@ -50,7 +53,7 @@ def get_srt(srt_path, osd_typ='mavic2zoom'):
                 df_lat.append(float(divide[7].split(': ')[-1]))
                 df_lon.append(float(divide[8].split(': ')[-1]))
 
-    elif osd_typ=='mavic2':
+    elif osd_typ=='mavicpro':
         for idx, line in enumerate(txt_srt):
             line = line.strip()
             if idx % 6 == 2:
@@ -132,7 +135,7 @@ def match_srt(pd_log, pd_srt, pd_idx):
         end_idx = coord_end.index[start_time.index(min(start_time))]
         print('match type: time')
     else:
-        if min(start_dist) <= 0.005:
+        if min(start_dist) <= 0.05:
             start_idx = coord_start.index[start_dist.index(min(start_dist))]
             end_idx = coord_end.index[start_dist.index(min(start_dist))]
             print('match type: distance')
@@ -145,7 +148,7 @@ def match_srt(pd_log, pd_srt, pd_idx):
 # adjust SRT matching region based on SRT file
 def adjust_csv_w_srt(pd_log, pd_srt):
     pd_log_adjust = pd_log.copy()
-    pd_log_adjust = pd_log_adjust.drop(['CUSTOM.date [local]','CAMERA.isVideo'], axis='columns')
+    pd_log_adjust = pd_log_adjust.drop(['CUSTOM.date [local]','CAMERA.isVideo','OSD.droneType'], axis='columns')
 
     pd_log_final = pd.DataFrame(index=range(len(pd_srt)), columns=pd_log_adjust.columns)
 
@@ -160,6 +163,7 @@ def adjust_csv_w_srt(pd_log, pd_srt):
 
     pd_log_final.insert(0, 'FrameCnt', [idx+1 for idx in range(len(pd_srt))])
     pd_log_final.insert(1, 'focal_length', pd_srt['focal_length'])
+    pd_log_final.insert(2, 'datetime', pd_srt['time_now'])
 
     return pd_log_final
 
@@ -167,7 +171,7 @@ def adjust_csv_w_srt(pd_log, pd_srt):
 # adjust SRT matching region based on SRT file
 def adjust_csv_wo_srt(pd_log, cnt_frame):
     pd_log_adjust = pd_log.copy()
-    pd_log_adjust = pd_log_adjust.drop(['CUSTOM.date [local]','CAMERA.isVideo'], axis='columns')
+    pd_log_adjust = pd_log_adjust.drop(['CUSTOM.date [local]','CAMERA.isVideo','OSD.droneType'], axis='columns')
 
     pd_log_final = pd.DataFrame(index=range(cnt_frame), columns=pd_log_adjust.columns)
 
@@ -186,39 +190,56 @@ def adjust_csv_wo_srt(pd_log, cnt_frame):
 
 
 # execute main function
+# ========== main function ==========
 def main(argv):
     # get argument
     args = argv
-    if len(args) != 2:
+    if len(args) != 1:
         print("[ERROR] Insufficient argument")
 
     root_dir = args[0]
-    # root_dir = 'C:/Users/user/Desktop/dolphin/log/data/230502'
-    osd_typ = args[1]
-    assert osd_typ == 'mavic2' or osd_typ == 'mavic2zoom', '[ERROR] OSD type should be mavic2 or mavic2zoom'
-    # osd_typ = 'mavic2zoom'
+    # root_dir = 'C:/Users/user/Desktop/dva-test/log/data/231110_iphone'
 
     log_dirs = glob.glob(root_dir+'/DJIFlightRecord_*.csv')
     assert len(log_dirs) == 1, '[ERROR] Input log file should be one'
     log_dir = log_dirs[0]
-    srt_dir_list = glob.glob(root_dir+'/DJI_*.SRT')
+    srt_dir_list = glob.glob(root_dir+'/*.SRT')
+
+    pd_use_log, flight_date = get_log(log_dir)
+    osd_dronetype = list(set(pd_use_log['OSD.droneType']))[0]
+    osd_typ = drone_type[osd_dronetype]
 
     if len(srt_dir_list):
         for srt_dir in srt_dir_list:
             out_dir = srt_dir.replace('SRT', 'csv')
 
-            pd_use_log, pd_use_srt = get_log(log_dir), get_srt(srt_dir, osd_typ)
+            pd_use_srt = get_srt(srt_dir, osd_typ)
             pd_use_idx = get_mov_idx(pd_use_log)
 
-            try:
-                pd_use_log_adjust, start_idx, end_idx = match_srt(pd_use_log, pd_use_srt, pd_use_idx)
-                pd_use_log_final = adjust_csv_w_srt(pd_use_log_adjust, pd_use_srt)
-                pd_use_log_final.to_csv(out_dir, index=False)
-                print(os.path.basename(srt_dir), 'match with log file.', 'start idx:', start_idx, 'end idx:', end_idx)
-            except:
-                print('[ERROR] ', os.path.basename(srt_dir), ': does not match with log file.')
+            pd_use_log_adjust, start_idx, end_idx = match_srt(pd_use_log, pd_use_srt, pd_use_idx)
+            pd_use_log_final = adjust_csv_w_srt(pd_use_log_adjust, pd_use_srt)
+
+            # fill unexpected NaN value
+            pd_use_log_final = pd_use_log_final.fillna(method='backfill')
+            pd_use_log_final = pd_use_log_final.fillna(method='ffill')
+
+            # adjust height
+            osd_info = (float(pd_use_log_final['OSD.latitude'][0]), float(pd_use_log_final['OSD.longitude'][0]),
+                        float(pd_use_log_final['HOME.latitude'][0]), float(pd_use_log_final['HOME.longitude'][0]))
+
+            osd_hgt_offset = adjust_height.get_offset(osd_info, flight_date)
+            print("Adjusted height : ", osd_hgt_offset)
+
+            pd_use_log_final['adjusted height'] = [hgt * 0.3048 + osd_hgt_offset for hgt in pd_use_log_final['OSD.height [ft]']]
+            pd_use_log_final['Drone type'] = [osd_dronetype] * len(pd_use_log_final)
+            pd_use_log_final = pd_use_log_final.drop(['OSD.height [ft]', 'OSD.altitude [ft]'], axis=1)
+
+            # save sync csv
+            pd_use_log_final.to_csv(out_dir, index=False)
+
+            print(os.path.basename(srt_dir), 'match with log file.', 'start idx:', start_idx, 'end idx:', end_idx)
+
     else:
-        pd_use_log = get_log(log_dir)
         pd_use_idx = get_mov_idx(pd_use_log)
 
         mov_dir_list = glob.glob(root_dir+'/DJI_*.MP4') + glob.glob(root_dir+'/DJI_*.MOV')
@@ -229,8 +250,28 @@ def main(argv):
             start_idx, end_idx = pd_use_idx['idx_start'][idx], pd_use_idx['idx_end'][idx]
             pd_use_log_adjust = pd_use_log[start_idx:end_idx+1]
             pd_use_log_final = adjust_csv_wo_srt(pd_use_log_adjust, cnt_frame)
+
+            # fill unexpected NaN value
+            pd_use_log_final = pd_use_log_final.fillna(method='backfill')
+            pd_use_log_final = pd_use_log_final.fillna(method='ffill')
+
+            osd_info = (float(pd_use_log_final['OSD.latitude'][0]), float(pd_use_log_final['OSD.longitude'][0]),
+                        float(pd_use_log_final['HOME.latitude'][0]), float(pd_use_log_final['HOME.longitude'][0]))
+
+            osd_hgt_offset = adjust_height.get_offset(osd_info, flight_date)
+            print("Adjusted height : ", osd_hgt_offset)
+
+            pd_use_log_final['adjusted height'] = [hgt * 0.3048 + osd_hgt_offset for hgt in
+                                                   pd_use_log_final['OSD.height [ft]']]
+
+            pd_use_log_final = pd_use_log_final.drop(['OSD.height [ft]', 'OSD.altitude [ft]'], axis=1)
+
             pd_use_log_final.to_csv(out_dir, index=False)
+
+    return pd_use_log_final
 
 
 if __name__ == "__main__":
+    # execute main function
+    # argument : root directory (one csv file and many srt file are in the root directory)
     main(sys.argv[1:])
