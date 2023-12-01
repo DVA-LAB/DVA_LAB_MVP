@@ -1,4 +1,3 @@
-import sys
 from urllib.request import urlopen
 import xmltodict
 import json
@@ -6,7 +5,7 @@ from haversine import haversine
 import pandas as pd
 
 
-# DT_0023 : 모슬포, DT_0010 : 서귀포, DT_0020 : 성산포, DT_0004 : 제주
+# DT_0023 : moseul-po, DT_0010 : seogwi-po, DT_0020 : seongsan-po, DT_0004 : jeju
 khoa_coord = {'DT_0023': [33.214, 126.251], 'DT_0004': [33.527, 126.543],
               'DT_0022': [33.474, 126.927], 'DT_0010': [33.24, 126.561]}
 
@@ -59,32 +58,23 @@ def get_level(date, obs_code='DT_0023'):
 
 
 # execute main function
-def main(argv):
-    # get argument
-    args = argv
-    if len(args) != 6:
-        print("[ERROR] Insufficient argument")
-
-    osd_coord = [float(args[0]), float(args[1])]
-    # osd_coord = [33.2629, 126.1815]
-    osd_hgt = float(args[2])
-    # osd_hgt = 19.87
-    home_coord = [float(args[3]), float(args[4])]
-    # home_coord = [33.2632, 126.1814]
-    date = str(args[5])
+# ========== main function ==========
+def get_offset(osd_info, date):
+    osd_lat, osd_lon, home_lat, home_lon = osd_info
+    # osd_lat, osd_lon, home_lat, home_lon =  33.2629, 126.1815, 33.2632, 126.1814
     # date = '20231015171233'
+
+    osd_coord = [osd_lat, osd_lon]
+    home_coord = [home_lat, home_lon]
 
     obs_name = get_obs(osd_coord)
 
-    # 보정된 고도 : (홈 포인트 기준) 드론 상대 고도 + (홈포인트 절대 고도 - 인근 조위관측소 절대 고도) + (조위 관측 최댓값 - 관측 조위)
-    # 절대 고도 산출을 위해 국토지리정보원 지오이드고 사용
-    # 가정 : 드론 & 조위관측소 바다 높이는 동일
-    osd_hgt_adjust = osd_hgt + ((get_geoid_hgt(home_coord) - get_geoid_hgt(khoa_coord[obs_name])) + \
-                                (400 - get_level(date, obs_name)) / 100.)
-    print("Adjusted height : ", osd_hgt_adjust)
+    # adjusted height = (compared to home) drone relative height + \
+    # (home point absolute height - nearby khoa station absolute height) + \
+    # (tide level observation maximum - tide level observed)
+    # In order to get absolute height, we used height from ngii
+    # assumption : height of sea is identical
+    osd_hgt_offset = ((get_geoid_hgt(home_coord) - get_geoid_hgt(khoa_coord[obs_name])) + \
+                     (400 - get_level(date, obs_name)) / 100.)
 
-    return osd_hgt_adjust
-
-
-if __name__ == "__main__":
-    main(sys.argv[1:])
+    return osd_hgt_offset
