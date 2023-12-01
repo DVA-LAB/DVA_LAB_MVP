@@ -268,7 +268,7 @@ def main(argv):
 
             pd_use_log_final.to_csv(out_dir, index=False)
 
-    return pd_use_log_final
+    return
 
 
 if __name__ == "__main__":
