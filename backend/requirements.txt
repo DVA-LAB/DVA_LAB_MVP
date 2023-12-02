@@ -1,5 +1,6 @@
 opencv-python
-fastapi
+fastapi==0.103.1
+pydantic==1.10.12
 autologging
 dependency-injector
 python-multipart
