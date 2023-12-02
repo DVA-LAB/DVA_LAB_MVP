@@ -6,10 +6,12 @@ from fastapi import (APIRouter, Depends, FastAPI, File, HTTPException,
                      UploadFile, status)
 from fastapi.responses import FileResponse, JSONResponse
 from utils.log_sync.adjust_log import do_sync
+from api.services.data_service import parse_videos_multithreaded
 
 router = APIRouter(tags=["data"])
 
 video_path = os.path.join("test", "video_origin")
+frame_path = os.path.join("test", "frame_origin")
 csv_path = os.path.join("test", "csv")
 srt_path = os.path.join("test", "srt")
 sync_path = os.path.join("test", "sync_csv")
@@ -17,15 +19,19 @@ sync_path = os.path.join("test", "sync_csv")
 
 @router.post("/video/")
 async def upload_video(file: UploadFile = File(...)):
-    video_storage_path = video_path
-    os.makedirs(video_storage_path, exist_ok=True)
-    delete_files_in_folder(video_storage_path)
+    os.makedirs(video_path, exist_ok=True)
+    os.makedirs(frame_path, exist_ok=True)
+    delete_files_in_folder(video_path)
+    delete_files_in_folder(frame_path)
     try:
         file_location = os.path.join(
-            video_storage_path, lowercase_extensions(file.filename)
+            video_path, lowercase_extensions(file.filename)
         )
         with open(file_location, "wb") as file_object:
             shutil.copyfileobj(file.file, file_object)
+        # TODO@jh: frame parsing을 background task로 처리하는 경우, 다 parsing되기전에 사용자 요청이 오는 경우 처리가 힘들지만 먼가 방법 고안이 필요함
+        parse_videos_multithreaded(video_path, frame_path)
+
         return {"message": "File saved successfully.", "filename": file.filename}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Could not save file: {e}")
