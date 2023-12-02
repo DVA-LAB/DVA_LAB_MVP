@@ -52,6 +52,13 @@ curl -X 'GET' \
   -H 'accept: application/json'
 ```
 
+* 프레임 이미지 가져오기
+```bash
+curl -X 'GET' \
+  'http://112.216.237.124:8000/frame/{frame_number}' \
+  -H 'accept: application/json'
+```
+
 * CSV 파일 업로드 (저장위치: backend 서버의 test/csv)
 ```bash
 curl -X 'POST' \
