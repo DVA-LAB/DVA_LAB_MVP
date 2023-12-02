@@ -3,7 +3,7 @@ import shutil
 
 from fastapi import (APIRouter, Depends, FastAPI, File, HTTPException,
                      UploadFile, status)
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 
 router = APIRouter(tags=["data"])
 
@@ -19,6 +19,15 @@ async def upload_video(file: UploadFile = File(...)):
         return {"message": "File saved successfully.", "filename": file.filename}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Could not save file: {e}")
+
+
+@router.get("/video/{filename}")
+async def get_video(filename: str):
+    video_storage_path = os.path.join("test", "video_origin")
+    file_location = os.path.join(video_storage_path, filename)
+    if not os.path.exists(file_location):
+        raise HTTPException(status_code=404, detail="File not found")
+    return FileResponse(file_location)
 
 
 @router.post("/csv/")
