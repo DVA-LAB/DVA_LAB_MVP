@@ -58,6 +58,16 @@ async def get_video():
     file_location = os.path.join(video_storage_path, lowercase_extensions(videos[0]))
     return FileResponse(file_location)
 
+@router.get("/frame/{frame_number}")
+async def get_frame(frame_number: int):
+    try:
+        frames = glob.glob(os.path.join(frame_path, '*.jpg'))
+        image_path = [x for x in frames if int(x.split('_')[-1].split('.')[0])==frame_number]
+        if not len(image_path):
+            return JSONResponse(status_code=404, content={"message": "Frame not found"})
+        return FileResponse(image_path[0])
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error accessing frame: {e}")
 
 @router.post("/csv/")
 async def upload_csv(file: UploadFile = File(...)):
