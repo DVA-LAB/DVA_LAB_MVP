@@ -4,6 +4,7 @@ import shutil
 from fastapi import (APIRouter, Depends, FastAPI, File, HTTPException,
                      UploadFile, status)
 from fastapi.responses import FileResponse, JSONResponse
+from utils.log_sync.adjust_log import do_sync
 
 router = APIRouter(tags=["data"])
 
@@ -67,3 +68,28 @@ async def upload_srt(file: UploadFile = File(...)):
         return {"message": "File saved successfully.", "filename": file.filename}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Could not save file: {e}")
+
+
+@router.post("/sync/")
+async def sync_log():
+    os.makedirs(sync_path, exist_ok=True)
+    try:
+        do_sync(video_path, csv_path, srt_path, sync_path)
+        return {"message": "synchronized csv saved successfully"}
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Error during file synchronization: {e}"
+        )
+
+
+def delete_files_in_folder(folder_path):
+    files = glob.glob(os.path.join(folder_path, "*"))
+    for file in files:
+        if os.path.isfile(file):
+            os.remove(file)
+
+
+def lowercase_extensions(file_name):
+    name, extension = os.path.splitext(file_name)
+    new_file_name = name + extension.lower()
+    return new_file_name
