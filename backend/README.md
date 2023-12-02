@@ -70,6 +70,14 @@ curl -X 'POST' \
   -F 'file=@{your_srt_path}'
 ```
 
+* 로그 싱크 조정 (저장위치: backend 서버의 test/sync_csv)
+```bash
+curl -X 'POST' \
+  'http://112.216.237.124:8000/sync/' \
+  -H 'accept: application/json' \
+  -d ''
+```
+
 ### 포인트 거리 정보 전송
 영상에서 특정 포인트 2개와 그 사이의 실제 거리 정보를 서버로 보내려면 아래 curl 명령어를 사용하세요:
 ```bash
