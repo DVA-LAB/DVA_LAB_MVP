@@ -21,12 +21,25 @@ async def upload_video(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=f"Could not save file: {e}")
 
 
-@router.get("/video/{filename}")
-async def get_video(filename: str):
+@router.get("/video/")
+async def get_video():
     video_storage_path = os.path.join("test", "video_origin")
-    file_location = os.path.join(video_storage_path, filename)
-    if not os.path.exists(file_location):
-        raise HTTPException(status_code=404, detail="File not found")
+    try:
+        videos = [
+            f
+            for f in os.listdir(video_storage_path)
+            if os.path.isfile(os.path.join(video_storage_path, f))
+        ]
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Error accessing video storage: {e}"
+        )
+    if not videos or len(videos) > 1:
+        return JSONResponse(
+            status_code=404,
+            content={"message": "Video not found or multiple videos present"},
+        )
+    file_location = os.path.join(video_storage_path, videos[0])
     return FileResponse(file_location)
 
 
