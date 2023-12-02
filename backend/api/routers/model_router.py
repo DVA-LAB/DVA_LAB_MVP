@@ -1,10 +1,9 @@
 from autologging import logged
 from fastapi import APIRouter, Depends, status
-
 from interface.request import UserInput
 
-
 router = APIRouter(tags=["model"])
+
 
 @router.post(
     "/model/inference",
