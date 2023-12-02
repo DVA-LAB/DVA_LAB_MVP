@@ -45,6 +45,13 @@ curl -X 'POST' \
   -F 'file=@{your_video_path};type=video/mp4'
 ```
 
+* 비디오 파일 가져오기
+```bash
+curl -X 'GET' \
+  'http://10.250.109.105:8000/video/' \
+  -H 'accept: application/json'
+```
+
 * CSV 파일 업로드 (저장위치: backend 서버의 test/csv)
 ```bash
 curl -X 'POST' \
