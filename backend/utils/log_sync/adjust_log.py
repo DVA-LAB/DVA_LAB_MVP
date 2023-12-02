@@ -5,7 +5,8 @@ import cv2
 import datetime
 import pandas as pd
 from haversine import haversine
-import adjust_height
+# import adjust_height
+from .adjust_height import get_offset
 
 use_cols = ['OSD.latitude', 'OSD.longitude', 'OSD.height [ft]', 'OSD.altitude [ft]',
             'OSD.xSpeed [MPH]', 'OSD.ySpeed [MPH]', 'OSD.zSpeed [MPH]', 'OSD.directionOfTravel',
@@ -270,6 +271,81 @@ def main(argv):
 
     return
 
+
+def do_sync(video_path, csv_path, srt_path, save_path):
+    log_dirs = glob.glob(os.path.join(csv_path, '*.csv'))
+    assert len(log_dirs) == 1, '[ERROR] Input log file should be one'
+    log_dir = log_dirs[0]
+    srt_dir_list = glob.glob(os.path.join(srt_path, '*.srt'))
+
+    pd_use_log, flight_date = get_log(log_dir)
+    osd_dronetype = list(set(pd_use_log['OSD.droneType']))[0]
+    osd_typ = drone_type[osd_dronetype]
+
+    out_dir = os.path.join(save_path, 'sync_log.csv')
+
+    if len(srt_dir_list):
+        for srt_dir in srt_dir_list:
+            # out_dir = srt_dir.replace('SRT', 'csv')
+
+            pd_use_srt = get_srt(srt_dir, osd_typ)
+            pd_use_idx = get_mov_idx(pd_use_log)
+
+            pd_use_log_adjust, start_idx, end_idx = match_srt(pd_use_log, pd_use_srt, pd_use_idx)
+            pd_use_log_final = adjust_csv_w_srt(pd_use_log_adjust, pd_use_srt)
+
+            # fill unexpected NaN value
+            pd_use_log_final = pd_use_log_final.fillna(method='backfill')
+            pd_use_log_final = pd_use_log_final.fillna(method='ffill')
+
+            # adjust height
+            osd_info = (float(pd_use_log_final['OSD.latitude'][0]), float(pd_use_log_final['OSD.longitude'][0]),
+                        float(pd_use_log_final['HOME.latitude'][0]), float(pd_use_log_final['HOME.longitude'][0]))
+
+            osd_hgt_offset = get_offset(osd_info, flight_date)
+            print("Adjusted height : ", osd_hgt_offset)
+
+            pd_use_log_final['adjusted height'] = [hgt * 0.3048 + osd_hgt_offset for hgt in pd_use_log_final['OSD.height [ft]']]
+            pd_use_log_final['Drone type'] = [osd_dronetype] * len(pd_use_log_final)
+            pd_use_log_final = pd_use_log_final.drop(['OSD.height [ft]', 'OSD.altitude [ft]'], axis=1)
+
+            # save sync csv
+            pd_use_log_final.to_csv(out_dir, index=False)
+
+            print(os.path.basename(srt_dir), 'match with log file.', 'start idx:', start_idx, 'end idx:', end_idx)
+
+    else:
+        pd_use_idx = get_mov_idx(pd_use_log)
+
+        video_list_1 = glob.glob(os.path.join(video_path, '*.mov'))
+        video_list_2 = glob.glob(os.path.join(video_path, '*.mp4'))
+        mov_dir_list = video_list_1 + video_list_2
+        for idx, mov_dir in enumerate(mov_dir_list):
+            # out_dir = mov_dir[:-4] + '.csv'
+            cnt_frame = get_num_frame(mov_dir)
+
+            start_idx, end_idx = pd_use_idx['idx_start'][idx], pd_use_idx['idx_end'][idx]
+            pd_use_log_adjust = pd_use_log[start_idx:end_idx+1]
+            pd_use_log_final = adjust_csv_wo_srt(pd_use_log_adjust, cnt_frame)
+
+            # fill unexpected NaN value
+            pd_use_log_final = pd_use_log_final.fillna(method='backfill')
+            pd_use_log_final = pd_use_log_final.fillna(method='ffill')
+
+            osd_info = (float(pd_use_log_final['OSD.latitude'][0]), float(pd_use_log_final['OSD.longitude'][0]),
+                        float(pd_use_log_final['HOME.latitude'][0]), float(pd_use_log_final['HOME.longitude'][0]))
+
+            osd_hgt_offset = get_offset(osd_info, flight_date)
+            print("Adjusted height : ", osd_hgt_offset)
+
+            pd_use_log_final['adjusted height'] = [hgt * 0.3048 + osd_hgt_offset for hgt in
+                                                   pd_use_log_final['OSD.height [ft]']]
+
+            pd_use_log_final = pd_use_log_final.drop(['OSD.height [ft]', 'OSD.altitude [ft]'], axis=1)
+
+            pd_use_log_final.to_csv(out_dir, index=False)
+
+    return
 
 if __name__ == "__main__":
     # execute main function
