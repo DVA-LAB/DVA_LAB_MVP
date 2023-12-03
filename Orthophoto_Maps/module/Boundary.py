@@ -2,11 +2,11 @@ import numpy as np
 # import trimesh
 import time
 
+
 def boundary(image, eo, R, dem, pixel_size, focal_length):
     inverse_R = R.transpose()
 
     image_vertex = getVertices(image, pixel_size, focal_length)  # shape: 3 x 4
-
     proj_coordinates = projection(image_vertex, eo, inverse_R, dem)
 
     bbox = np.empty(shape=(4, 1))
