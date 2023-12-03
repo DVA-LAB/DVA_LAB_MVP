@@ -4,104 +4,277 @@ import time
 from module.ExifData import *
 from module.EoData import *
 from module.Boundary import boundary
-from module.BackprojectionResample import rectify_plane_parallel, createGeoTiff, create_pnga_optical
+from module.BackprojectionResample import rectify_plane_parallel_with_point, rectify_plane_parallel, createGeoTiff, create_pnga_optical, create_pnga_optical_with_obj_for_dev
 from rich.console import Console
 from rich.table import Table
+import pandas as pd
+import warnings
+warnings.filterwarnings('ignore')
 
-console = Console()
+import math
 
-input_folder = 'Data'
-ground_height = 0   # unit: m
-sensor_width = 6.16  # unit: mm, Mavic mini
-# sensor_width = 13.2  # unit: mm, P4RTK
-# sensor_width = 17.3  # unit: mm, Inspire
-epsg = 5186     # editable
-gsd = 0   # unit: m, set 0 to compute automatically
+### ADD MORE INFO ####
+# model : [Sensor Width, Sensor Height, FOV]
+DRONE_SENSOR_INFO = {"MAVIC PRO" : [6.3, 4.7, 78.8], "MAVIC 2" : [6.3, 4.7, 78.8]}
 
-if __name__ == '__main__':
-    for root, dirs, files in os.walk(input_folder):
-        files.sort()
-        for file in files:
-            image_start_time = time.time()
+def estimate_focal_length(image_width: int, fov_degrees: float) -> float:
+    """
+    Estimate the focal length given the FOV and the image width.
+    
+    Parameters:
+    - image_width: width of the image in pixels
+    - fov_degrees: field of view in degrees
+    
+    Returns:
+    - Estimated focal length in pixels.
+    """
 
-            filename = os.path.splitext(file)[0]
-            extension = os.path.splitext(file)[1]
-            file_path = root + '/' + file
-            dst = './' + filename
+    sensor_width_mm = 6.3  # for 1/2.3" sensor, usually around 6.3mm
+    focal_length_mm = (sensor_width_mm / 2) / math.tan(np.radians(fov_degrees / 2))
+    focal_length_px = (focal_length_mm / sensor_width_mm) * image_width
+    return focal_length_px
 
-            if extension == '.JPG' or extension == '.jpg':
-                print('Georeferencing - ' + file)
-                start_time = time.time()
-                image = cv2.imread(file_path, -1)
 
-                # 1. Extract metadata from a image
-                focal_length, orientation, eo, maker = get_metadata(file_path)  # unit: m, _, ndarray
+def get_params_from_csv(csv_file, idx = None):
+    df = pd.read_csv(csv_file, encoding_errors='ignore')
+    df.loc[:,"R"] = df["GIMBAL.roll"] # +  df["OSD.roll"]
+    df.loc[:,"P"] = df["GIMBAL.pitch"] # + df["OSD.pitch"]
+    df.loc[:,"Y"] = df["GIMBAL.yaw"] # + df["OSD.yaw"]
+    df.loc[:,"V"] = df["adjusted height"] # *0.3048 # *1000 # ft to M 
+    df.loc[:,"Drone"] =  df["Drone type"].str.upper()
+    
+    df =  df.loc[:,["R", "P", "Y", "V", "Drone"]]
+    if idx == None :
+        return df
+    else : 
+        return df.iloc[idx, :]
 
-                # 2. Restore the image based on orientation information
-                restored_image = restoreOrientation(image, orientation)
 
-                image_rows = restored_image.shape[0]
-                image_cols = restored_image.shape[1]
 
-                pixel_size = sensor_width / image_cols  # unit: mm/px
-                pixel_size = pixel_size / 1000  # unit: m/px
+def BEV_1(frame_num, frame_path, csv_path, objects, realdistance, dst_dir, DEV = False):
+    """
+    * Parameters 
+    frame_num : int 
+    frame_path : str, png file path
+    csv_path : str, csv file path
+    drone_model : int, 
+    objects : list [frame_id, track_id, label, bbox, score, -1, -1, -1 ]
+            : BEV1 : dummy, dummy, dummy, pt1, pt2, dummy, -1, -1, -1
+    realdistance : float, Meter
 
-                eo = geographic2plane(eo, epsg)
-                opk = rpy_to_opk(eo[3:], maker)
-                eo[3:] = opk * np.pi / 180   # degree to radian
-                R = Rot3D(eo)
+    * return 
+    rst : result flag // 0 : Success, 1 : rectify fail, 2 : gsd calc Fail
+    img_dst : string 
+    objects : list object
+    pixel_size : float. Unit : m/pixel
+    gsd : floag. Unit : m/pixel
+    
+    """
+    # Step 0 : Meta Info.
+    rst = 0 # Success
+    info_row = get_params_from_csv(csv_path, frame_num) # R, P, Y, V, Drone
+    
+    drone_model  = info_row["Drone"]
+    ground_height = 0   # unit: m
+    sensor_width = DRONE_SENSOR_INFO[drone_model][0]  # unit: mm 
+    sensor_height = DRONE_SENSOR_INFO[drone_model][1]  # unit: mm 
+    fov_degrees = DRONE_SENSOR_INFO[drone_model][2]
+    gsd = 0 # unit: m, set 0 to compute automatically
 
-                console.print(
-                    f"EOP: {eo[0]:.2f} | {eo[1]:.2f} | {eo[2]:.2f} | {eo[3]:.2f} | {eo[4]:.2f} | {eo[5]:.2f}\n"
-                    f"Focal Length: {focal_length * 1000:.2f} mm, Maker: {maker}",
-                    style="blink bold red underline")
-                georef_time = time.time() - start_time
-                console.print(f"Georeferencing time: {georef_time:.2f} sec", style="blink bold red underline")
+    # Objects Point : Col1, Row1, Col2, Row2
+    object_points = [int(x) for x in objects[3:3 + 4]]
+    
+    # Save Path
+    filename = os.path.basename(frame_path).split(".")[0]
+    dst_file_name = "Transformed_{}".format(filename)
+    img_dst = dst_dir + '/' + dst_file_name # os.path.join(dst_dir, dst_file_name)
 
-                print('DEM & GSD')
-                start_time = time.time()
-                # 3. Extract a projected boundary of the image
-                bbox = boundary(restored_image, eo, R, ground_height, pixel_size, focal_length)
+    # Imread
+    image = cv2.imread(frame_path, -1)
+    if DEV : 
+        ## Visualize Original Image
+        origin_img = image.copy()
+        cv2.line(origin_img, (object_points[0], object_points[1]), (object_points[2], object_points[3]), color=(255, 0, 0), thickness = 10)
+        cv2.imwrite(img_dst + '_Origin' + '.png', origin_img, [int(cv2.IMWRITE_PNG_COMPRESSION), 3])   # from 0 to 9, default: 
 
-                # 4. Compute GSD & Boundary size
-                # GSD
-                if gsd == 0:
-                    gsd = (pixel_size * (eo[2] - ground_height)) / focal_length  # unit: m/px
-                # Boundary size
-                boundary_cols = int((bbox[1, 0] - bbox[0, 0]) / gsd)
-                boundary_rows = int((bbox[3, 0] - bbox[2, 0]) / gsd)
 
-                console.print(f"GSD: {gsd * 100:.2f} cm/px", style="blink bold red underline")
-                dem_time = time.time() - start_time
-                console.print(f"DEM time: {dem_time:.2f} sec", style="blink bold red underline")
+    # Step 1. Extract metadata from a df and advance information
+    # focal_length, orientation, eo, maker = get_metadata(file_path)  # unit: m, _, ndarray
+    orientation = 1 # NEED Check from csv?? 
+    maker = "DJI"  # 
+    eo = [0, 0] # longitude, latitude : Not Used
+    eo.append(info_row["V"]) # altitude
+    eo.append(info_row["R"]) # Roll
+    eo.append(info_row["P"]) # Pitch
+    eo.append(info_row["Y"]) # Yaw
 
-                print('Rectify & Resampling')
-                start_time = time.time()
-                b, g, r, a = rectify_plane_parallel(bbox, boundary_rows, boundary_cols, gsd, eo, ground_height,
-                                                    R, focal_length, pixel_size, image)
-                rectify_time = time.time() - start_time
-                console.print(f"Rectify time: {rectify_time:.2f} sec", style="blink bold red underline")
+    focal_length = estimate_focal_length(image.shape[1], fov_degrees)/(1000)
 
-                # 8. Create GeoTiff
-                print('Save the image in GeoTiff')
-                start_time = time.time()
-                # createGeoTiff(b, g, r, a, bbox, gsd, epsg, boundary_rows, boundary_cols, dst)
-                create_pnga_optical(b, g, r, a, bbox, gsd, epsg, dst)   # for test
-                write_time = time.time() - start_time
-                console.print(f"Write time: {write_time:.2f} sec", style="blink bold red underline")
+    # Step 2. Restore the image based on orientation information
+    restored_image = restoreOrientation(image, orientation)
 
-                processing_time = time.time() - image_start_time
-                console.print(f"Process time: {processing_time:.2f} sec", style="blink bold red underline")
+    image_rows = restored_image.shape[0]
+    image_cols = restored_image.shape[1]
 
-                table = Table(show_header=True, header_style="bold magenta")
-                table.add_column("Image", style="dim", width=12)
-                table.add_column("Georeferencing", justify="right")
-                table.add_column("DEM", justify="right")
-                table.add_column("Rectify", justify="right")
-                table.add_column("Write", justify="right")
-                table.add_column("Processing", justify="right")
-                table.add_row(
-                    filename, str(round(georef_time, 5)), str(round(dem_time, 5)), str(round(rectify_time, 5)),
-                    str(round(write_time, 5)), str(round(processing_time, 5))
-                )
-                console.print(table)
+    pixel_size = sensor_width / image_cols  # unit: mm/px
+    pixel_size = pixel_size / 1000  # unit: m/px
+
+    eo = geographic2plane(eo, 5186) # epsg = 5186 the global coordinate system definition # 5186 : Korea Center
+    opk = rpy_to_opk(eo[3:], maker) # Roll Pitch Yaw Coorection
+    eo[3:] = opk * np.pi / 180   # degree to radian
+    R = Rot3D(eo) # Rotation Matrix
+    
+    # Step 3. Extract a projected boundary of the image
+    bbox = boundary(restored_image, eo, R, ground_height, pixel_size, focal_length)
+
+    # Step 4. Compute GSD & Boundary size
+    # GSD
+    if gsd == 0:
+        gsd = (pixel_size * (eo[2] - ground_height)) / focal_length  # unit: m/px
+
+    # Boundary size
+    boundary_cols = int((bbox[1, 0] - bbox[0, 0]) / gsd)
+    boundary_rows = int((bbox[3, 0] - bbox[2, 0]) / gsd)
+
+    try :
+        b, g, r, a, rectified_poinst = rectify_plane_parallel_with_point(bbox, boundary_rows, boundary_cols, gsd, eo, ground_height, R, focal_length, pixel_size, image, object_points)
+        objects[3:3 + 4] = rectified_poinst
+        if DEV : 
+            create_pnga_optical_with_obj_for_dev(b, g, r, a, bbox, gsd, 5186, img_dst, rectified_poinst)  
+        else : 
+            create_pnga_optical(b, g, r, a, bbox, gsd, 5186, img_dst)  
+    except : 
+        rst = 1
+        return rst, None, None, None, None
+
+    try :
+        rectify_img_dist = math.dist(rectified_poinst[:2], rectified_poinst[2:])  # Pixel Count 
+        pixel_size = realdistance/rectify_img_dist
+        if DEV :
+            print("pixel_count : ", rectify_img_dist)
+            print("pixel_count : ", rectify_img_dist)
+            print("Pixel Size : ", pixel_size)
+            print(gsd)
+    except :  
+        print("FAIL")
+        rst = 2
+        return rst, None, None, None, None
+
+    return rst, img_dst, objects, pixel_size, gsd
+
+
+def BEV_2(frame_num, frame_path, csv_path, objects, dst_dir, gsd, DEV = False):
+    """
+    * Parameters 
+    frame_num : int 
+    frame_path : str, png file path
+    csv_path : str, csv file path
+    drone_model : int, 
+    objects : list [frame_id, track_id, label, bbox, score, -1, -1, -1 ]
+    
+    * return 
+    rst : result flag // 0 : Success, 1 : rectify fail, 2 : gsd calc Fail
+    img_dst : string 
+    objects : list object
+    """
+    # Step 0 : Meta Info.
+    rst = 0 # Success
+    info_row = get_params_from_csv(csv_path, frame_num) # R, P, Y, V, Drone
+    
+    drone_model  = info_row["Drone"]
+    ground_height = 0   # unit: m
+    sensor_width = DRONE_SENSOR_INFO[drone_model][0]  # unit: mm 
+    sensor_height = DRONE_SENSOR_INFO[drone_model][1]  # unit: mm 
+    fov_degrees = DRONE_SENSOR_INFO[drone_model][2]
+    gsd = gsd # From BEV1
+
+    # Objects Point : Col1, Row1, Col2, Row2
+    object_points = [int(x) for x in objects[3:3 + 4]]
+    # BEV2 : Detected Objects Format
+    object_points[2] = object_points[0] + object_points[2]
+    object_points[3] = object_points[1] + object_points[3]
+    
+    # Save Path
+    filename = os.path.basename(frame_path).split(".")[0]
+    dst_file_name = "Transformed_{}".format(filename)
+    img_dst = dst_dir + '/' + dst_file_name # os.path.join(dst_dir, dst_file_name)
+
+    # Imread
+    image = cv2.imread(frame_path, -1)
+    if DEV : 
+        ## Visualize Original Image
+        origin_img = image.copy()
+        cv2.line(origin_img, (object_points[0], object_points[1]), (object_points[2], object_points[3]), color=(255, 0, 0), thickness = 10)
+        cv2.imwrite(img_dst + '_Origin' + '.png', origin_img, [int(cv2.IMWRITE_PNG_COMPRESSION), 3])   # from 0 to 9, default: 
+
+
+    # Step 1. Extract metadata from a df and advance information
+    # focal_length, orientation, eo, maker = get_metadata(file_path)  # unit: m, _, ndarray
+    orientation = 1 # NEED Check from csv?? 
+    maker = "DJI"  # 
+    eo = [0, 0] # longitude, latitude : Not Used
+    eo.append(info_row["V"]) # altitude
+    eo.append(info_row["R"]) # Roll
+    eo.append(info_row["P"]) # Pitch
+    eo.append(info_row["Y"]) # Yaw
+
+    focal_length = estimate_focal_length(image.shape[1], fov_degrees)/(1000)
+
+    # Step 2. Restore the image based on orientation information
+    restored_image = restoreOrientation(image, orientation)
+
+    image_rows = restored_image.shape[0]
+    image_cols = restored_image.shape[1]
+
+    pixel_size = sensor_width / image_cols  # unit: mm/px
+    pixel_size = pixel_size / 1000  # unit: m/px
+
+    eo = geographic2plane(eo, 5186) # epsg = 5186 the global coordinate system definition # 5186 : Korea Center
+    opk = rpy_to_opk(eo[3:], maker) # Roll Pitch Yaw Coorection
+    eo[3:] = opk * np.pi / 180   # degree to radian
+    R = Rot3D(eo) # Rotation Matrix
+    
+    # Step 3. Extract a projected boundary of the image
+    bbox = boundary(restored_image, eo, R, ground_height, pixel_size, focal_length)
+
+    # Step 4. Compute GSD & Boundary size
+    # Boundary size
+    boundary_cols = int((bbox[1, 0] - bbox[0, 0]) / gsd)
+    boundary_rows = int((bbox[3, 0] - bbox[2, 0]) / gsd)
+
+    try :
+        b, g, r, a, rectified_poinst = rectify_plane_parallel_with_point(bbox, boundary_rows, boundary_cols, gsd, eo, ground_height, R, focal_length, pixel_size, image, object_points)
+        objects[3:3 + 4] = rectified_poinst
+        if DEV : 
+            create_pnga_optical_with_obj_for_dev(b, g, r, a, bbox, gsd, 5186, img_dst, rectified_poinst)  
+        else : 
+            create_pnga_optical(b, g, r, a, bbox, gsd, 5186, img_dst)  
+    except : 
+        rst = 1
+        return rst, None, None
+
+    return rst, img_dst, objects
+
+if __name__ == "__main__":
+    ### Test Data ###
+    frame_num = 200
+    frame_path = ".\Orthophoto_Maps\\Data\\frame_img\\DJI_0119_200.png"
+    csv_path = ".\Orthophoto_Maps\Data\DJI_0119.csv" 
+    col1, row1  = 528.60, 537.70
+    col2, row2  = col1 + 134.01, row1 + 258.51
+
+    objects = [None, None, None, col1, row1, col2, row2, None, -1, -1, -1]
+    realdistance = 20
+
+    dst_dir = ".\\Orthophoto_Maps\\Data\\result"
+    # Test # 
+    DEV = False
+    rst, img_dst, objects, pixel_size, gsd = BEV_1(frame_num, frame_path, csv_path, objects, realdistance, dst_dir, DEV)
+    print(gsd)
+
+    print("GSD1 Done")
+    col1, row1  = 528.60, 537.70
+    col2, row2  = 134.01, 258.51
+
+    objects = [None, None, None, col1, row1, col2, row2, None, -1, -1, -1]
+    rst, img_dst, objects = BEV_2(frame_num, frame_path, csv_path, objects, dst_dir, gsd, DEV)
