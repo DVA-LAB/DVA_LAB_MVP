@@ -17,7 +17,7 @@ import math
 # model : [Sensor Width, Sensor Height, FOV]
 DRONE_SENSOR_INFO = {"MAVIC PRO" : [6.3, 4.7, 78.8], "MAVIC 2" : [6.3, 4.7, 78.8]}
 
-def estimate_focal_length(image_width: int, fov_degrees: float) -> float:
+def estimate_focal_length(image_width: int, sensor_width_mm: float, fov_degrees: float) -> float:
     """
     Estimate the focal length given the FOV and the image width.
     
@@ -29,7 +29,7 @@ def estimate_focal_length(image_width: int, fov_degrees: float) -> float:
     - Estimated focal length in pixels.
     """
 
-    sensor_width_mm = 6.3  # for 1/2.3" sensor, usually around 6.3mm
+    # sensor_width_mm = 6.3  # for 1/2.3" sensor, usually around 6.3mm
     focal_length_mm = (sensor_width_mm / 2) / math.tan(np.radians(fov_degrees / 2))
     focal_length_px = (focal_length_mm / sensor_width_mm) * image_width
     return focal_length_px
@@ -76,6 +76,9 @@ def BEV_1(frame_num, frame_path, csv_path, objects, realdistance, dst_dir, DEV =
     
     drone_model  = info_row["Drone"]
     ground_height = 0   # unit: m
+    
+    if DRONE_SENSOR_INFO.get(drone_model) is None:
+        drone_model = "MAVIC PRO"
     sensor_width = DRONE_SENSOR_INFO[drone_model][0]  # unit: mm 
     sensor_height = DRONE_SENSOR_INFO[drone_model][1]  # unit: mm 
     fov_degrees = DRONE_SENSOR_INFO[drone_model][2]
@@ -108,7 +111,7 @@ def BEV_1(frame_num, frame_path, csv_path, objects, realdistance, dst_dir, DEV =
     eo.append(info_row["P"]) # Pitch
     eo.append(info_row["Y"]) # Yaw
 
-    focal_length = estimate_focal_length(image.shape[1], fov_degrees)/(1000)
+    focal_length = estimate_focal_length(image.shape[1], sensor_width, fov_degrees)/(1000)
 
     # Step 2. Restore the image based on orientation information
     restored_image = restoreOrientation(image, orientation)
@@ -183,6 +186,9 @@ def BEV_2(frame_num, frame_path, csv_path, objects, dst_dir, gsd, DEV = False):
     
     drone_model  = info_row["Drone"]
     ground_height = 0   # unit: m
+    
+    if DRONE_SENSOR_INFO.get(drone_model) is None:
+        drone_model = "MAVIC PRO"
     sensor_width = DRONE_SENSOR_INFO[drone_model][0]  # unit: mm 
     sensor_height = DRONE_SENSOR_INFO[drone_model][1]  # unit: mm 
     fov_degrees = DRONE_SENSOR_INFO[drone_model][2]
@@ -218,7 +224,7 @@ def BEV_2(frame_num, frame_path, csv_path, objects, dst_dir, gsd, DEV = False):
     eo.append(info_row["P"]) # Pitch
     eo.append(info_row["Y"]) # Yaw
 
-    focal_length = estimate_focal_length(image.shape[1], fov_degrees)/(1000)
+    focal_length = estimate_focal_length(image.shape[1], sensor_width, fov_degrees)/(1000)
 
     # Step 2. Restore the image based on orientation information
     restored_image = restoreOrientation(image, orientation)
