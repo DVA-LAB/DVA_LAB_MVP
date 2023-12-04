@@ -231,7 +231,7 @@ def get_configurable_parameters(
         model_name = "efficient_ad"
 
     if config_path is None:
-        config_path = Path(f"services/src/anomalib/models/{model_name}/{config_filename}.{config_file_extension}")
+        config_path = Path(f"api/services/src/anomalib/models/{model_name}/{config_filename}.{config_file_extension}")
 
     config = OmegaConf.load(config_path)
 
