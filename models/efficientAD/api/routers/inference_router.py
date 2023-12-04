@@ -1,3 +1,12 @@
+import os
+import sys
+script_path = os.path.abspath(__file__)
+add_path = os.path.dirname(os.path.dirname(script_path))
+target_directory = os.path.join(add_path, 'services', 'src')
+absolute_target_directory = os.path.abspath(target_directory)
+if absolute_target_directory not in sys.path:
+    sys.path.append(absolute_target_directory)
+
 import cv2
 import numpy as np
 import torch
@@ -25,12 +34,12 @@ router = APIRouter(tags=["anomaly"])
     summary="anomaly segmentation",
 )
 async def anomaly_inference(request_body: SegRequest):
-    res_img, res_boxes, res_scores = ad_slice_inference(request_body.frame_path)
-    return res_img, res_boxes, res_scores
+    output_img, output_mask, output_bbox = ad_slice_inference(request_body.frame_path)
+    return output_img, output_mask, output_bbox
 
 def ad_slice_inference(frame_path):
     config = get_configurable_parameters("efficient_ad")
-    config.trainer.resume_from_checkpoint = "services/weights/model.ckpt"
+    config.trainer.resume_from_checkpoint = os.path.join(add_path, 'services', 'weights', 'model.ckpt')
     config.visualization.mode = "full"
 
     frame = frame_path

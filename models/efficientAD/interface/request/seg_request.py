@@ -12,6 +12,6 @@ class SegRequest(BaseModel):
     class Config:
         schema_extra = {
             "example": {
-                "frame_path": 'test_frame_path'
+                "frame_path": '/home/dva4/dva/backend/test/frame_origin/DJI_0119_30_00000.jpg'
             }
         }
