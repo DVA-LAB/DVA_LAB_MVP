@@ -20,4 +20,5 @@ async def inference(request_body: DataRequest):
     json_path = request_body.json_file
 
     updated_data = refiner.do_refine(json_path, imgs_path)
-    refiner.save_update(updated_data, "/mnt/coco_form/refined_train.json")
+    # refiner.save_update(updated_data, "refined_train.json")
+    return updated_data
