@@ -41,6 +41,11 @@ class App extends Component {
       textBoxPosition : {x:0, y:0},
       showTextBox: false,
       lines: [],
+      showProgressBar: false,
+      showControlButtons: false,
+      showResults: false,
+      displayMode: 'video',
+      showWriteDistanceButton: false,
     };
 
     this.videoRef = React.createRef();
@@ -103,10 +108,28 @@ class App extends Component {
     }
   }
 
+  fetchAndLoadVideo = async () => {
+    try {
+        const response = await axios.get('http://localhost:8000/video/');
+        if (response.data) {
+            // Assuming the response will be a URL to the video
+            this.setState({
+                videoSrc: response.data,
+            }, () => {
+                this.loadVideo();
+            });
+        }
+    } catch (error) {
+        console.error('Error fetching video:', error);
+    }
+}
+
+
   // 비디오 파일 로드
   loadVideo = () => {
     const { videoSrc } = this.state;
     if (videoSrc) {
+      console.log("Loading video:",videoSrc);
       this.videoRef.current.src = videoSrc;
       this.videoRef.current.load();
       this.videoRef.current.addEventListener('loadeddata', () => {
@@ -199,88 +222,92 @@ class App extends Component {
   // 파일 업로드 핸들러
   handleFileUpload = async (file) => {
     this.setState({
-      // Reset states before upload
-      videoSrc: null,
-      logFile: null,
-      videoPlaying: false,
-      frameNumber: 0,
-      addingInfo: false,
-      points: [],
-      pointColors: [],
-      pointDistances: [],
-      distanceInputs: [],
-      allFillUpload: false,
-      aiModelActive: false,
-      exportOptionsVisible: false,
-      isDownloadModalOpen: false,
-      applyFlag: false,
-      lastVideoFilename: null,
+        // Reset states before upload
+        videoSrc: null,
+        logFile: null,
+        videoPlaying: false,
+        frameNumber: 0,
+        addingInfo: false,
+        points: [],
+        pointColors: [],
+        pointDistances: [],
+        distanceInputs: [],
+        allFillUpload: false,
+        aiModelActive: false,
+        exportOptionsVisible: false,
+        isDownloadModalOpen: false,
+        applyFlag: false,
+        lastVideoFilename: null,
     });
+
     const formData = new FormData();
     formData.append('file', file);
 
+
     try {
-      const response = await axios.post('http://112.216.237.124:8000/videos/', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      const response = await axios.post('http://localhost:8000/video/', formData);
+
+
       console.log(response.data);
-      if(response.data && response.data.filename){
-        this.setState({
-          videoSrc: `http://112.216.237.124:8000/videos/${response.data.filename}`,
-          lastVideoFilename : response.data.filename,
-          // other states you want to set
-        },()=>{
-          this.loadVideo();
-        });
-      };
-
-      // Handle the response as needed...
+      if (response.data && response.data.filename) {
+        this.fetchAndLoadVideo();
+      }
     } catch (error) {
-      console.error('Error uploading file:', error);
+        console.error('Error uploading file:', error);
     }
-    // if (this.state.videoSrc) {
-    //   this.setState({
-    //     videoSrc: null,
-    //     logFile: null,
-    //     videoPlaying: false,
-    //     frameNumber: 0,
-    //     addingInfo: false,
-    //     points: [],
-    //     pointColors: [],
-    //     pointDistances: [],
-    //     distanceInputs: [],
-    //     allFillUpload: false,
-    //     aiModelActive: false,
-    //     exportOptionsVisible: false,
-    //     isDownloadModalOpen: false,
-    //     applyFlag: false,
+};
 
-    //   });
-    // }
-    // if (file) {
-    //   const videoFileName = file.name.split('.')[0];  // 파일 이름 가져오기
-    //   this.setState({ videoSrc: file, videoFileName }, () => {  // videoFileName 상태 추가
-    //     this.loadVideo();
-    //   });
-    // }
-  };
 
-  // 로그 파일 업로드 핸들러
-  handleLogFileUpload = (file) => {
+  handleCsvFileUpload = async (file) => {
     if (file) {
-      this.setState({ logFile: file });
-      this.setState({ allFillUpload: true });
+        // Update state to indicate file is being processed
+        this.setState({ logFile: file, isLoading: true });
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const response = await axios.post('http://localhost:8000/csv/', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+
+            console.log(response.data);
+            // Handle any additional state updates or actions on successful upload
+            this.setState({ allFillUpload: true, isLoading: false });
+
+        } catch (error) {
+            console.error('Error uploading CSV file:', error);
+            // Handle errors and update state accordingly
+            this.setState({ isLoading: false });
+        }
     }
   };
 
-  handleSrtFileUpload = (file) => {
+  handleSrtFileUpload = async (file) => {
     if (file) {
-      this.setState({ srtFile: file });
-      this.setState({ allFillUpload: true });
+        this.setState({ srtFile: file, isLoading: true });
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const response = await axios.post('http://localhost:8000/srt/', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+
+            console.log(response.data);
+            this.setState({ allFillUpload: true, isLoading: false });
+        } catch (error) {
+            console.error('Error uploading SRT file:', error);
+            this.setState({ isLoading: false });
+        }
     }
-  };
+};
+
 
   // 비디오 재생/일시정지 토글
   togglePlayPause = () => {
@@ -315,25 +342,12 @@ class App extends Component {
 
   // 추가 정보 입력 모드 활성화/비활성화 토글
   toggleAddingInfo = () => {
-    this.setState((prevState) => {
-      // addingInfo 상태를 토글합니다.
-      const newAddingInfo = !prevState.addingInfo;
-
-      // addingInfo 상태가 false로 바뀌면 pointDistances와 points 배열을 비웁니다.
-      if (!newAddingInfo) {
-        return {
-          addingInfo: newAddingInfo,
-          // pointDistances: [],
-          // points: [],
-        };
-      }
-
-      console.log(this.points, this.pointDistances);
-
-      // addingInfo 상태가 true로 바뀌면 상태를 그대로 유지합니다.
-      return { addingInfo: newAddingInfo };
-    });
+    this.setState(prevState => ({
+      addingInfo: !prevState.addingInfo
+      // Removed the logic to reset points and pointDistances
+    }));
   };
+  
 
   captureAndSendFrame = async () => {
     const { lastVideoFilename } = this.state;
@@ -354,14 +368,14 @@ class App extends Component {
     formData.append('file', file);
 
     try {
-        const response = await axios.post(`http://112.216.237.124:8000/bev/${lastVideoFilename}`, formData, {
+        const response = await axios.post(`http://localhost:8000/bev/${lastVideoFilename}`, formData, {
             headers: {
                 'Content-Type': 'multipart/form-data',
             },
         });
         if (response.data && response.data.framePath) {
             const framePath = response.data.framePath.split('/').pop();
-            const getImageUrl = `http://112.216.237.124:8000/extracted_frames/${framePath}`;
+            const getImageUrl = `http://localhost:8000/extracted_frames/${framePath}`;
             console.log(getImageUrl);
             return getImageUrl;
         }
@@ -426,7 +440,7 @@ class App extends Component {
       this.setState({
         showBEV: false,
         showDrawLineButton: false,
-        videoSrc: `http://112.216.237.124:8000/videos/${lastVideoFilename}`
+        videoSrc: `http://localhost:8000/video/${lastVideoFilename}`
       }, () => {
         this.loadVideo();
       });
@@ -470,6 +484,7 @@ class App extends Component {
 
     this.setState(prevState => {
       const newPoints = [...prevState.points, newPoint];
+      const showWriteDistanceButton = newPoints.length===2;
       
       console.log("Points after adding new point:", newPoints);
       if (newPoints.length === 2) {
@@ -481,6 +496,7 @@ class App extends Component {
 
         return { 
           points: newPoints,
+          showWriteDistanceButton,
           // showTextBox: true,
           // textBoxPosition: {x:screenX,y: screenY} 
           // pointDistances: [...prevState.pointDistances, distance],
@@ -633,52 +649,67 @@ drawLabel = (startPoint, endPoint, text) => {
 
   // Run AI Model 버튼 클릭 핸들러
   runAIModel = async () => {
-    const { points, pointDistances, videoSrc } = this.state;
-    if (videoSrc && points.length === 2 && pointDistances.length > 0) {
-      
-      const payload = {
-        point1: points[0],
-        point2: points[1],
-        distance: parseFloat(pointDistances[0])
-      };
-      
-      
-      // FormData를 사용하여 파일을 업로드합니다.
-      
-      
-      const formData = new FormData();
-      
-      
-      formData.append('video_path', videoSrc);
+    this.setState({aiModelActive:true, showProgressBar: true, showControlButtons: true });
+  
+    // TODO: Implement the AI model logic here
 
-      fetch("http://112.216.237.124:8000/", {
-        method: "POST",
-        body: formData, // FormData를 전송합니다.
-      })
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error("Network response was not ok");
-          }
-          return response.json();
-        })
-        .then((data) => {
-          console.log(data);
-          alert("Video path uploaded successfully");
+    // setTimeout(() => {
+    //   this.setState({ showProgressBar: false, showControlButtons: true});
+    // }, 3000); 
+  
+  // After the AI model logic is done, update the state to hide the progress bar and show control buttons
+    // this.setState({ showProgressBar: false, showControlButtons: true });
+    
+    
+    // const { points, pointDistances, videoSrc } = this.state;
+    // if (videoSrc && points.length === 2 && pointDistances.length > 0) {
+      
+    //   const payload = {
+    //     point1: points[0],
+    //     point2: points[1],
+    //     distance: parseFloat(pointDistances[0])
+    //   };
+      
+      
+    //   // FormData를 사용하여 파일을 업로드합니다.
+      
+      
+    //   const formData = new FormData();
+      
+      
+    //   formData.append('video_path', videoSrc);
 
-          // 서버에서 받은 결과 데이터에서 동영상 경로 추출
-          const newVideoPath = data.result.match(/Embedded Video Local Path: (.+)/)[1];
+    //   fetch("http://localhost:8000/", {
+    //     method: "POST",
+    //     body: formData, // FormData를 전송합니다.
+    //   })
+    //     .then((response) => {
+    //       if (!response.ok) {
+    //         throw new Error("Network response was not ok");
+    //       }
+    //       return response.json();
+    //     })
+    //     .then((data) => {
+    //       console.log(data);
+    //       alert("Video path uploaded successfully");
 
-          // 추출한 경로를 사용하여 비디오를 다시 로드
-          this.reLoadVideo(newVideoPath);
+    //       // 서버에서 받은 결과 데이터에서 동영상 경로 추출
+    //       const newVideoPath = data.result.match(/Embedded Video Local Path: (.+)/)[1];
 
-          this.setState({ aiModelActive: true });
-        })
-        .catch((error) => {
-          console.error("There was a problem with the fetch operation:", error);
-          alert("Failed to upload video path");
-        });
-    }
+    //       // 추출한 경로를 사용하여 비디오를 다시 로드
+    //       this.reLoadVideo(newVideoPath);
+
+    //       this.setState({ aiModelActive: true });
+    //     })
+    //     .catch((error) => {
+    //       console.error("There was a problem with the fetch operation:", error);
+    //       alert("Failed to upload video path");
+    //     });
+    // }
   };
+
+
+  
 
   // 비디오를 미리보기로 보여주는 함수
   reLoadVideo = async (newVideoPath) => {
@@ -766,8 +797,32 @@ drawLabel = (startPoint, endPoint, text) => {
     }
   }
 
+  seeResults = () => {
+    
+    
+    this.setState({ 
+      showResults: true,
+      videoSrc: 'http://localhost:8000/video/sample_output.mov',
+     },()=>{
+      this.loadVideo();
+     });
+     console.log(this.state.videoSrc)
+  };
+
+  toggleDisplayMode =()=> {
+    this.setState(prevState => ({
+      displayMode: prevState.displayMode === 'video' ? 'image' : 'video'
+    }));
+  }
+
   // 렌더링
   render() {
+    const ProgressBar = () => (
+      <div style={{ width: '100%', backgroundColor: '#ccc', height: '20px', position: 'absolute', top: 0 }}>
+        <div style={{ width: '50%', /* Dynamic based on progress */ backgroundColor: 'blue', height: '100%' }}></div>
+      </div>
+    );
+    
     // 화면 높이 구하기
     const screenHeight = window.innerHeight;
 
@@ -779,11 +834,69 @@ drawLabel = (startPoint, endPoint, text) => {
       zIndex: 0
     };
 
-    const { videoSrc, videoPlaying, frameNumber, addingInfo, isLoading, applyFlag, allFillUpload, aiModelActive, showBEV, showDrawLineButton, points } = this.state;
+    const canSeeResults = this.state.points.length / 2 === this.state.pointDistances.length &&
+                          this.state.points.length >= 2;
+
+    const { logFile, srtFile, videoSrc, videoPlaying, frameNumber, addingInfo, isLoading, applyFlag, allFillUpload, aiModelActive, showBEV, showDrawLineButton, points, showResults } = this.state;
+
+    if (showResults) {
+      return (
+        <div className="App" style={{ height: screenHeight + 'px', position: 'relative' }}>
+          <Title level={1}>Drone Video Analysis for MARC</Title>
+          
+          {/* Toggle Button */}
+          <Button onClick={this.toggleDisplayMode}>
+            {this.state.displayMode === 'video' ? 'Show Image' : 'Show Video'}
+          </Button>
+    
+          {/* Conditional Rendering Based on Display Mode */}
+          {this.state.displayMode === 'video' ? (
+            <div>
+            <video
+              ref={this.videoRef}
+              onError={(e)=> console.error("Error Loading video:", e)}
+              crossOrigin='anonymous'
+
+              style={{
+                width: '100%',
+                height: '80%',
+                position: 'relative',
+                zIndex: 0,
+                
+              }}
+
+              onTimeUpdate={this.updateFrameNumber}
+              // other video properties
+            >
+               <source src={this.state.videoSrc} type="video/mp4"/>
+            </video>
+             
+            <Space direction="vertical" style={{ alignItems: 'center' }}>
+            <div style={{ fontSize: '30px' }}>
+              {videoSrc && <p>Frame: {frameNumber}</p>}
+            </div>
+            <Space>
+              <Button onClick={this.skipBackward} icon={<FastBackwardOutlined />} />
+              <Button onClick={this.togglePlayPause} icon={videoPlaying ? <PauseCircleOutlined /> : <PlayCircleOutlined />} />
+              <Button onClick={this.skipForward} icon={<FastForwardOutlined />} />
+            </Space>
+          </Space> 
+          </div>
+          ) : (
+            <img src="result.png" alt="Results" style={{ ...videoStyle, objectFit: 'contain' }} />
+          )}
+        </div>
+      );
+    }
+    
+    
 
     return (
       <div className="App" style={{ height: screenHeight + 'px', position: 'relative' }}>
-        <Space direction="vertical" style={{ marginTop: '40px', marginLeft: '20px' }}>
+        
+        {this.state.showProgressBar && <ProgressBar/>}
+        
+        <Space direction="vertical" style={{ marginTop: '40px' }}>
           <Title level={1}>Drone Video Analysis for MARC</Title>
          
           <div className='video-bev-container' style={{position: 'relative', ...videoStyle}}>
@@ -798,7 +911,6 @@ drawLabel = (startPoint, endPoint, text) => {
                 onTimeUpdate={this.updateFrameNumber}
                 // onClick={this.handleVideoClick}
                 style={videoStyle}
-                // src={this.state.videoSrc?URL.createObjectURL(this.state.videoSrc)}
                 // onLoadedData={this.handleVideoLoaded}
               />
             ):(
@@ -847,25 +959,38 @@ drawLabel = (startPoint, endPoint, text) => {
             )}
             
           </Space>
-          <div style={{ fontSize: 30 + 'px' }}>
-           {videoSrc && <p >Frame: {frameNumber}</p>}
-          </div>
-          {showBEV && this.state.pointDistances.length > 0 && (
-              <Button style={{ backgroundColor: 'red', color: 'white' }} onClick={this.runAIModel}>
-                Run AI Model
-              </Button>
+          
+          {/* {showBEV && this.state.pointDistances.length > 0 && (
+              
+            )} */}
+          <Space style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            {videoSrc && logFile && srtFile && !showBEV && !this.state.aiModelActive && (
+              <div>
+                <Button style={{ backgroundColor: 'red', color: 'white' }} onClick={this.runAIModel}>
+                  Run AI Model
+                </Button>
+              </div>
             )}
-          <Space>
-          {videoSrc && !showBEV && (
-              <Space>
-                <Button onClick={this.skipBackward} icon={<FastBackwardOutlined />} />
-                <Button onClick={this.togglePlayPause} icon={videoPlaying ? <PauseCircleOutlined /> : <PlayCircleOutlined />} />
-                <Button onClick={this.skipForward} icon={<FastForwardOutlined />} />
-              </Space>
-            )}
-          </Space>
+
+  {/* Control Buttons */}
+  {this.state.showControlButtons && !showBEV && (
+  <Space direction="vertical" style={{ alignItems: 'center' }}>
+    <div style={{ fontSize: '30px' }}>
+      {videoSrc && <p>Frame: {frameNumber}</p>}
+    </div>
+    <Space>
+      <Button onClick={this.skipBackward} icon={<FastBackwardOutlined />} />
+      <Button onClick={this.togglePlayPause} icon={videoPlaying ? <PauseCircleOutlined /> : <PlayCircleOutlined />} />
+      <Button onClick={this.skipForward} icon={<FastForwardOutlined />} />
+    </Space>
+  </Space>
+)}
+
+</Space>
+
+
           <div>
-            {!videoPlaying && videoSrc && (
+            {!videoPlaying && videoSrc &&  this.state.showControlButtons && (
             <Button type="primary" onClick={this.toggleBEVView}>
               {showBEV ? 'Return to Video' : 'Convert to BEV'}
             </Button>
@@ -905,16 +1030,16 @@ drawLabel = (startPoint, endPoint, text) => {
               <Upload
                 showUploadList={false}
                 accept=".csv"
-                customRequest={({ file }) => this.handleLogFileUpload(file)}
+                customRequest={({ file }) => this.handleCsvFileUpload(file)}
               >
-                {this.state.logFile ? <Button>Re-upload Log File</Button> : <Button>Upload Log File</Button>}
+                {logFile ? <Button>Re-upload Log File</Button> : <Button>Upload Log File</Button>}
               </Upload>
               <Upload
                 showUploadList={false}
                 accept=".srt"
                 customRequest={({ file }) => this.handleSrtFileUpload(file)}
               >
-                {this.state.srtFile ? <Button>Re-upload SRT File</Button> : <Button>Upload SRT File</Button>}
+                {srtFile ? <Button>Re-upload SRT File</Button> : <Button>Upload SRT File</Button>}
               </Upload>
               {/* {allFillUpload && <Button onClick={this.runAIModel}>Run AI Model</Button>} */}
 
@@ -922,6 +1047,13 @@ drawLabel = (startPoint, endPoint, text) => {
             
             
           </Space>
+          <div>
+          {showBEV && (
+          <Button type="primary" onClick={this.seeResults}>
+            See Results
+          </Button>
+        )}
+          </div>
           {/* <div>
             {this.state.pointDistances.map((distance, index) => (
               <p key={index}>Distance {index + 1}: {distance.meters} meters ({distance.pixels.toFixed(3)} pixels)</p>
