@@ -148,7 +148,7 @@ Thanks go to these wonderful people ([emoji key](https://allcontributors.org/doc
                     title="Reviewed Pull Requests">👀</a></td>
                       <td align="center" valign="top" width="14.28%"><a href="https://github.com/dkccccc"><img
                         src="https://avatars.githubusercontent.com/u/143378988?v=4?s=100" width="100px;"
-                        alt="DongKi Jung" /><br /><sub><b>DongKi Jung</b></sub></a><br /><a
+                        alt="Dongki Chung" /><br /><sub><b>Dongki Chung</b></sub></a><br /><a
                     href="https://github.com/DVA-LAB/DVA_LAB/commits?author=dkccccc"
                     title="Code">💻</a> </td>
         </tr>
