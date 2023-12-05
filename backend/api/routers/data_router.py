@@ -149,6 +149,7 @@ async def sync_log():
 
 @router.post("/GSD/")
 async def get_GSD(request: UserInput):
+    frame_number = request.frame_number
     point_distances = request.point_distances
     try:
         pixel_distances = [calculate_pixel_distance(pd.point1, pd.point2) for pd in point_distances]
