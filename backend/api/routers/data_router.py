@@ -10,6 +10,7 @@ from fastapi import (APIRouter, Depends, FastAPI, File, Form, HTTPException,
 from fastapi.responses import FileResponse, JSONResponse
 from utils.log_sync.adjust_log import do_sync
 from utils.remove_glare import remove_glare
+from interface.request.user_input_request import UserInput
 
 
 router = APIRouter(tags=["data"])
@@ -144,6 +145,31 @@ async def sync_log():
         raise HTTPException(
             status_code=500, detail=f"Error during file synchronization: {e}"
         )
+
+
+@router.post("/GSD/")
+async def get_GSD(request: UserInput):
+    point_distances = request.point_distances
+    try:
+        pixel_distances = [calculate_pixel_distance(pd.point1, pd.point2) for pd in point_distances]
+        distances_ratio = [pd.distance / pixel_distance for pd, pixel_distance in
+                           zip(point_distances, pixel_distances)]
+        average_distance = calculate_average_distance(distances_ratio)
+        with open('test/GSD.txt', 'w') as f:
+            f.write(str(average_distance))
+        return {"average_distance": average_distance}
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Error during calculation: {e}"
+        )
+
+
+def calculate_pixel_distance(point1, point2):
+    return ((point2.x - point1.x) ** 2 + (point2.y - point1.y) ** 2) ** 0.5
+
+
+def calculate_average_distance(distances):
+    return sum(distances) / len(distances)
 
 
 def delete_files_in_folder(folder_path):
