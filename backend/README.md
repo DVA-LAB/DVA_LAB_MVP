@@ -94,6 +94,7 @@ curl -X 'POST' \
   -H 'accept: application/json' \
   -H 'Content-Type: application/json' \
   -d '{
+  "frame_number": 1,
   "point_distances": [
     {
       "point1": {
