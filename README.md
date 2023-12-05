@@ -54,3 +54,131 @@ frame_loader = DataLoader(dataset, batch_size=1, shuffle=False, num_workers=0)
 ### 5. visualize.py
 This file is for visualizing the result of detection and tracking.
 it shows a kind of dashboard at top-left side of frame. especially has the vessel violated?, distance between vessel and dolphin, speed of vessel and so on.
+
+## Contributors ✨
+
+Thanks go to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+<table>
+    <tbody>
+        <tr>
+            <td align="center" valign="top" width="14.28%"><a href="https://github.com/swhan0329"><img
+                        src="https://avatars.githubusercontent.com/u/46466469?v=4?s=100" width="100px;"
+                        alt="SeoWoo Han" /><br /><sub><b>SeoWoo Han</b></sub></a><br /><a href="#maintenance-tbenning"
+                    title="Maintenance">🚧</a>
+                <a href="https://github.com/all-contributors/all-contributors/commits?author=tbenning"
+                    title="Code">💻</a><a
+                    href="https://github.com/all-contributors/all-contributors/commits?author=jfmengels"
+                    title="Documentation">📖</a> <a
+                    href="https://github.com/all-contributors/all-contributors/pulls?q=is%3Apr+reviewed-by%3Ajfmengels"
+                    title="Reviewed Pull Requests">👀</a><a href="#infra-jakebolam"
+                    title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a>
+            </td>
+            <td align="center" valign="top" width="14.28%"><a href="https://github.com/JunHyungKang"><img
+                        src="https://avatars.githubusercontent.com/u/48425469?v=4?s=100" width="100px;"
+                        alt="JunHyung Kang" /><br /><sub><b>JunHyung Kang</b></sub></a><br />
+                <a href="https://github.com/all-contributors/all-contributors/commits?author=tbenning"
+                    title="Code">💻</a><a href="#infra-jakebolam"
+                    title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a><a
+                    href="https://github.com/all-contributors/all-contributors/commits?author=kentcdodds"
+                    title="Documentation">📖</a><a
+                    href="https://github.com/all-contributors/all-contributors/pulls?q=is%3Apr+reviewed-by%3Akentcdodds"
+                    title="Reviewed Pull Requests">👀</a>
+            </td>
+            <td align="center" valign="top" width="14.28%"><a href="https://github.com/roytravel"><img
+                        src="https://avatars.githubusercontent.com/u/46618353?v=44?s=100" width="100px;"
+                        alt="HanEol Lee" /><br /><sub><b>HanEol Lee</b></sub></a><br />
+                <a href="https://github.com/all-contributors/all-contributors/commits?author=tbenning"
+                    title="Code">💻</a> <a
+                    href="https://github.com/all-contributors/all-contributors/commits?author=jakebolam"
+                    title="Documentation">📖</a> <a
+                    href="https://github.com/all-contributors/all-contributors/pulls?q=is%3Apr+reviewed-by%3Ajakebolam"
+                    title="Reviewed Pull Requests">👀</a>
+            </td>
+          <td align="center" valign="top" width="14.28%"><a href="https://github.com/jiyoung-e"><img
+                        src="https://avatars.githubusercontent.com/u/68890429?v=4?s=100" width="100px;"
+                        alt="JiYoung Lee" /><br /><sub><b>JiYoung Lee</b></sub></a><br /><a
+                    href="https://github.com/all-contributors/all-contributors/commits?author=MatheusRV"
+                    title="Code">💻</a><a href="#infra-jakebolam"
+                    title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a><a
+                    href="https://github.com/all-contributors/all-contributors/commits?author=Berkmann18"
+                    title="Documentation">📖</a> <a
+                    href="https://github.com/all-contributors/all-contributors/pulls?q=is%3Apr+reviewed-by%3ABerkmann18"
+                    title="Reviewed Pull Requests">👀</a></td>
+            <td align="center" valign="top" width="14.28%"><a href="https://github.com/roche-MH"><img
+                        src="https://avatars.githubusercontent.com/u/53164586?v=4?s=100" width="100px;"
+                        alt="MyeongHoon Lim" /><br /><sub><b>MyeongHoon Lim</b></sub></a><br />
+                <a href="https://github.com/all-contributors/all-contributors/commits?author=tbenning"
+                    title="Code">💻</a><a
+                    href="https://github.com/all-contributors/all-contributors/commits?author=jakebolam"
+                    title="Documentation">📖</a>
+                <a href="https://github.com/all-contributors/all-contributors/pulls?q=is%3Apr+reviewed-by%3Asinchang"
+                    title="Reviewed Pull Requests">👀</a>
+            </td>
+            <td align="center" valign="top" width="14.28%"><a href="https://github.com/woohyuun"><img
+                        src="https://avatars.githubusercontent.com/u/98294094?v=4?s=100" width="100px;"
+                        alt="WooHyun Jun" /><br /><sub><b>WooHyun Jun</b></sub></a><br /><a
+                    href="https://github.com/all-contributors/all-contributors/commits?author=MatheusRV"
+                    title="Code">💻</a> <a
+                    href="https://github.com/all-contributors/all-contributors/commits?author=Berkmann18"
+                    title="Documentation">📖</a> <a
+                    href="https://github.com/all-contributors/all-contributors/pulls?q=is%3Apr+reviewed-by%3ABerkmann18"
+                    title="Reviewed Pull Requests">👀</a></td>
+            <td align="center" valign="top" width="14.28%"><a href="https://github.com/jognsu98"><img
+                        src="https://avatars.githubusercontent.com/u/64674244?v=4?s=100" width="100px;"
+                        alt="JongSu Choi" /><br /><sub><b>JongSu Choi</b></sub></a><br /><a
+                    href="https://github.com/all-contributors/all-contributors/commits?author=MatheusRV"
+                    title="Code">💻</a> <a
+                    href="https://github.com/all-contributors/all-contributors/commits?author=Berkmann18"
+                    title="Documentation">📖</a> <a
+                    href="https://github.com/all-contributors/all-contributors/pulls?q=is%3Apr+reviewed-by%3ABerkmann18"
+                    title="Reviewed Pull Requests">👀</a></td>
+        </tr>
+        <tr>
+            <td align="center" valign="top" width="14.28%"><a href="https://github.com/jiyoung-e"><img
+                        src="https://avatars.githubusercontent.com/u/68890429?v=4?s=100" width="100px;"
+                        alt="JiYoung Lee" /><br /><sub><b>JiYoung Lee</b></sub></a><br /><a
+                    href="https://github.com/all-contributors/all-contributors/commits?author=MatheusRV"
+                    title="Code">💻</a><a href="#infra-jakebolam"
+                    title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a><a
+                    href="https://github.com/all-contributors/all-contributors/commits?author=Berkmann18"
+                    title="Documentation">📖</a> <a
+                    href="https://github.com/all-contributors/all-contributors/pulls?q=is%3Apr+reviewed-by%3ABerkmann18"
+                    title="Reviewed Pull Requests">👀</a></td>
+            <td align="center" valign="top" width="14.28%"><a href="https://github.com/dwjustin"><img
+                        src="https://avatars.githubusercontent.com/u/77228085?v=4?s=100" width="100px;"
+                        alt="DongWoo Kim" /><br /><sub><b>DongWoo Kim</b></sub></a><br /><a
+                    href="https://github.com/all-contributors/all-contributors/commits?author=MatheusRV"
+                    title="Code">💻</a> <a
+                    href="https://github.com/all-contributors/all-contributors/commits?author=Berkmann18"
+                    title="Documentation">📖</a> <a
+                    href="https://github.com/all-contributors/all-contributors/pulls?q=is%3Apr+reviewed-by%3ABerkmann18"
+                    title="Reviewed Pull Requests">👀</a></td>
+            <td align="center" valign="top" width="14.28%"><a href="https://github.com/lemonbuilder"><img
+                        src="https://avatars.githubusercontent.com/u/103490406?v=4?s=100" width="100px;"
+                        alt="HyeMin Park" /><br /><sub><b>HyeMin Park</b></sub></a><br /><a
+                    href="https://github.com/all-contributors/all-contributors/commits?author=MatheusRV"
+                    title="Code">💻</a><a
+                    href="https://github.com/all-contributors/all-contributors/commits?author=jakebolam"
+                    title="Documentation">📖</a><a
+                    href="https://github.com/all-contributors/all-contributors/pulls?q=is%3Apr+reviewed-by%3Ajakebolam"
+                    title="Reviewed Pull Requests">👀</a></td>
+                      <td align="center" valign="top" width="14.28%"><a href="https://github.com/dkccccc"><img
+                        src="https://avatars.githubusercontent.com/u/143378988?v=4?s=100" width="100px;"
+                        alt="DongKi Jung" /><br /><sub><b>DongKi Jung</b></sub></a><br /><a
+                    href="https://github.com/all-contributors/all-contributors/commits?author=tbenning"
+                    title="Code">💻</a> </td>
+        </tr>
+    </tbody>
+</table>
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
+
+This project follows the [all-contributors](https://allcontributors.org) specification.
+Contributions of any kind are welcome!
