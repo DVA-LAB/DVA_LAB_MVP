@@ -42,7 +42,8 @@ curl -X 'POST' \
   'http://112.216.237.124:8000/video/' \
   -H 'accept: application/json' \
   -H 'Content-Type: multipart/form-data' \
-  -F 'file=@{your_video_path};type=video/mp4'
+  -F 'file=@{your/video/path};type=video/mp4' \
+  -F 'preprocess=true'
 ```
 
 * 비디오 파일 가져오기

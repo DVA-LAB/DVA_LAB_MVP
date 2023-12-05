@@ -8,3 +8,4 @@ uvicorn
 pandas
 haversine
 xmltodict
+tqdm

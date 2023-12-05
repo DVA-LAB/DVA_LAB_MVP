@@ -13,7 +13,7 @@ khoa_coord = {'DT_0023': [33.214, 126.251], 'DT_0004': [33.527, 126.543],
 # get geoid height from KNGeoid18 data
 # input target point must be two column list type of [latitude, longitude]
 def get_geoid_hgt(target_pt):
-    with open('./KNGeoid18.dat') as geoid_dir:
+    with open('utils/log_sync/KNGeoid18.dat') as geoid_dir:
         geoid_file = geoid_dir.read()
     geoid = [file.split('\t') for file in geoid_file.split('\n')]
 

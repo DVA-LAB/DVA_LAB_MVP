@@ -6,12 +6,12 @@ from typing import Union
 import torch
 
 class RGLARE:
-    def __init__(self, video_path: str, queue_len: int, save:bool=True,
+    def __init__(self, video_path: str, save_path: str, queue_len: int, save:bool=True,
                  gamma:bool=False):
         self.cap = cv2.VideoCapture(video_path)
         self.out = None
         if save:
-            self.video_save()
+            self.video_save(save_path)
         self.total_frame = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
         self.queue_len = queue_len
         self.frame_queue = []
@@ -41,7 +41,7 @@ class RGLARE:
             weight.append(weight[-1]-0.1)
         return torch.Tensor(weight)[:,None,None,None].to(self.device)
 
-    def video_save(self) -> None:
+    def video_save(self, save_path) -> None:
         '''
         Video 저장을 위한 함수이며,
         Input으로 받은 Video의 코덱의 정수표현, FPS,사이즈들을 가지고 Writer 정의
@@ -51,7 +51,7 @@ class RGLARE:
         fps = self.cap.get(cv2.CAP_PROP_FPS)
         frame_size = (int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH)),
                       int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT)))
-        self.out = cv2.VideoWriter('result.mp4', fourcc, fps, frame_size)
+        self.out = cv2.VideoWriter(save_path, fourcc, fps, frame_size)
 
     def gamma_correction(self, frame:np.ndarray, alpha:float=0.8) -> np.ndarray:
         '''
