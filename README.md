@@ -106,7 +106,7 @@ Thanks go to these wonderful people ([emoji key](https://allcontributors.org/doc
                     title="Reviewed Pull Requests">👀</a></td>
             <td align="center" valign="top" width="14.28%"><a href="https://github.com/roche-MH"><img
                         src="https://avatars.githubusercontent.com/u/53164586?v=4?s=100" width="100px;"
-                        alt="MyeongHoon Lim" /><br /><sub><b>MyeongHoon Lim</b></sub></a><br />
+                        alt="MyeongHun Lim" /><br /><sub><b>MyeongHun Lim</b></sub></a><br />
                 <a href="https://github.com/DVA-LAB/DVA_LAB/commits?author=roche-MH"
                     title="Code">💻</a><a
                     href="https://github.com/DVA-LAB/DVA_LAB/commits?author=roche-MH"
@@ -115,7 +115,7 @@ Thanks go to these wonderful people ([emoji key](https://allcontributors.org/doc
             </td>
             <td align="center" valign="top" width="14.28%"><a href="https://github.com/woohyuun"><img
                         src="https://avatars.githubusercontent.com/u/98294094?v=4?s=100" width="100px;"
-                        alt="WooHyun Jun" /><br /><sub><b>WooHyun Jun</b></sub></a><br /><a
+                        alt="WooHyun Jeon" /><br /><sub><b>WooHyun Jeon</b></sub></a><br /><a
                     href="https://github.com/DVA-LAB/DVA_LAB/commits?author=woohyuun"
                     title="Code">💻</a> <a
                     href="https://github.com/DVA-LAB/DVA_LAB/commits?author=woohyuun"
