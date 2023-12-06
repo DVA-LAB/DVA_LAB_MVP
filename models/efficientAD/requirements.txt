@@ -16,7 +16,8 @@ einops>=0.3.2
 freia>=0.2
 jsonargparse[signatures]>=4.3
 timm>=0.5.4,<=0.6.13
-fastapi
+fastapi==0.103.1
+pydantic==1.10.12
 uvicorn
 autologging
 dependency_injector

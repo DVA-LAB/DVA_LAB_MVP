@@ -28,7 +28,7 @@ segment.show_mask_bbox(masks, sample_bboxes, random_color=True)
 
 ## 3. Sample 결과
 <img src="./sample_img/sample.PNG" width="600" height="300">
-<img src="./sample_img/result.png" width="600" height="300">
+<img src="./sample_img/result.PNG" width="600" height="300">
 
 ## TODO
 * TODO@jh: SAM-HQ 옵션 추가 (https://drive.google.com/file/d/1qobFYrI4eyIANfBSmYcGuWRaSIXfMOQ8/view?usp=sharing)

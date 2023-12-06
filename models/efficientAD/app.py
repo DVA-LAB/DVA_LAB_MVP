@@ -1,7 +1,9 @@
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"  # GPU 0번만 사용하도록 설정
+
 from fastapi import FastAPI
 import uvicorn
 from api import routers
-
 
 def create_app() -> FastAPI:
     app = FastAPI()
@@ -12,5 +14,4 @@ def create_app() -> FastAPI:
 app = create_app()
 
 if __name__ == "__main__":
-    # uvicorn.run("app:app", reload=True, port=8009, host="0.0.0.0")
-    uvicorn.run("app:app", reload=True, port=8009, host="10.250.109.105")
+    uvicorn.run("app:app", reload=True, port=8000, host="0.0.0.0")

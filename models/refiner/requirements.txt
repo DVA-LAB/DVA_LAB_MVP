@@ -1,0 +1,7 @@
+datasets[vision]
+opencv-python
+transformers
+fastapi==0.103.1
+torch
+autologging
+uvicorn
