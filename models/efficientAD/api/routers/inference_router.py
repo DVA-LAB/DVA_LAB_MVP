@@ -1,6 +1,17 @@
+import os
+import sys
+script_path = os.path.abspath(__file__)
+add_path = os.path.dirname(os.path.dirname(script_path))
+target_directory = os.path.join(add_path, 'services', 'src')
+absolute_target_directory = os.path.abspath(target_directory)
+if absolute_target_directory not in sys.path:
+    sys.path.append(absolute_target_directory)
+
 import cv2
 import numpy as np
 import torch
+from itertools import groupby
+
 from anomalib.config import get_configurable_parameters
 from anomalib.data.inference import InferenceDataset
 from anomalib.data.utils import InputNormalizationMethod, get_transforms
@@ -25,23 +36,12 @@ router = APIRouter(tags=["anomaly"])
     summary="anomaly segmentation",
 )
 async def anomaly_inference(request_body: SegRequest):
-    res_img, res_boxes, res_scores = ad_slice_inference(request_body.frame_path)
-    return res_img, res_boxes, res_scores
+    output_img, output_mask, output_list = ad_slice_inference(request_body.frame_path, slices_path, output_path) # 설정 필요
+    return output_img, output_mask, output_list
 
-def ad_slice_inference(frame_path):
+def ad_slice_inference(frame_path, slices_path, output_path):
     config = get_configurable_parameters("efficient_ad")
-    config.trainer.resume_from_checkpoint = "services/weights/model.ckpt"
-    config.visualization.mode = "full"
-
-    frame = frame_path
-
-    frame_img = cv2.imread(frame)
-    h, w = frame_img.shape[:2]
-    patch_size = 512
-    overlap = 0.5
-    resize_rate = 2
-    
-    slice_frame = slicing(frame, patch_size, overlap)
+    config.trainer.resume_from_checkpoint = os.path.join(add_path, 'services', 'weights', 'model.ckpt')
 
     efficient_ad = get_model(config)
     callbacks = get_callbacks(config)
@@ -65,40 +65,68 @@ def ad_slice_inference(frame_path):
         normalization=normalization,
     )
 
-    inf = []
-    for i in range(len(slice_frame)):
-        input_frame = slice_frame[i]
-        t = transform(image=input_frame)["image"]
-        dataloader = DataLoader(t)
-        result = trainer.predict(model=efficient_ad, dataloaders=[dataloader])         
-        pred_mask = result[0]["pred_masks"][0]
-        inf.append(pred_mask)
+    frame = frame_path
 
-    ''' merge slices '''
-    #resize_rate = config.dataset.image_size[0] / patch_size
-    re_img = cv2.resize(frame_img, (int(w*resize_rate), int(h*resize_rate)))    
-    merge_result = merge_tensors_max(inf, h, w, resize_rate, patch_size, overlap)    # -> torch.Tensor
-    output_t = merge_result.squeeze().numpy()
+    frame_img = cv2.imread(frame)
+    h, w = frame_img.shape[:2]
+    patch_size = 512   # 최종적으로는 SAHI에서 적용된 값을 그대로 받아오도록 수정
+    overlap = 0.5      # 
+    resize_rate = 2
 
-    ''' original resizing '''
-    original_size = (w, h)
-    resized_result = cv2.resize(output_t, original_size)
+    folder_path = slices_path
+    file_paths = sorted(glob.glob(os.path.join(folder_path, '*')))  
 
-    ''' output '''
-    v = mark_boundaries(frame_img, resized_result, color=(1, 0, 0), mode="thick")
-    output_img = (v * 255).astype(np.uint8)    # -> numpy.ndarray
-    #cv2.imwrite("results/inf/output_img.jpg", output_img)
-    output_mask = (resized_result * 255).astype(np.uint8)    # -> numpy.ndarray
-    #cv2.imwrite(f"results/inf/output_mask.jpg", output_mask)
+    # SHAI file명: 'filename_0000n_*.png'라고 가정
+    grouped_files = {k: list(g) for k, g in groupby(file_paths, key=lambda x: int(x.split('_')[1]))}
 
-    mask_contours, _ = cv2.findContours(output_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    output_bbox = []    # -> list (x, y, w, h)
-    for contour in mask_contours:
-        x, y, w, h = cv2.boundingRect(contour)
-        output_bbox.append((x, y, w, h))
+    output_list = []
+    for frame_number, slc_files in grouped_files.items():
+
+        inf = []
+        for slice in slc_files :
+            dataset = InferenceDataset(
+                slice, 
+                image_size=tuple(config.dataset.image_size), 
+                transform=transform  # type: ignore
+                )
+            dataloader = DataLoader(dataset)
+
+            result = trainer.predict(model=efficient_ad, dataloaders=[dataloader])
+            pred_mask = result[0]["pred_masks"][0]
+            inf.append(pred_mask)
+
+        ''' merge slices ''' 
+        merge_result = merge_tensors_max(inf, h, w, resize_rate, patch_size, overlap)    # -> torch.Tensor
+        output_t = merge_result.squeeze().numpy()
+
+        ''' original resizing '''
+        original_size = (w, h)
+        resized_result = cv2.resize(output_t, original_size)
+
+        ''' output '''
+        v = mark_boundaries(frame_img, resized_result, color=(1, 0, 0), mode="thick")
+        output_img = (v * 255).astype(np.uint8)    # -> numpy.ndarray
+        output_mask = (resized_result * 255).astype(np.uint8)    # -> numpy.ndarray
+
+        mask_contours, _ = cv2.findContours(output_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        output_bbox = []    # -> list (x, y, w, h)
+        for contour in mask_contours:
+            x, y, w, h = cv2.boundingRect(contour)
+            class_id = 1
+            pred_score = 1  # 수정 예정
+            output_bbox.append((frame_number, class_id, x, y, w, h, pred_score))
+        output_list.append(output_bbox) 
+
+    save_path = output_path
+
+    with open(save_path, 'w') as f:
+        for j in output_list[0]:
+            frame_number, class_id, x, y, w, h, pred_score = j
+            f.write(f"{frame_number},{class_id},{x},{y},{w},{h},{pred_score}\n")
 
 
-    return output_img, output_mask, output_bbox
+    return output_img, output_mask, output_list
+
 
 
 def ad_inference():

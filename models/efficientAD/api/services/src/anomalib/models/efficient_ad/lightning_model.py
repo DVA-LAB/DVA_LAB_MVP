@@ -264,12 +264,13 @@ class EfficientAd(AnomalyModule):
         
         #################################################
         
-        ''' api version '''
+        '''
         if type(batch) == torch.Tensor:
             i = batch
             batch = {}
             batch["image"] = i 
-            
+        '''
+        
         #################################################
 
         batch["anomaly_maps"] = self.model(batch["image"])["anomaly_map_combined"]

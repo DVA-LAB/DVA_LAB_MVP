@@ -87,6 +87,7 @@ def merge_tensors_max(tensors, h, w, resize_rate=1, patch=1024, overlap=0.5):
             elif xx == x_num - 1:
                 tensor = tensors[yy * x_num + xx] 
                 merged_tensor[:, :, y:y+patch, w-patch:w] = torch.max(merged_tensor[:, :, y:y+patch, w-patch:w], tensor)
+                x = 0 
                 continue            
 
             x1 = x
