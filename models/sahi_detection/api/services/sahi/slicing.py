@@ -22,7 +22,8 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(name)s -   %(message)s",
     datefmt="%m/%d/%Y %H:%M:%S",
-    level=os.environ.get("LOGLEVEL", "INFO").upper(),
+    # level=os.environ.get("LOGLEVEL", "INFO").upper(),
+    level=logging.DEBUG,
 )
 
 MAX_WORKERS = 20
@@ -318,6 +319,7 @@ def slice_image(
 
     def _export_single_slice(image: np.ndarray, output_dir: str, slice_file_name: str):
         image_pil = read_image_as_pil(image)
+        logger.debug(output_dir)
         slice_file_path = str(Path(output_dir) / slice_file_name)
         # export sliced image
         image_pil.save(slice_file_path, quality="keep")
@@ -352,7 +354,7 @@ def slice_image(
 
     image_pil_arr = np.asarray(image_pil)
     # iterate over slices
-    for slice_bbox in slice_bboxes:
+    for idx, slice_bbox in enumerate(slice_bboxes, 1):
         n_ims += 1
 
         # extract image
@@ -376,7 +378,13 @@ def slice_image(
             suffix = ".png"
 
         # set image file name and path
-        slice_file_name = f"{output_file_name}_{slice_suffixes}{suffix}"
+        idx = str(idx)
+        if output_dir is not None:
+            new_path = os.path.join(output_dir, output_file_name)
+            Path(new_path).mkdir(parents=True, exist_ok=True)
+            slice_file_name = f"{output_file_name}/{idx.zfill(4)}_{slice_suffixes}{suffix}"
+        else:
+            slice_file_name = f"{output_file_name}_{idx.zfill(4)}_{slice_suffixes}{suffix}"
 
         # create coco image
         slice_width = slice_bbox[2] - slice_bbox[0]
@@ -398,6 +406,7 @@ def slice_image(
     # if output_file_name and output_dir:
     if output_dir:
         conc_exec = concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS)
+        logger.info([output_dir] * len(sliced_image_result))
         conc_exec.map(
             _export_single_slice,
             sliced_image_result.images,

@@ -12,4 +12,8 @@
 ```markdown
 ```bash
 # 명령 예시
-curl -X POST "http://112.216.237.124:8000/sahi/inference" -H "Content-Type: application/json" -d '{"img_path": "/home/dva3/workspace/output/test/test01", "csv_path": "./test.csv"}'
+# sliced image save mode
+curl -X POST "http://112.216.237.124:8001/sahi/inference" -H "Content-Type: application/json" -d '{"img_path": "/home/dva3/workspace_temp/output/test/test01", "csv_path": "./test.csv", "sliced_path":"./test_sliced"}'
+
+# No save mode
+curl -X POST "http://112.216.237.124:8001/sahi/inference" -H "Content-Type: application/json" -d '{"det_result_path": "/home/dva3/API/DVA_LAB/models/bytetrack_jy/example.txt", "result_path": "./test.txt"}'
