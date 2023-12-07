@@ -50,6 +50,7 @@ class App extends Component {
       showWriteDistanceButton: false,
       uploadStatus: '',
       syncCompleted: false,
+      preprocessChecked: false,
     };
 
     this.videoRef = React.createRef();
@@ -243,6 +244,7 @@ class App extends Component {
 
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('preprocess', this.state.preprocessChecked ? 1:0);
 
 
     try {
@@ -404,6 +406,9 @@ loadVideo = () => {
     try {
       const response = await axios.post(`${API_URL}/sync/`);
       console.log(response.data);
+      if(response.status===200){
+        alert("Synchronized csv file successfully!");
+      };
       // Update the syncCompleted state to true when the sync is done
       this.setState({ syncCompleted: true });
       // Optionally, display a success message or handle UI updates
@@ -899,7 +904,7 @@ drawLabel = (startPoint, endPoint, text) => {
     const canSeeResults = this.state.points.length / 2 === this.state.pointDistances.length &&
                           this.state.points.length >= 2;
 
-    const { logFile, srtFile, videoSrc, videoPlaying, frameNumber, addingInfo, isLoading, applyFlag, allFillUpload, aiModelActive, showBEV, showDrawLineButton, points, showResults, uploadStatus } = this.state;
+    const { logFile, srtFile, videoSrc, videoPlaying, frameNumber, addingInfo, isLoading, applyFlag, allFillUpload, aiModelActive, showBEV, showDrawLineButton, points, showResults, uploadStatus, syncCompleted } = this.state;
 
     if (showResults) {
       return (
@@ -1069,44 +1074,62 @@ drawLabel = (startPoint, endPoint, text) => {
           {/* {showBEV && this.state.pointDistances.length > 0 && (
               
             )} */}
-<Space style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-<Space style={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
-  {videoSrc && logFile && srtFile && !showBEV && !this.state.aiModelActive && (
-    <div>
-      <Button style={{ backgroundColor: 'red', color: 'white' }} onClick={this.runAIModel}>
-        Run AI Model
-      </Button>
-    </div>
-  )}
-  {logFile && srtFile && !showBEV && !this.state.aiModelActive && (
-  <div>
-    <Button 
-      style={{ backgroundColor: 'red', color: 'white' }} 
-      onClick={this.syncFile}
-      disabled={this.state.isLoading} // Disable the button when loading
-    >
-      {this.state.syncCompleted ? 'Sync Again' : 'Sync Log File'}
-    </Button>
-  </div>
-)}
+          <Space style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <Space style={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
+            {videoSrc && logFile && srtFile && !showBEV && !this.state.aiModelActive && syncCompleted && (
+              <div>
+                <Button style={{ backgroundColor: 'red', color: 'white' }} onClick={this.runAIModel}>
+                  Run AI Model
+                </Button>
+              </div>
+            )}
+            {logFile && srtFile && !showBEV && !this.state.aiModelActive && (
+            <div>
+              <Button 
+                style={{ backgroundColor: 'red', color: 'white' }} 
+                onClick={this.syncFile}
+                disabled={this.state.isLoading} // Disable the button when loading
+              >
+                {this.state.syncCompleted ? 'Sync Again' : 'Sync Log File'}
+              </Button>
+            </div>
+          )}
 
-  </Space>
+            </Space>
+            <div>
+            {/* ... existing JSX elements */}
+            {uploadStatus === ''&& !this.state.aiModelActive && (
+            <div>
+            <input
+              type="checkbox"
+              checked={this.state.preprocessChecked}
+              onChange={e => this.setState({ preprocessChecked: e.target.checked })}
+            />
+            <label>Enable Preprocess?<br/></label>
+            <label>Check this first before you upload the video.</label>
+            </div>)}
+            
+            </div>
+           
 
-  {/* Control Buttons */}
-  {this.state.showControlButtons && !showBEV && (
-  <Space direction="vertical" style={{ alignItems: 'center' }}>
-    <div style={{ fontSize: '30px' }}>
-      {videoSrc && <p>Frame: {frameNumber}</p>}
-    </div>
-    <Space>
-      <Button onClick={this.skipBackward} icon={<FastBackwardOutlined />} />
-      <Button onClick={this.togglePlayPause} icon={videoPlaying ? <PauseCircleOutlined /> : <PlayCircleOutlined />} />
-      <Button onClick={this.skipForward} icon={<FastForwardOutlined />} />
-    </Space>
-  </Space>
-)}
+{/* ... rest of the JSX elements for file upload and other controls */}
 
-</Space>
+
+            {/* Control Buttons */}
+            {this.state.showControlButtons && !showBEV && (
+            <Space direction="vertical" style={{ alignItems: 'center' }}>
+              <div style={{ fontSize: '30px' }}>
+                {videoSrc && <p>Frame: {frameNumber}</p>}
+              </div>
+              <Space>
+                <Button onClick={this.skipBackward} icon={<FastBackwardOutlined />} />
+                <Button onClick={this.togglePlayPause} icon={videoPlaying ? <PauseCircleOutlined /> : <PlayCircleOutlined />} />
+                <Button onClick={this.skipForward} icon={<FastForwardOutlined />} />
+              </Space>
+            </Space>
+          )}
+
+          </Space>
 
 
           <div>
