@@ -60,7 +60,7 @@ def read_bbox_data(file_path):
             data[frame_id].append({'track_id': int(track_id), 'bbox': (x, y, w, h), 'class': label, 'conf': conf})
     return data
 
-def draw_lines_and_distances(draw, centers, classes, font, line_color=(255, 0, 0)):
+def draw_lines_and_distances(draw, centers, classes, font, line_color=(0, 0, 255)):
     global merged_dolphin_center
     if merged_dolphin_center is None:
         return  # 돌고래가 없으면 거리를 그릴 필요가 없습니다.
@@ -85,7 +85,7 @@ def draw_radius_circles(draw, center, radii_info, font):
     """
     for radius, color in radii_info:
         # 원을 그립니다.
-        draw.ellipse([center[0] - radius, center[1] - radius, center[0] + radius, center[1] + radius], outline=color, width=2)
+        draw.ellipse([center[0] - radius, center[1] - radius, center[0] + radius, center[1] + radius], outline=color, width=15)
         # 원의 선 위에 텍스트를 표시합니다.
         draw.text((center[0] + radius + 10, center[1] - 10), f"{radius*GSD}m", font=font, fill=color)
 
@@ -141,13 +141,14 @@ def main():
         draw = ImageDraw.Draw(image)
 
         # 좌상단에 흰색 배경 사각형을 그립니다.
-        dashboard_background = (0, 0, 700, 300)  # 좌표 (x0, y0, x1, y1)
+        dashboard_background = (0, 0, 700, 350)  # 좌표 (x0, y0, x1, y1)
         draw.rectangle(dashboard_background, fill=(255, 255, 255))
         
         dolphin_bboxes = []
         track_ids=[]
         centers = []  # bbox 중심점들을 저장합니다.
         classes = []  # bbox의 클래스 정보를 저장합니다.
+        ships_within_50m = set()
         ships_within_300m = set()
         ship_speeds = {}
 
@@ -172,7 +173,15 @@ def main():
             track_ids.append(track_id)
             
             if class_id == 1:  # 선박인 경우
-                draw.rectangle(xy=(x, y, x + w, y + h), width=5, outline=(0, 255, 0))
+                # 기존에 주어진 x, y, w, h를 사용하여 bounding box의 중심 좌표를 계산
+                center_x = x + w // 2
+                center_y = y + h // 2
+
+                # 중심 좌표에 작은 초록색 점을 그림
+                outer_radius = 10  # 외부 원의 반지름
+                draw.ellipse((center_x - outer_radius, center_y - outer_radius, center_x + outer_radius, center_y + outer_radius), outline=(0, 0, 255), width=10)
+
+
                 # 중심점 저장
                 if track_id not in previous_centers:
                     previous_centers[track_id] = (center_x, center_y)
@@ -191,9 +200,9 @@ def main():
         merged_dolphin_bbox = merge_bboxes(dolphin_bboxes)
         if merged_dolphin_bbox is not None:
             center_x, center_y = (merged_dolphin_bbox[0]+merged_dolphin_bbox[2])/2,  (merged_dolphin_bbox[1]+merged_dolphin_bbox[3])/2
-            draw_radius_circles(draw, (center_x, center_y), [(50/GSD, "yellow"), (300/GSD, "purple")], font)
+            draw_radius_circles(draw, (center_x, center_y), [(50/GSD, "black"), (300/GSD, "yellow")], font)
             # 그리고 해당 bbox를 그립니다.
-            draw.rectangle(xy=merged_dolphin_bbox, width=5, outline=(255, 0, 0))
+            draw.rectangle(xy=merged_dolphin_bbox, width=5, outline=(0, 0, 255))
 
         # 모든 bbox 중심점들 사이에 선을 그리고 거리를 표시합니다.
         draw_lines_and_distances(draw, centers, classes, font)
@@ -203,7 +212,8 @@ def main():
             if cls == 1:
                 if distance <= 300:
                     ships_within_300m.add(track_id)
-
+                if distance <= 50:
+                    ships_within_50m.add(track_id)
         violation = False
 
         if dolphin_present:
@@ -234,13 +244,14 @@ def main():
         font_color = (0, 0, 0) # if violation else (0, 255, 0)
 
         # 텍스트를 흰색 배경 사각형 위에 그립니다.
-        text_positions = [(30, 30), (30, 80), (30, 130), (30, 180), (30, 230)]
+        text_positions = [(30, 30), (30, 80), (30, 130), (30, 180), (30, 230), (30, 280)]
         texts = [
-            f"Date: {date}",
-            f"Frame number: {frame_count}",
-            f"Nearest distance: {min_distance}m",
-            f"Max ship speed: {max_ship_speed}km/h",
-            f"Ships within 300m: {len(ships_within_300m)}"
+            f"일시: {date}",
+            f"프레임 숫자: {frame_count}",
+            f"선박과 가장 가까운 거리: {min_distance}m",
+            f"선박 최대 속도: {max_ship_speed}km/h",
+            f"50m 이내의 선박 수: {len(ships_within_50m)}",
+            f"300m 이내의 선박 수: {len(ships_within_300m)}"
         ]
 
         for text, pos in zip(texts, text_positions):
