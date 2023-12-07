@@ -183,3 +183,15 @@ def lowercase_extensions(file_name):
     name, extension = os.path.splitext(file_name)
     new_file_name = name + extension.lower()
     return new_file_name
+
+@router.delete("/reset/")
+async def reset_data():
+    try:
+        delete_files_in_folder(video_path)
+        delete_files_in_folder(frame_path)
+        delete_files_in_folder(csv_path)
+        delete_files_in_folder(srt_path)
+        delete_files_in_folder(sync_path)
+        return {"message": "All data reset successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error during data reset: {e}")

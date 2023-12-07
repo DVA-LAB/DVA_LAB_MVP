@@ -11,6 +11,8 @@ import axios from 'axios';
 
 const { Title } = Typography;
 
+const API_URL = 'http://localhost:8000';
+
 class App extends Component {
   constructor(props) {
     super(props);
@@ -46,6 +48,8 @@ class App extends Component {
       showResults: false,
       displayMode: 'video',
       showWriteDistanceButton: false,
+      uploadStatus: '',
+      syncCompleted: false,
     };
 
     this.videoRef = React.createRef();
@@ -55,9 +59,33 @@ class App extends Component {
     this.imageRef = React.createRef();
     this.clearCanvas = this.clearCanvas.bind(this);
     this.drawLine = this.drawLine.bind(this);
+    this.handleReset = this.handleReset.bind(this);
     // this.drawPointsAndLines = this.drawPointsAndLines.bind(this);
   }
 
+  handleReset = async () => {
+    // Check if there's any data present
+    if (this.state.videoSrc || this.state.logFile || this.state.srtFile) {
+      // If data is present, ask for user confirmation before resetting
+      if (window.confirm('Are you sure you want to exit and reset all data?')) {
+        this.setState({ isLoading: true });
+        try {
+          const response = await axios.delete(`${API_URL}/reset/`);
+          console.log(response.data);
+          // Refresh the page after successful reset
+          window.location.reload();
+        } catch (error) {
+          console.error('Error resetting data:', error);
+          alert('Failed to reset data: ' + error);
+          this.setState({ isLoading: false });
+        }
+      }
+    } else {
+      // If no data is present, just refresh the page
+      window.location.reload();
+    }
+  };
+  
   
 
   // 모달 열기
@@ -108,36 +136,7 @@ class App extends Component {
     }
   }
 
-  fetchAndLoadVideo = async () => {
-    try {
-        const response = await axios.get('http://localhost:8000/video/');
-        if (response.data) {
-            // Assuming the response will be a URL to the video
-            this.setState({
-                videoSrc: response.data,
-            }, () => {
-                this.loadVideo();
-            });
-        }
-    } catch (error) {
-        console.error('Error fetching video:', error);
-    }
-}
 
-
-  // 비디오 파일 로드
-  loadVideo = () => {
-    const { videoSrc } = this.state;
-    if (videoSrc) {
-      console.log("Loading video:",videoSrc);
-      this.videoRef.current.src = videoSrc;
-      this.videoRef.current.load();
-      this.videoRef.current.addEventListener('loadeddata', () => {
-        this.videoRef.current.currentTime = 0;
-        this.setState({ videoPlaying: false });
-      });
-    }
-  };
 
   toggleExportOptions = () => {
     this.setState(prevState => ({ exportOptionsVisible: !prevState.exportOptionsVisible }));
@@ -238,6 +237,8 @@ class App extends Component {
         isDownloadModalOpen: false,
         applyFlag: false,
         lastVideoFilename: null,
+        uploadStatus: 'saving',
+        isLoading: true,
     });
 
     const formData = new FormData();
@@ -245,16 +246,73 @@ class App extends Component {
 
 
     try {
-      const response = await axios.post('http://localhost:8000/video/', formData);
+      const response = await axios.post(`${API_URL}/video/`, formData);
 
 
       console.log(response.data);
       if (response.data && response.data.filename) {
-        this.fetchAndLoadVideo();
+        this.setState({
+          uploadStatus: 'parsing',
+        }, () => {
+          this.fetchAndLoadVideo();
+        });
       }
     } catch (error) {
         console.error('Error uploading file:', error);
+        this.setState({
+          uploadStatus: '',
+          isLoading: false,
+        });
     }
+};
+
+fetchAndLoadVideo = async () => {
+
+  this.setState({
+    uploadStatus: 'loading',
+    // isLoading: true,
+  });
+
+  try {
+      const response = await axios.get(`${API_URL}/video/`, { responseType: 'blob' });
+      if (response.data) {
+          const videoBlob = response.data;
+          const videoUrl = URL.createObjectURL(videoBlob); // Create a URL for the video Blob
+          this.setState({
+              videoSrc: videoUrl,
+              uploadStatus: 'saved',
+              // isLoading: false,
+          }, () => {
+              this.loadVideo();
+          });
+      }
+  } catch (error) {
+      console.error('Error fetching video:', error);
+      this.setState({
+        uploadStatus: '',
+        isLoading: false,
+      });
+  }
+};
+
+
+
+// 비디오 파일 로드
+loadVideo = () => {
+  const { videoSrc } = this.state;
+  if (videoSrc) {
+    console.log("Loading video:",videoSrc);
+    this.videoRef.current.src = videoSrc;
+    this.videoRef.current.load();
+    this.videoRef.current.addEventListener('loadeddata', () => {
+      this.videoRef.current.currentTime = 0;
+      this.setState({ 
+        videoPlaying: false,
+        uploadStatus: '',
+        isLoading: false,
+       });
+    });
+  }
 };
 
 
@@ -267,7 +325,7 @@ class App extends Component {
         formData.append('file', file);
 
         try {
-            const response = await axios.post('http://localhost:8000/csv/', formData, {
+            const response = await axios.post(`${API_URL}/csv/`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
@@ -293,7 +351,7 @@ class App extends Component {
         formData.append('file', file);
 
         try {
-            const response = await axios.post('http://localhost:8000/srt/', formData, {
+            const response = await axios.post(`${API_URL}/srt/`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
@@ -340,6 +398,26 @@ class App extends Component {
     }
   };
 
+  syncFile = async () => {
+    this.setState({ isLoading: true, syncCompleted: false });
+  
+    try {
+      const response = await axios.post(`${API_URL}/sync/`);
+      console.log(response.data);
+      // Update the syncCompleted state to true when the sync is done
+      this.setState({ syncCompleted: true });
+      // Optionally, display a success message or handle UI updates
+    } catch (error) {
+      console.error('Error during file synchronization:', error);
+      alert('Failed to sync files: ' + error);
+      // Keep syncCompleted as false if there's an error
+    } finally {
+      this.setState({ isLoading: false });
+    }
+  };
+  
+  
+
   // 추가 정보 입력 모드 활성화/비활성화 토글
   toggleAddingInfo = () => {
     this.setState(prevState => ({
@@ -349,76 +427,60 @@ class App extends Component {
   };
   
 
+//   captureAndSendFrame = async () => {
+//     const { lastVideoFilename } = this.state;
+//     const video = this.videoRef.current;
+
+//     // Capture the current frame of the video
+//     const canvas = document.createElement('canvas');
+//     canvas.width = video.videoWidth;
+//     canvas.height = video.videoHeight;
+//     const ctx = canvas.getContext('2d');
+//     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+//     // Convert canvas to Blob
+//     const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg'));
+//     const file = new File([blob], `frame-${Date.now()}.jpg`, { type: 'image/jpeg' });
+
+//     const formData = new FormData();
+//     formData.append('file', file);
+
+//     try {
+//         const response = await axios.post(`http://localhost:8000/bev/${lastVideoFilename}`, formData, {
+//             headers: {
+//                 'Content-Type': 'multipart/form-data',
+//             },
+//         });
+//         if (response.data && response.data.framePath) {
+//             const framePath = response.data.framePath.split('/').pop();
+//             const getImageUrl = `http://localhost:8000/extracted_frames/${framePath}`;
+//             console.log(getImageUrl);
+//             return getImageUrl;
+//         }
+//     } catch (error) {
+//         console.error('Error sending frame for BEV conversion:', error);
+//     }
+// };
+
   captureAndSendFrame = async () => {
-    const { lastVideoFilename } = this.state;
-    const video = this.videoRef.current;
-
-    // Capture the current frame of the video
-    const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-    // Convert canvas to Blob
-    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg'));
-    const file = new File([blob], `frame-${Date.now()}.jpg`, { type: 'image/jpeg' });
-
-    const formData = new FormData();
-    formData.append('file', file);
+    const { frameNumber } = this.state; // Assuming frameNumber is stored in state
 
     try {
-        const response = await axios.post(`http://localhost:8000/bev/${lastVideoFilename}`, formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data',
-            },
-        });
-        if (response.data && response.data.framePath) {
-            const framePath = response.data.framePath.split('/').pop();
-            const getImageUrl = `http://localhost:8000/extracted_frames/${framePath}`;
-            console.log(getImageUrl);
-            return getImageUrl;
-        }
+      const response = await axios.get(`${API_URL}/frame/${frameNumber}`, { responseType: 'blob' });
+      if (response.data) {
+        const frameBlob = response.data;
+        const frameUrl = URL.createObjectURL(frameBlob); // Create a URL for the frame Blob
+        console.log(frameUrl);
+        return frameUrl;
+      }
     } catch (error) {
-        console.error('Error sending frame for BEV conversion:', error);
+      console.error('Error fetching frame:', error);
     }
-};
+  };
 
-
-  
-  
-  
-  
-
-  // // handleVideoClick 함수 수정
-  // handleVideoClick = (e) => {
-  //   if (this.state.addingInfo) {
-  //     const rect = this.canvasRef.current.getBoundingClientRect();
-  //     const { clientX, clientY } = e.nativeEvent;
-  //     const x = clientX - rect.left;
-  //     const y = clientY - rect.top;
-
-  //     this.setState((prevState) => {
-  //       const points = [...prevState.points, { x, y }];
-  //       const pointColors = [...prevState.pointColors, `rgb(${Math.random() * 255},${Math.random() * 255},${Math.random() * 255})`];
-
-  //       return { points, pointColors };
-  //     }, () => {
-  //       // Check if there are even points and more than 1 point
-  //       if (this.state.points.length % 2 === 0 && this.state.points.length > 1) {
-  //         const lastPointIndex = this.state.points.length - 1;
-  //         // Calculate the distance for the last two points
-  //         this.calculateDistance(lastPointIndex); // Calculate distance for the previous pair of points
-  //       }
-
-  //       // Draw points and lines after adding the second point
-  //       this.drawPointsAndLines();
-  //     });
-  //   }
-  // };
 
   toggleBEVView = async () => {
-    const { showBEV, lastVideoFilename } = this.state;
+    const { showBEV} = this.state;
     
     if (!showBEV) {
       this.setState({isLoading: true});
@@ -440,7 +502,7 @@ class App extends Component {
       this.setState({
         showBEV: false,
         showDrawLineButton: false,
-        videoSrc: `http://localhost:8000/video/${lastVideoFilename}`
+        videoSrc: `${API_URL}/video/`
       }, () => {
         this.loadVideo();
       });
@@ -802,7 +864,7 @@ drawLabel = (startPoint, endPoint, text) => {
     
     this.setState({ 
       showResults: true,
-      videoSrc: 'http://localhost:8000/video/sample_output.mov',
+      videoSrc: `${API_URL}/video/`,
      },()=>{
       this.loadVideo();
      });
@@ -837,12 +899,28 @@ drawLabel = (startPoint, endPoint, text) => {
     const canSeeResults = this.state.points.length / 2 === this.state.pointDistances.length &&
                           this.state.points.length >= 2;
 
-    const { logFile, srtFile, videoSrc, videoPlaying, frameNumber, addingInfo, isLoading, applyFlag, allFillUpload, aiModelActive, showBEV, showDrawLineButton, points, showResults } = this.state;
+    const { logFile, srtFile, videoSrc, videoPlaying, frameNumber, addingInfo, isLoading, applyFlag, allFillUpload, aiModelActive, showBEV, showDrawLineButton, points, showResults, uploadStatus } = this.state;
 
     if (showResults) {
       return (
         <div className="App" style={{ height: screenHeight + 'px', position: 'relative' }}>
-          <Title level={1}>Drone Video Analysis for MARC</Title>
+          <Button
+            type="text"
+            onClick={this.handleReset}
+            style={{ 
+              fontSize: '2rem', // Adjust the size as needed to match a title
+              fontWeight: 'bold',
+              margin: 0,
+              padding: 0,
+              border: 'none',
+              boxShadow: 'none',
+              cursor: 'pointer',
+              background: 'none'
+            }}
+          >
+            Drone Video Analysis for MARC
+          </Button>
+
           
           {/* Toggle Button */}
           <Button onClick={this.toggleDisplayMode}>
@@ -897,38 +975,66 @@ drawLabel = (startPoint, endPoint, text) => {
         {this.state.showProgressBar && <ProgressBar/>}
         
         <Space direction="vertical" style={{ marginTop: '40px' }}>
-          <Title level={1}>Drone Video Analysis for MARC</Title>
+        <Button
+            type="text"
+            onClick={this.handleReset}
+            style={{ 
+              fontSize: '2rem', // Adjust the size as needed to match a title
+              fontWeight: 'bold',
+              margin: 0,
+              padding: 0,
+              border: 'none',
+              boxShadow: 'none',
+              cursor: 'pointer',
+              background: 'none'
+            }}
+          >
+            Drone Video Analysis for MARC
+          </Button>
          
-          <div className='video-bev-container' style={{position: 'relative', ...videoStyle}}>
+          <div className='video-bev-container' style={{ position: 'relative', ...videoStyle }}>
+            {/* Show loading indicator and status messages when isLoading is true */}
+            
             {this.state.isLoading && (
-                <div className="loader"></div> // This will display the loading spinner
-              )}
+              <div style={{
+                position: 'absolute', 
+                top: '50%', 
+                left: '50%', 
+                transform: 'translate(-50%, -50%)', 
+                textAlign: 'center'
+              }}>
+                <div className="loader" style={{ margin: '0 auto' }}></div>
+                {this.state.uploadStatus === 'saving' && <div style={{ marginTop: '20px' }}>Saving video and parsing frames.<br/>This might take a while.</div>}
+                {this.state.uploadStatus === 'loading' && <div style={{ marginTop: '20px' }}>Loading video...</div>}
+              </div>
+            )}
             {!showBEV ? (
               <video
                 ref={this.videoRef}
                 crossOrigin='anonymous'
                 src={this.state.videoSrc} // Set the src attribute to use videoSrc from the state
                 onTimeUpdate={this.updateFrameNumber}
-                // onClick={this.handleVideoClick}
                 style={videoStyle}
                 // onLoadedData={this.handleVideoLoaded}
               />
-            ):(
-              <img 
-                src={this.state.bevImageSrc} 
-                style={videoStyle} 
-                alt="Bird's Eye View" 
-                ref={this.imageRef} 
-                onClick={this.handleMouseDown}/>
+            ) : (
+              <img
+                src={this.state.bevImageSrc}
+                style={videoStyle}
+                alt="Bird's Eye View"
+                ref={this.imageRef}
+                onClick={this.handleMouseDown}
+              />
             )}
-              {showBEV && (
-                <canvas
+            {showBEV && (
+              <canvas
                 ref={this.canvasRef}
                 onMouseDown={this.handleMouseDown}
                 style={{ position: 'absolute', top: '0', left: '0', zIndex: 1, width: '100%', height: '100%' }}
               />
-              
-              )}
+            )}
+
+
               {showBEV && points.length === 2 && (
             <input
                 type="text"
@@ -963,14 +1069,28 @@ drawLabel = (startPoint, endPoint, text) => {
           {/* {showBEV && this.state.pointDistances.length > 0 && (
               
             )} */}
-          <Space style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            {videoSrc && logFile && srtFile && !showBEV && !this.state.aiModelActive && (
-              <div>
-                <Button style={{ backgroundColor: 'red', color: 'white' }} onClick={this.runAIModel}>
-                  Run AI Model
-                </Button>
-              </div>
-            )}
+<Space style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+<Space style={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
+  {videoSrc && logFile && srtFile && !showBEV && !this.state.aiModelActive && (
+    <div>
+      <Button style={{ backgroundColor: 'red', color: 'white' }} onClick={this.runAIModel}>
+        Run AI Model
+      </Button>
+    </div>
+  )}
+  {logFile && srtFile && !showBEV && !this.state.aiModelActive && (
+  <div>
+    <Button 
+      style={{ backgroundColor: 'red', color: 'white' }} 
+      onClick={this.syncFile}
+      disabled={this.state.isLoading} // Disable the button when loading
+    >
+      {this.state.syncCompleted ? 'Sync Again' : 'Sync Log File'}
+    </Button>
+  </div>
+)}
+
+  </Space>
 
   {/* Control Buttons */}
   {this.state.showControlButtons && !showBEV && (
@@ -1018,15 +1138,21 @@ drawLabel = (startPoint, endPoint, text) => {
                 />
                 )} */}
           </div>
-          <Space direction="vertical">
+          {!aiModelActive && (<Space direction="vertical">
             <Space>
-              <Upload
-                showUploadList={false}
-                accept=".mp4,.mov"
-                customRequest={({ file }) => this.handleFileUpload(file)}
-              >
-                {videoSrc ? <Button>Re-upload Video</Button> : <Button>Upload Video</Button>}
-              </Upload>
+              {/* Conditional rendering of status messages */}
+              
+
+               {/* Conditional rendering of the Upload component */}
+              {uploadStatus === '' && ( // Only show the upload button if there's no ongoing process
+                <Upload
+                  showUploadList={false}
+                  accept=".mp4,.mov"
+                  customRequest={({ file }) => this.handleFileUpload(file)}
+                >
+                  {videoSrc ? <Button>Re-upload Video</Button> : <Button>Upload Video</Button>}
+                </Upload>
+              )}
               <Upload
                 showUploadList={false}
                 accept=".csv"
@@ -1046,7 +1172,7 @@ drawLabel = (startPoint, endPoint, text) => {
             </Space>
             
             
-          </Space>
+          </Space>)}
           <div>
           {showBEV && (
           <Button type="primary" onClick={this.seeResults}>
