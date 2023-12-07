@@ -22,8 +22,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(name)s -   %(message)s",
     datefmt="%m/%d/%Y %H:%M:%S",
-    # level=os.environ.get("LOGLEVEL", "INFO").upper(),
-    level=logging.DEBUG,
+    level=os.environ.get("LOGLEVEL", "INFO").upper(),
 )
 
 MAX_WORKERS = 20
@@ -319,7 +318,6 @@ def slice_image(
 
     def _export_single_slice(image: np.ndarray, output_dir: str, slice_file_name: str):
         image_pil = read_image_as_pil(image)
-        logger.debug(output_dir)
         slice_file_path = str(Path(output_dir) / slice_file_name)
         # export sliced image
         image_pil.save(slice_file_path, quality="keep")
