@@ -404,7 +404,6 @@ def slice_image(
     # if output_file_name and output_dir:
     if output_dir:
         conc_exec = concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS)
-        logger.info([output_dir] * len(sliced_image_result))
         conc_exec.map(
             _export_single_slice,
             sliced_image_result.images,
