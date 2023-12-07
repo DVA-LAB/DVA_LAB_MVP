@@ -2,36 +2,36 @@ import cv2
 import math
 import argparse
 import numpy as np
+import pandas as pd
 from PIL import Image, ImageDraw, ImageFont
-from backend.utils.extract_meta import extract_date_from_srt, extract_video_metadata
+from backend.utils.extract_meta import extract_video_metadata
 
 LEGAL_SPEED = 50
-GSD = 0.041
+GSD = 0.06 #m/px
+merged_dolphin_center = None
+
+def read_log_file(log_path):
+    # Reading the CSV file into a DataFrame
+    df = pd.read_csv(log_path)
+
+    # Displaying the first few rows of the DataFrame
+    return df
 
 def calculate_nearest_distance(centers, classes, track_ids, GSD):
-    """
-    각 선박과 가장 가까운 돌고래 사이의 거리를 계산합니다. 돌고래가 없으면 빈 딕셔너리를 반환합니다.
-    """
+    global merged_dolphin_center
     distances = {}
-    dolphin_present = any(cls == 0 for cls in classes)  # 돌고래 존재 여부
+    dolphin_present = merged_dolphin_center is not None
     if not dolphin_present:
-        return dolphin_present, distances  # Always return two values
+        return dolphin_present, distances
 
     for i in range(len(centers)):
         if classes[i] == 1:  # 선박인 경우
-            min_distance = float('inf')
-            for j in range(len(centers)):
-                if classes[j] == 0:  # 돌고래인 경우
-                    # 선박과 돌고래 사이의 거리 계산
-                    distance = math.sqrt((centers[j][0] - centers[i][0]) ** 2 + (centers[j][1] - centers[i][1]) ** 2)
-                    real_distance = distance * GSD
-                    if real_distance < min_distance:
-                        min_distance = real_distance
-            if min_distance != float('inf'):
-                distances[(track_ids[i],classes[i])] = min_distance
+            # 병합된 돌고래 바운딩 박스 중심과의 거리 계산
+            distance = math.sqrt((merged_dolphin_center[0] - centers[i][0]) ** 2 + (merged_dolphin_center[1] - centers[i][1]) ** 2)
+            real_distance = distance * GSD
+            distances[(track_ids[i],classes[i])] = real_distance
     
     return dolphin_present, distances
-
 
 def calculate_speed(center1, center2, frame_rate, GSD):
     """
@@ -61,21 +61,21 @@ def read_bbox_data(file_path):
     return data
 
 def draw_lines_and_distances(draw, centers, classes, font, line_color=(255, 0, 0)):
-    """
-    지정된 두 클래스(여기서는 보트와 돌고래) 간의 거리만을 그립니다.
-    """
-    for i in range(len(centers)):
-        for j in range(i + 1, len(centers)):
-            # 클래스 확인: 하나는 보트이고 다른 하나는 돌고래여야 합니다.
-            if (classes[i] == 1 and classes[j] == 0) or (classes[i] == 0 and classes[j] == 1):
-                # 두 중심점 사이에 선을 그립니다.
-                start, end = centers[i], centers[j]
-                draw.line([start, end], fill=line_color, width=2)
+    global merged_dolphin_center
+    if merged_dolphin_center is None:
+        return  # 돌고래가 없으면 거리를 그릴 필요가 없습니다.
 
-                # 두 점 사이의 거리를 계산합니다.
-                distance = math.sqrt((end[0] - start[0]) ** 2 + (end[1] - start[1]) ** 2)
-                mid_point = ((start[0] + end[0]) / 2, (start[1] + end[1]) / 2)
-                draw.text(mid_point, f"{round(int(distance)*GSD, 2)}m", font=font, fill=line_color)
+    for i in range(len(centers)):
+        if classes[i] == 1:  # 선박인 경우
+            # 병합된 돌고래 바운딩 박스 중심과 선박 중심점 사이에 선을 그립니다.
+            start, end = centers[i], merged_dolphin_center
+            draw.line([start, end], fill=line_color, width=2)
+
+            # 두 점 사이의 거리를 계산합니다.
+            distance = math.sqrt((end[0] - start[0]) ** 2 + (end[1] - start[1]) ** 2)
+            mid_point = ((start[0] + end[0]) / 2, (start[1] + end[1]) / 2)
+            
+            draw.text(mid_point, f"{round(distance*GSD, 2)}m", font=font, fill=line_color)
 
 
 def draw_radius_circles(draw, center, radii_info, font):
@@ -87,19 +87,40 @@ def draw_radius_circles(draw, center, radii_info, font):
         # 원을 그립니다.
         draw.ellipse([center[0] - radius, center[1] - radius, center[0] + radius, center[1] + radius], outline=color, width=2)
         # 원의 선 위에 텍스트를 표시합니다.
-        draw.text((center[0] + radius + 10, center[1] - 10), f"{radius/4}m", font=font, fill=color)
+        draw.text((center[0] + radius + 10, center[1] - 10), f"{radius*GSD}m", font=font, fill=color)
+
+def merge_bboxes(bboxes):
+    """
+    여러 경계 상자들을 포함하는 하나의 큰 경계 상자를 계산합니다.
+    """
+    global merged_dolphin_center
+    if not bboxes:
+        merged_dolphin_center = None
+        return None
+
+    # 각 경계 상자의 최소 x, y 및 최대 x, y 좌표를 계산합니다.
+    min_x = min(bbox['bbox'][0] for bbox in bboxes)
+    min_y = min(bbox['bbox'][1] for bbox in bboxes)
+    max_x = max(bbox['bbox'][0] + bbox['bbox'][2] for bbox in bboxes)
+    max_y = max(bbox['bbox'][1] + bbox['bbox'][3] for bbox in bboxes)
+
+    merged_dolphin_center = (min_x + (max_x - min_x) / 2, min_y + (max_y - min_y) / 2)
+    return (min_x, min_y, max_x, max_y)
+
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--srt_path', type=str, default='data/DJI_0010.srt')
-    parser.add_argument('--video_path', type=str, default='in/DJI_0119_30.MP4')
-    parser.add_argument('--output_video', type=str, default='out/DJI_0119_30.MP4')
+    parser.add_argument('--log_path', type=str, default='in/DJI_0119_30.csv')
+    parser.add_argument('--video_path', type=str, default='in/input.mp4')
+    parser.add_argument('--output_video', type=str, default='out/output.mp4')
     parser.add_argument('--bbox_path', type=str, default='in/bbox.txt')
     args = parser.parse_args()
 
+    logs = read_log_file(args.log_path)
+    print(logs.columns)
     # bbox 데이터를 읽어옵니다.
     bbox_data = read_bbox_data(args.bbox_path)
-    frame_rate, total_frames, frame_width, frame_height = extract_video_metadata(args.video_path)
+    frame_rate, _, frame_width, frame_height = extract_video_metadata(args.video_path)
     
     font = ImageFont.truetype('AppleGothic.ttf', 40)
     fourcc = cv2.VideoWriter_fourcc(*'MP4V')
@@ -114,7 +135,7 @@ def main():
         success, frame = cap.read()
         if not success:
             break
-
+        date = logs['datetime'][frame_count]
         frame_bboxes = bbox_data.get(frame_count, [])
         image = Image.fromarray(frame)
         draw = ImageDraw.Draw(image)
@@ -123,6 +144,7 @@ def main():
         dashboard_background = (0, 0, 700, 300)  # 좌표 (x0, y0, x1, y1)
         draw.rectangle(dashboard_background, fill=(255, 255, 255))
         
+        dolphin_bboxes = []
         track_ids=[]
         centers = []  # bbox 중심점들을 저장합니다.
         classes = []  # bbox의 클래스 정보를 저장합니다.
@@ -133,15 +155,24 @@ def main():
             track_id = bbox_info['track_id']
             x, y, w, h = bbox_info['bbox']
             class_id = bbox_info['class']
+            if class_id == 2:
+                class_id = 0 # dolphin
+            else:
+                class_id = 1 # boat
+
             conf_score = round(bbox_info['conf'], 2)
+            if class_id == 1 and conf_score < 0.6:
+                continue
+            
             # bbox의 중심점을 계산합니다.
             center_x, center_y = x + w / 2, y + h / 2
-            # bbox 중심점과 클래스 정보를 추가합니다.
+
             centers.append((center_x, center_y))
             classes.append(class_id)
             track_ids.append(track_id)
-            draw.rectangle(xy=(x, y, x + w, y + h), width=5, outline=(0, 255, 0))
+            
             if class_id == 1:  # 선박인 경우
+                draw.rectangle(xy=(x, y, x + w, y + h), width=5, outline=(0, 255, 0))
                 # 중심점 저장
                 if track_id not in previous_centers:
                     previous_centers[track_id] = (center_x, center_y)
@@ -154,8 +185,15 @@ def main():
                     previous_centers[track_id] = (center_x, center_y)
 
             if class_id == 0:
-                draw_radius_circles(draw, (center_x, center_y), [(1200, "yellow"), (3000, "purple")], font)
-            # draw.text(xy=(x, y - 20), text=f"Conf: {conf_score}", font=font, fill=(0, 255, 0))
+                dolphin_bboxes.append(bbox_info)
+
+        # 모든 돌고래 bbox를 하나로 합칩니다.
+        merged_dolphin_bbox = merge_bboxes(dolphin_bboxes)
+        if merged_dolphin_bbox is not None:
+            center_x, center_y = (merged_dolphin_bbox[0]+merged_dolphin_bbox[2])/2,  (merged_dolphin_bbox[1]+merged_dolphin_bbox[3])/2
+            draw_radius_circles(draw, (center_x, center_y), [(50/GSD, "yellow"), (300/GSD, "purple")], font)
+            # 그리고 해당 bbox를 그립니다.
+            draw.rectangle(xy=merged_dolphin_bbox, width=5, outline=(255, 0, 0))
 
         # 모든 bbox 중심점들 사이에 선을 그리고 거리를 표시합니다.
         draw_lines_and_distances(draw, centers, classes, font)
@@ -193,24 +231,17 @@ def main():
             min_distance = str(min_distance)
         else:
             min_distance = "-"  # Or any other placeholder you prefer
-        font_color = (0, 0, 255) # if violation else (0, 255, 0)
+        font_color = (0, 0, 0) # if violation else (0, 255, 0)
 
         # 텍스트를 흰색 배경 사각형 위에 그립니다.
-        text_positions = [(30, 30), (30, 80), (30, 130), (30, 180)]
+        text_positions = [(30, 30), (30, 80), (30, 130), (30, 180), (30, 230)]
         texts = [
+            f"Date: {date}",
             f"Frame number: {frame_count}",
             f"Nearest distance: {min_distance}m",
             f"Max ship speed: {max_ship_speed}km/h",
             f"Ships within 300m: {len(ships_within_300m)}"
         ]
-        # text_positions = [(30, 30), (30, 80), (30, 130), (30, 180), (30, 230)]
-        # texts = [
-        #     f"Frame number: {frame_count}",
-        #     f"Violation: {'Yes' if violation else 'No'}" if dolphin_present is False else "Violation: No",
-        #     f"Nearest distance: {min_distance}m",
-        #     f"Max ship speed: {max_ship_speed}km/h",
-        #     f"Ships within 300m: {len(ships_within_300m)}"
-        # ]
 
         for text, pos in zip(texts, text_positions):
             draw.text(pos, text, font=font, fill=font_color)
