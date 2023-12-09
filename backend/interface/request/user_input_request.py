@@ -17,11 +17,13 @@ class PointDistance(BaseModel):
 
 @logged
 class UserInput(BaseModel):
+    frame_number: int = Field(description="Frame number associated with the point distances")
     point_distances: list[PointDistance] = Field(description="List of point pairs with their distances")
 
     class Config:
         schema_extra = {
             "example": {
+                "frame_number": 1,
                 "point_distances": [
                     {
                         "point1": {"x": 100, "y": 150},

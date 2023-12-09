@@ -1,0 +1,8 @@
+fastapi==0.103.1
+pydantic==1.10.12
+opencv-python
+autologging
+dependency-injector
+uvicorn
+pandas
+tqdm

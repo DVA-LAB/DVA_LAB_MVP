@@ -89,9 +89,37 @@ curl -X 'POST' \
 ### 포인트 거리 정보 전송
 영상에서 특정 포인트 2개와 그 사이의 실제 거리 정보를 서버로 보내려면 아래 curl 명령어를 사용하세요:
 ```bash
-curl -X POST "http://localhost:8000/points-distance/" \
-     -H "Content-Type: application/json" \
-     -d '{"point1": {"x": 100, "y": 150}, "point2": {"x": 200, "y": 150}, "distance": 5.0}'
+curl -X 'POST' \
+  'http://112.216.237.124:8000/GSD/' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "frame_number": 1,
+  "point_distances": [
+    {
+      "point1": {
+        "x": 100,
+        "y": 150
+      },
+      "point2": {
+        "x": 200,
+        "y": 150
+      },
+      "distance": 5
+    },
+    {
+      "point1": {
+        "x": 300,
+        "y": 350
+      },
+      "point2": {
+        "x": 400,
+        "y": 350
+      },
+      "distance": 10
+    }
+  ]
+}'
 ```
 
 ### 처리된 영상 가져오기
