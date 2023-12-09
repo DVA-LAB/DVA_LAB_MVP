@@ -2,16 +2,17 @@ import glob
 import os
 import shutil
 import time
+from typing import List
 
 import torch
-from api.services.data_service import parse_videos_multithreaded
 from fastapi import (APIRouter, Depends, FastAPI, File, Form, HTTPException,
                      UploadFile, status)
 from fastapi.responses import FileResponse, JSONResponse
+from interface.request.user_input_request import UserInput
 from utils.log_sync.adjust_log import do_sync
 from utils.remove_glare import remove_glare
-from interface.request.user_input_request import UserInput
 
+from api.services.data_service import parse_videos_multithreaded
 
 router = APIRouter(tags=["data"])
 
@@ -21,6 +22,7 @@ frame_path = os.path.join("test", "frame_origin")
 csv_path = os.path.join("test", "csv")
 srt_path = os.path.join("test", "srt")
 sync_path = os.path.join("test", "sync_csv")
+input_path = os.path.join("test", "input")
 
 
 @router.post("/video/")
@@ -55,7 +57,6 @@ async def upload_video(file: UploadFile = File(...), preprocess: bool = Form(...
             )
             parse_videos_multithreaded(processed_video_path, frame_path)
             print(f"frame parsing time: {round(time.time() - process_f_time)} sec")
-
         else:
             frame_s_time = time.time()
             parse_videos_multithreaded(video_path, frame_path)
@@ -138,6 +139,7 @@ async def upload_srt(file: UploadFile = File(...)):
 @router.post("/sync/")
 async def sync_log():
     os.makedirs(sync_path, exist_ok=True)
+    delete_files_in_folder(sync_path)
     try:
         do_sync(video_path, csv_path, srt_path, sync_path)
         return {"message": "synchronized csv saved successfully"}
@@ -147,22 +149,22 @@ async def sync_log():
         )
 
 
-@router.post("/GSD/")
-async def get_GSD(request: UserInput):
+@router.post("/user_input/")
+async def save_input(request: UserInput):
+    os.makedirs(input_path, exist_ok=True)
+    delete_files_in_folder(input_path)
     frame_number = request.frame_number
     point_distances = request.point_distances
     try:
-        pixel_distances = [calculate_pixel_distance(pd.point1, pd.point2) for pd in point_distances]
-        distances_ratio = [pd.distance / pixel_distance for pd, pixel_distance in
-                           zip(point_distances, pixel_distances)]
-        average_distance = calculate_average_distance(distances_ratio)
-        with open('test/GSD.txt', 'w') as f:
-            f.write(str(average_distance))
-        return {"average_distance": average_distance}
+        with open(os.path.join(input_path, f"{frame_number}.txt"), "a") as f:
+            for pd in point_distances:
+                f.write(
+                    f"{pd.point1.x} {pd.point1.y} {pd.point2.x} {pd.point2.y} {pd.distance}\n"
+                )
+
+        return {"message": f"User input for frame {frame_number} saved successfully"}
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Error during calculation: {e}"
-        )
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 def calculate_pixel_distance(point1, point2):
@@ -185,6 +187,7 @@ def lowercase_extensions(file_name):
     new_file_name = name + extension.lower()
     return new_file_name
 
+
 @router.delete("/reset/")
 async def reset_data():
     try:
@@ -193,6 +196,7 @@ async def reset_data():
         delete_files_in_folder(csv_path)
         delete_files_in_folder(srt_path)
         delete_files_in_folder(sync_path)
+        delete_files_in_folder(input_path)
         return {"message": "All data reset successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error during data reset: {e}")

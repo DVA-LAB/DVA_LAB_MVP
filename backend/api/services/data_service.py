@@ -1,6 +1,8 @@
-import cv2
 import os
 import threading
+
+import cv2
+
 
 def parse_video_to_frames(video_path, output_base_folder_path):
     """
@@ -44,6 +46,7 @@ def parse_video_to_frames(video_path, output_base_folder_path):
     cap.release()
     print(f"Completed parsing video: {filename_without_ext}")
 
+
 def parse_videos_multithreaded(video_folder_path, output_base_folder_path):
     """
     Parses videos in the given folder into frames using multiple threads and saves them
@@ -64,9 +67,13 @@ def parse_videos_multithreaded(video_folder_path, output_base_folder_path):
 
     # Create a thread for each video file
     for filename in os.listdir(video_folder_path):
-        if filename.lower().endswith(('.mp4', '.avi', '.mov', '.mkv')):  # Handles both lowercase and uppercase extensions
+        if filename.lower().endswith(
+            (".mp4", ".avi", ".mov", ".mkv")
+        ):  # Handles both lowercase and uppercase extensions
             video_path = os.path.join(video_folder_path, filename)
-            thread = threading.Thread(target=parse_video_to_frames, args=(video_path, output_base_folder_path))
+            thread = threading.Thread(
+                target=parse_video_to_frames, args=(video_path, output_base_folder_path)
+            )
             threads.append(thread)
             thread.start()
 
