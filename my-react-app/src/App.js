@@ -11,13 +11,16 @@ import axios from 'axios';
 
 const { Title } = Typography;
 
-const API_URL = 'http://localhost:8000';
+const API_URL =  'http://localhost:8000';
+//
+// const API_URL='http://112.216.237.124:8000';
 
 class App extends Component {
   constructor(props) {
     super(props);
     this.state = {
       videoSrc: null,
+      videoName: null,
       logFile: null,
       srtFile: null,
       videoPlaying: false,
@@ -51,6 +54,7 @@ class App extends Component {
       uploadStatus: '',
       syncCompleted: false,
       preprocessChecked: false,
+      infoAdded: false,
     };
 
     this.videoRef = React.createRef();
@@ -61,7 +65,7 @@ class App extends Component {
     this.clearCanvas = this.clearCanvas.bind(this);
     this.drawLine = this.drawLine.bind(this);
     this.handleReset = this.handleReset.bind(this);
-    // this.drawPointsAndLines = this.drawPointsAndLines.bind(this);
+    this.drawPointsAndLines = this.drawPointsAndLines.bind(this);
   }
 
   handleReset = async () => {
@@ -223,6 +227,7 @@ class App extends Component {
   handleFileUpload = async (file) => {
     this.setState({
         // Reset states before upload
+        videoFileName: null,
         videoSrc: null,
         logFile: null,
         videoPlaying: false,
@@ -255,6 +260,7 @@ class App extends Component {
       if (response.data && response.data.filename) {
         this.setState({
           uploadStatus: 'parsing',
+          videoFileName: response.data.filename,
         }, () => {
           this.fetchAndLoadVideo();
         });
@@ -485,34 +491,77 @@ loadVideo = () => {
 
 
   toggleBEVView = async () => {
-    const { showBEV} = this.state;
-    
-    if (!showBEV) {
-      this.setState({isLoading: true});
-      const bevImageSrcPath = await this.captureAndSendFrame();
-      if (bevImageSrcPath) {
-        // Construct the full URL
-        this.setState({
-          showBEV: true,
-          showDrawLineButton: true,
-          bevImageSrc: bevImageSrcPath,
-          isLoading: false,
+    const { showBEV, frameNumber, videoFileName } = this.state;
+    const parts = videoFileName.split('.');
+  
+    // Remove the last part (the extension)
+    const fileNameWithoutExtension = parts.slice(0, -1).join('.');
+    const frameNumberPadded = frameNumber.toString().padStart(5, '0'); // Pad frame number with leading zeros
+    const framePath = `${fileNameWithoutExtension}_${frameNumberPadded}.jpg`; 
+    const csvPath = "sync_log.csv";
+    const dstDir = "test/dstDir"; // Destination directory
+  
+    const formatObjectsArray = (lastEntry) => {
+      if (!lastEntry) return null;
+  
+      const { point1, point2 } = lastEntry;
+      return [null, null, null, point1.x, point1.y, point2.x, point2.y, null, -1, -1, -1];
+    };
+  
+    const lastEntry = this.state.pointDistances[this.state.pointDistances.length - 1];
+    const objects = formatObjectsArray(lastEntry); 
+  
+    if (!objects) {
+      console.error("No point distances available for BEV conversion");
+      this.setState({ isLoading: false });
+      return;
+    }
+  
+    const payload = {
+      frame_num: frameNumber,
+      frame_path: framePath,
+      csv_path: csvPath,
+      objects: objects,
+      realdistance: lastEntry.distance,
+      dst_dir: dstDir,
+    }
+    console.log(payload);
+  
+    if (!showBEV && this.state.infoAdded) {
+      this.setState({ isLoading: true });
+  
+      try {
+        const response = await axios.post(`${API_URL}/bev1`, payload, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
         });
-      } else{
-        console.log("Cannot find bevImageSrcPath");
+  
+        // Assuming the response contains the path to the BEV image
+        if (response.data && response.data.bevImagePath) {
+          this.setState({
+            showBEV: true,
+            bevImageSrc: response.data.bevImagePath,
+            isLoading: false
+          });
+        } else {
+          console.error("BEV conversion failed");
+          this.setState({ isLoading: false });
+        }
+      } catch (error) {
+        console.error("Error during API call:", error);
         this.setState({ isLoading: false });
       }
     } else {
-      // Return to video view
       this.setState({
         showBEV: false,
-        showDrawLineButton: false,
         videoSrc: `${API_URL}/video/`
       }, () => {
         this.loadVideo();
       });
     }
   };
+  
   
   
   
@@ -525,6 +574,8 @@ loadVideo = () => {
   //     points: [], // reset points if you're starting a new line
   //   });
   // };
+
+  
   
 
   handleMouseDown = (event) => {
@@ -597,13 +648,28 @@ drawLine = (startPoint, endPoint) => {
 handleDistanceInput = (event) => {
   const distance = event.target.value;
   if (distance && !isNaN(distance)) {
-      this.setState(prevState => {
-          const { points } = prevState;
-          this.drawLabel(points[0], points[1], distance);
-          return { pointDistances: [...prevState.pointDistances, distance], points: [] }; // Reset points
-      });
+    this.setState(prevState => {
+      const { points } = prevState;
+      if (points.length >= 2) {
+        const lastIndex = points.length - 1;
+        this.drawLabel(points[lastIndex - 1], points[lastIndex], distance);
+        const newEntry = {
+          point1: points[lastIndex - 1],
+          point2: points[lastIndex],
+          distance: parseFloat(distance)
+        };
+        return { 
+          pointDistances: [...prevState.pointDistances, newEntry], 
+          infoAdded: true,
+          points: [] // Clear points after adding distance
+        };
+
+      }
+      return null;
+    });
   }
 };
+
 
 drawLabel = (startPoint, endPoint, text) => {
   const canvas = this.canvasRef.current;
@@ -1013,36 +1079,48 @@ drawLabel = (startPoint, endPoint, text) => {
                 {this.state.uploadStatus === 'loading' && <div style={{ marginTop: '20px' }}>Loading video...</div>}
               </div>
             )}
-            {!showBEV ? (
-              <video
-                ref={this.videoRef}
-                crossOrigin='anonymous'
-                src={this.state.videoSrc} // Set the src attribute to use videoSrc from the state
-                onTimeUpdate={this.updateFrameNumber}
-                style={videoStyle}
-                // onLoadedData={this.handleVideoLoaded}
-              />
-            ) : (
-              <img
-                src={this.state.bevImageSrc}
-                style={videoStyle}
-                alt="Bird's Eye View"
-                ref={this.imageRef}
-                onClick={this.handleMouseDown}
-              />
-            )}
-            {showBEV && (
-              <canvas
-                ref={this.canvasRef}
-                onMouseDown={this.handleMouseDown}
-                style={{ position: 'absolute', top: '0', left: '0', zIndex: 1, width: '100%', height: '100%' }}
-              />
-            )}
+            
+            <video
+              ref={this.videoRef}
+              crossOrigin='anonymous'
+              src={this.state.videoSrc} // Set the src attribute to use videoSrc from the state
+              onTimeUpdate={this.updateFrameNumber}
+              style={videoStyle}
+              // onLoadedData={this.handleVideoLoaded}
+            />
+
+{!videoPlaying && (
+        <canvas
+          ref={this.canvasRef}
+          onMouseDown={this.handleMouseDown}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            zIndex: 1,
+          }}
+        />
+      )}
+
+              
+          {showBEV && (
+                  <img
+                    src={this.state.bevImageSrc}
+                    alt="Bird's Eye View"
+                    ref={this.imageRef}
+                    style={{ width: '100%', height: '100%' }}
+                    onClick={this.handleMouseDown}
+                  />
+                )}
+            
 
 
-              {showBEV && points.length === 2 && (
+              {points.length >= 2 && points.length % 2===0 && (
             <input
-                type="text"
+                type="number"
+                min="0"
                 placeholder="Enter distance (m)"
                 onBlur={this.handleDistanceInput}
                 style={{ position: 'absolute', left: '10px', top: '10px', zIndex:2 }} // Adjust position as needed
@@ -1133,7 +1211,7 @@ drawLabel = (startPoint, endPoint, text) => {
 
 
           <div>
-            {!videoPlaying && videoSrc &&  this.state.showControlButtons && (
+            {this.state.infoAdded && !videoPlaying && videoSrc &&  this.state.showControlButtons && (
             <Button type="primary" onClick={this.toggleBEVView}>
               {showBEV ? 'Return to Video' : 'Convert to BEV'}
             </Button>
@@ -1143,7 +1221,7 @@ drawLabel = (startPoint, endPoint, text) => {
               <Button type="primary" onClick={this.handleMouseDown}>Draw Line</Button>
               )
             } */}
-            {showDrawLineButton &&(
+            {this.state.syncCompleted&& aiModelActive && !videoPlaying && videoSrc && (
               <Button onClick={this.toggleAddingInfo}>{addingInfo ? 'Disable Adding Info' : 'Enable Adding Info'}</Button>
             )}
             {/* {
