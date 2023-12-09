@@ -1,105 +1,107 @@
+from fastapi import APIRouter, Depends, status, Request
+
 import argparse
-import os
+import time
 
-import torch
-from api.services import Predictor, predict_image, predict_video
-from api.services.yolox.exp import get_exp
-from autologging import logged
-from fastapi import APIRouter, Depends, status
-from yolox.exp import get_exp
-from yolox.utils import fuse_model
+from loguru import logger
 
-parser = argparse.ArgumentParser("ByteTrack")
-parser.add_argument("-n", "--name", type=str, default=None, help="model name")
-parser.add_argument(
-    "-c",
-    "--ckpt",
-    type=str,
-    default="YOLOX_outputs/dva/best_ckpt.pth.tar",
-    help="ckpt for eval",
-)
-parser.add_argument("-t", "--type", type=str, default="image", help="image or video")
-parser.add_argument(
-    "--path", default="./videos/palace.mp4", help="path to images or video"
-)
-parser.add_argument(
-    "--save_result",
-    action="store_true",
-    help="whether to save the inference result of image/video",
-)
+from api.services import BYTETracker
+from api.services import Timer
 
-parser.add_argument(
-    "-f",
-    "--exp_file",
-    default=None,
-    type=str,
-    help="pls input your expriment description file",
-)
-parser.add_argument("--fps", default=30, type=int, help="frame rate (fps)")
-parser.add_argument(
-    "--fp16",
-    dest="fp16",
-    default=False,
-    action="store_true",
-    help="Adopting mix precision evaluating.",
-)
-parser.add_argument(
-    "--trt",
-    dest="trt",
-    default=False,
-    action="store_true",
-    help="Using TensorRT model for testing.",
-)
-parser.add_argument("--conf", default=None, type=float, help="test conf")
-parser.add_argument("--nms", default=None, type=float, help="test nms threshold")
-parser.add_argument("--tsize", default=None, type=int, help="test img size")
+import numpy as np
 
-parser.add_argument(
-    "--track_thresh", type=float, default=0.5, help="tracking confidence threshold"
-)
-parser.add_argument(
-    "--track_buffer", type=int, default=30, help="the frames for keep lost tracks"
-)
-parser.add_argument(
-    "--match_thresh", type=float, default=0.8, help="matching threshold for tracking"
-)
-parser.add_argument(
-    "--aspect_ratio_thresh",
-    type=float,
-    default=1.6,
-    help="threshold for filtering out boxes of which aspect ratio are above the given value.",
-)
-parser.add_argument(
-    "--min_box_area", type=float, default=10, help="filter out tiny boxes"
-)
-parser.add_argument(
-    "--mot20", dest="mot20", default=False, action="store_true", help="test mot20."
-)
-args = parser.parse_args()
+def make_parser():
+    parser = argparse.ArgumentParser("ByteTrack")
 
-exp = get_exp(args.exp_file, args.name)
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model = exp.get_model().to(device)
-model.eval()
-ckpt = torch.load(args.ckpt, map_location="cpu")
-model.load_state_dict(ckpt["model"])
-model = fuse_model(model)
-model = model.half()  # to FP16
+    parser.add_argument("--fps", default=30, type=int, help="frame rate (fps)")
+    # tracking args
+    parser.add_argument("--track_thresh", type=float, default=0.2, help="tracking confidence threshold")
+    parser.add_argument("--track_buffer", type=int, default=30, help="the frames for keep lost tracks")
+    parser.add_argument("--match_thresh", type=float, default=0.8, help="matching threshold for tracking")
+    parser.add_argument(
+        "--aspect_ratio_thresh", type=float, default=1.6,
+        help="threshold for filtering out boxes of which aspect ratio are above the given value."
+    )
+    parser.add_argument('--min_box_area', type=float, default=1, help='filter out tiny boxes')
+    parser.add_argument("--mot20", dest="mot20", default=False, action="store_true", help="test mot20.")
+    return parser
 
-predictor = Predictor(model, exp, None, device, args.fp16)
+def track(det_results, img_w, img_h, result_path, args):
+    tracker = BYTETracker(args, frame_rate=args.fps)
+    timer = Timer()
+    results = []
+    timer.tic()
+    for frame_id, det_result in enumerate(det_results, 1):
+        if det_result is not None and np.array(det_result).size > 0:
+            online_targets = tracker.update(np.array(det_result), [img_h, img_w], [img_h, img_w])
+            online_tlwhs = []
+            online_ids = []
+            online_scores = []
+            online_labels = []
+            for t in online_targets:
+                tlwh = t.tlwh
+                tid = t.track_id
+                label = int(t.label)
+                
+                if tlwh[2] * tlwh[3] > args.min_box_area:
+                    online_tlwhs.append(tlwh)
+                    online_ids.append(tid)
+                    online_scores.append(t.score)
+                    online_labels.append(label)
+                    # save results
+                    results.append(f"{frame_id},{tid},{label},{tlwh[0]:.2f},{tlwh[1]:.2f},{tlwh[2]:.2f},{tlwh[3]:.2f},{t.score:.2f},-1,-1,-1\n")
+        timer.toc()
+        if frame_id % 20 == 0:
+            logger.info('Processing frame {}: avg {:.4f} seconds per frame'.format(frame_id, timer.average_time))
+
+    with open(result_path, 'w') as f:
+        f.writelines(results)
+    logger.info(f"save results to {result_path}")
+
+
+def main(det_result_path, result_path):
+    args = make_parser().parse_args()
+
+    # 시작 시간 로그
+    current_time = time.localtime(time.time())
+    time_format = '%Y-%m-%d %H:%M:%S'
+    time_str = time.strftime(time_format,current_time)
+    logger.info('Start time: {}'.format(time_str))
+
+    # 검출 결과 파일 읽어서 bytetrack 인풋 형태로 변환
+    f = open(det_result_path, 'r')
+    lines = f.readlines()
+    f.close()
+    
+    grouped_data = {}
+    for line in lines:
+        line = line.replace("\n", "")
+        line = line.split(",")
+        
+        key = int(float(line[0]))
+        values = [float(value) for value in line[1:]]
+        if key not in grouped_data.keys():
+            
+            grouped_data[key] = []        
+        grouped_data[key].append(values)
+    det_results = [grouped_data[key] for key in sorted(grouped_data.keys())]
+
+    # 추후 인풋 형식 맞출 때 반영 필요: img w, h 절보 추가
+    img_w, img_h = 3840, 1260
+    
+    track(det_results, img_w, img_h, result_path, args)
+
+
 router = APIRouter(tags=["bytetrack"])
 
-
 @router.post(
-    "/bytetrack/inference",
+    "/bytetrack/track",
     status_code=status.HTTP_200_OK,
-    summary="object tracking",
+    summary="bytetrack",
 )
-async def bytetrack_inference(request_body: ByteTrackRequest, request: Request):
-    if args.type == "image":
-        results = predict_image(predictor, exp, args)
-
-    elif args.type == "video":
-        results = predict_video(predictor, exp, args)
-
-    return results
+async def inference(request: Request):
+    data = await request.json()
+    det_result_path = data.get("det_result_path")
+    result_path = data.get("result_path")
+    main(det_result_path, result_path)
+    return

@@ -1,17 +1,16 @@
 #!/usr/bin/env python3
-# -*- coding:utf-8 -*-
-# Copyright (c) 2014-2021 Megvii Inc. All rights reserved.
+# Copyright (c) Megvii Inc. All rights reserved.
+
+import ast
+import pprint
+from abc import ABCMeta, abstractmethod
+from typing import Dict, List, Tuple
+from tabulate import tabulate
 
 import torch
 from torch.nn import Module
 
 from yolox.utils import LRScheduler
-
-import ast
-import pprint
-from abc import ABCMeta, abstractmethod
-from tabulate import tabulate
-from typing import Dict
 
 
 class BaseExp(metaclass=ABCMeta):
@@ -22,9 +21,14 @@ class BaseExp(metaclass=ABCMeta):
         self.output_dir = "./YOLOX_outputs"
         self.print_interval = 100
         self.eval_interval = 10
+        self.dataset = None
 
     @abstractmethod
     def get_model(self) -> Module:
+        pass
+
+    @abstractmethod
+    def get_dataset(self, cache: bool = False, cache_type: str = "ram"):
         pass
 
     @abstractmethod
@@ -61,12 +65,23 @@ class BaseExp(metaclass=ABCMeta):
         return tabulate(exp_table, headers=table_header, tablefmt="fancy_grid")
 
     def merge(self, cfg_list):
-        assert len(cfg_list) % 2 == 0
+        assert len(cfg_list) % 2 == 0, f"length must be even, check value here: {cfg_list}"
         for k, v in zip(cfg_list[0::2], cfg_list[1::2]):
             # only update value with same key
             if hasattr(self, k):
                 src_value = getattr(self, k)
                 src_type = type(src_value)
+
+                # pre-process input if source type is list or tuple
+                if isinstance(src_value, (List, Tuple)):
+                    v = v.strip("[]()")
+                    v = [t.strip() for t in v.split(",")]
+
+                    # find type of tuple
+                    if len(src_value) > 0:
+                        src_item_type = type(src_value[0])
+                        v = [src_item_type(t) for t in v]
+
                 if src_value is not None and src_type != type(v):
                     try:
                         v = src_type(v)

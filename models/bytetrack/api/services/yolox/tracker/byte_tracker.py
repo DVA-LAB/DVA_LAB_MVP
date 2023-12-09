@@ -7,12 +7,12 @@ import torch
 import torch.nn.functional as F
 
 from .kalman_filter import KalmanFilter
-from yolox.tracker import matching
+from . import matching
 from .basetrack import BaseTrack, TrackState
 
 class STrack(BaseTrack):
     shared_kalman = KalmanFilter()
-    def __init__(self, tlwh, score):
+    def __init__(self, tlwh, score, label):
 
         # wait activate
         self._tlwh = np.asarray(tlwh, dtype=np.float)
@@ -21,6 +21,7 @@ class STrack(BaseTrack):
         self.is_activated = False
 
         self.score = score
+        self.label = label
         self.tracklet_len = 0
 
     def predict(self):
@@ -98,6 +99,7 @@ class STrack(BaseTrack):
         ret = self.mean[:4].copy()
         ret[2] *= ret[3]
         ret[:2] -= ret[2:] / 2
+
         return ret
 
     @property
@@ -147,11 +149,9 @@ class BYTETracker(object):
         self.tracked_stracks = []  # type: list[STrack]
         self.lost_stracks = []  # type: list[STrack]
         self.removed_stracks = []  # type: list[STrack]
-
         self.frame_id = 0
         self.args = args
-        #self.det_thresh = args.track_thresh
-        self.det_thresh = args.track_thresh + 0.1
+        self.det_thresh = args.track_thresh
         self.buffer_size = int(frame_rate / 30.0 * args.track_buffer)
         self.max_time_lost = self.buffer_size
         self.kalman_filter = KalmanFilter()
@@ -163,9 +163,10 @@ class BYTETracker(object):
         lost_stracks = []
         removed_stracks = []
 
-        if output_results.shape[1] == 5:
+        if output_results.shape[1] == 6:
             scores = output_results[:, 4]
             bboxes = output_results[:, :4]
+            labels = output_results[:, 5]
         else:
             output_results = output_results.cpu().numpy()
             scores = output_results[:, 4] * output_results[:, 5]
@@ -181,13 +182,16 @@ class BYTETracker(object):
         inds_second = np.logical_and(inds_low, inds_high)
         dets_second = bboxes[inds_second]
         dets = bboxes[remain_inds]
+        
         scores_keep = scores[remain_inds]
         scores_second = scores[inds_second]
 
+        labels_second = labels[inds_second]  # 후보 label
+        labs = labels[remain_inds] # 당선 label
+
         if len(dets) > 0:
             '''Detections'''
-            detections = [STrack(STrack.tlbr_to_tlwh(tlbr), s) for
-                          (tlbr, s) in zip(dets, scores_keep)]
+            detections = [STrack(STrack.tlbr_to_tlwh(tlbr), s, l) for (tlbr, s, l) in zip(dets, scores_keep, labs)]
         else:
             detections = []
 
@@ -199,7 +203,6 @@ class BYTETracker(object):
                 unconfirmed.append(track)
             else:
                 tracked_stracks.append(track)
-
         ''' Step 2: First association, with high score detection boxes'''
         strack_pool = joint_stracks(tracked_stracks, self.lost_stracks)
         # Predict the current location with KF
@@ -216,15 +219,15 @@ class BYTETracker(object):
                 track.update(detections[idet], self.frame_id)
                 activated_starcks.append(track)
             else:
-                track.re_activate(det, self.frame_id, new_id=False)
+                track.re_activate(det, self.frame_id, new_id=True)
                 refind_stracks.append(track)
 
         ''' Step 3: Second association, with low score detection boxes'''
         # association the untrack to the low score detections
         if len(dets_second) > 0:
             '''Detections'''
-            detections_second = [STrack(STrack.tlbr_to_tlwh(tlbr), s) for
-                          (tlbr, s) in zip(dets_second, scores_second)]
+            detections_second = [STrack(STrack.tlbr_to_tlwh(tlbr), s, l) for
+                          (tlbr, s, l) in zip(dets_second, scores_second, labels_second)]
         else:
             detections_second = []
         r_tracked_stracks = [strack_pool[i] for i in u_track if strack_pool[i].state == TrackState.Tracked]
@@ -237,7 +240,7 @@ class BYTETracker(object):
                 track.update(det, self.frame_id)
                 activated_starcks.append(track)
             else:
-                track.re_activate(det, self.frame_id, new_id=False)
+                track.re_activate(det, self.frame_id, new_id=True)
                 refind_stracks.append(track)
 
         for it in u_track:

@@ -1,30 +1,22 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
-# Copyright (c) 2014-2021 Megvii Inc. All rights reserved.
+# Copyright (c) Megvii Inc. All rights reserved.
+import math
+from copy import deepcopy
+
 import torch
 import torch.nn as nn
 
-import math
-from copy import deepcopy
+__all__ = ["ModelEMA", "is_parallel"]
 
 
 def is_parallel(model):
     """check if model is in parallel mode."""
-
     parallel_type = (
         nn.parallel.DataParallel,
         nn.parallel.DistributedDataParallel,
     )
     return isinstance(model, parallel_type)
-
-
-def copy_attr(a, b, include=(), exclude=()):
-    # Copy attributes from b to a, options to only include [...] and to exclude [...]
-    for k, v in b.__dict__.items():
-        if (len(include) and k not in include) or k.startswith("_") or k in exclude:
-            continue
-        else:
-            setattr(a, k, v)
 
 
 class ModelEMA:
@@ -66,7 +58,3 @@ class ModelEMA:
                 if v.dtype.is_floating_point:
                     v *= d
                     v += (1.0 - d) * msd[k].detach()
-
-    def update_attr(self, model, include=(), exclude=("process_group", "reducer")):
-        # Update EMA attributes
-        copy_attr(self.ema, model, include, exclude)

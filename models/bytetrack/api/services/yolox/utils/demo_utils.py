@@ -1,12 +1,52 @@
 #!/usr/bin/env python3
-# -*- coding:utf-8 -*-
-# Copyright (c) 2014-2021 Megvii Inc. All rights reserved.
-
-import numpy as np
+# Copyright (c) Megvii Inc. All rights reserved.
 
 import os
+import random
 
-__all__ = ["mkdir", "nms", "multiclass_nms", "demo_postprocess"]
+import cv2
+import numpy as np
+
+__all__ = [
+    "mkdir", "nms", "multiclass_nms", "demo_postprocess", "random_color", "visualize_assign"
+]
+
+
+def random_color():
+    return random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)
+
+
+def visualize_assign(img, boxes, coords, match_results, save_name=None) -> np.ndarray:
+    """visualize label assign result.
+
+    Args:
+        img: img to visualize
+        boxes: gt boxes in xyxy format
+        coords: coords of matched anchors
+        match_results: match results of each gt box and coord.
+        save_name: name of save image, if None, image will not be saved. Default: None.
+    """
+    for box_id, box in enumerate(boxes):
+        x1, y1, x2, y2 = box
+        color = random_color()
+        assign_coords = coords[match_results == box_id]
+        if assign_coords.numel() == 0:
+            # unmatched boxes are red
+            color = (0, 0, 255)
+            cv2.putText(
+                img, "unmatched", (int(x1), int(y1) - 5),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 1
+            )
+        else:
+            for coord in assign_coords:
+                # draw assigned anchor
+                cv2.circle(img, (int(coord[0]), int(coord[1])), 3, color, -1)
+        cv2.rectangle(img, (int(x1), int(y1)), (int(x2), int(y2)), color, 2)
+
+    if save_name is not None:
+        cv2.imwrite(save_name, img)
+
+    return img
 
 
 def mkdir(path):
@@ -44,8 +84,17 @@ def nms(boxes, scores, nms_thr):
     return keep
 
 
-def multiclass_nms(boxes, scores, nms_thr, score_thr):
+def multiclass_nms(boxes, scores, nms_thr, score_thr, class_agnostic=True):
     """Multiclass NMS implemented in Numpy"""
+    if class_agnostic:
+        nms_method = multiclass_nms_class_agnostic
+    else:
+        nms_method = multiclass_nms_class_aware
+    return nms_method(boxes, scores, nms_thr, score_thr)
+
+
+def multiclass_nms_class_aware(boxes, scores, nms_thr, score_thr):
+    """Multiclass NMS implemented in Numpy. Class-aware version."""
     final_dets = []
     num_classes = scores.shape[1]
     for cls_ind in range(num_classes):
@@ -68,15 +117,29 @@ def multiclass_nms(boxes, scores, nms_thr, score_thr):
     return np.concatenate(final_dets, 0)
 
 
-def demo_postprocess(outputs, img_size, p6=False):
+def multiclass_nms_class_agnostic(boxes, scores, nms_thr, score_thr):
+    """Multiclass NMS implemented in Numpy. Class-agnostic version."""
+    cls_inds = scores.argmax(1)
+    cls_scores = scores[np.arange(len(cls_inds)), cls_inds]
 
+    valid_score_mask = cls_scores > score_thr
+    if valid_score_mask.sum() == 0:
+        return None
+    valid_scores = cls_scores[valid_score_mask]
+    valid_boxes = boxes[valid_score_mask]
+    valid_cls_inds = cls_inds[valid_score_mask]
+    keep = nms(valid_boxes, valid_scores, nms_thr)
+    if keep:
+        dets = np.concatenate(
+            [valid_boxes[keep], valid_scores[keep, None], valid_cls_inds[keep, None]], 1
+        )
+    return dets
+
+
+def demo_postprocess(outputs, img_size, p6=False):
     grids = []
     expanded_strides = []
-
-    if not p6:
-        strides = [8, 16, 32]
-    else:
-        strides = [8, 16, 32, 64]
+    strides = [8, 16, 32] if not p6 else [8, 16, 32, 64]
 
     hsizes = [img_size[0] // stride for stride in strides]
     wsizes = [img_size[1] // stride for stride in strides]
