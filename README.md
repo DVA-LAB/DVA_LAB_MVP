@@ -1,59 +1,54 @@
 # DVA_LAB
 Drone Video Analysis(DVA) project for helping MARC supported by Kakao Impact, MODULABS
 
-## Files
+## 1. Repository Structure
 ```
-ㄴinput
-ㄴutils
-  ㄴseg_frame_parsing.py
-  ㄴtracking_frame_parsing.py
-  ㄴextract_meta.py
-  ㄴvideo_segments.py
-main.py
-data.py
-README.md
-```
-### 1. input
-This folder is for reading videos or images.
-
-### 2. utils
-This folder is for handling many things such as reading metadata, making video segments etc.
-
-#### 2-1. extract_meta.py
-This file is for reading metadata and srt file from .MP4, .SRT.
-Input .MP4 and .SRT file should be located in "./input".
-
-```python extract_meta.py```
-
-#### 2-2. video_segments.py
-This file is for making video segments struct including frame and metadata.
-Input .MP4 and .SRT file should be located in "./input".
-
-```python video_segments.py```
-
-#### 2-3. transform_coordinate.py
-This file is for getting 3D world coordinate from 2D image coordinate.
-
-
-### 3. main.py
-Merge the other classes and pre, postprocessing
-TODO: Divide classes into folders or other py files.
-
-
-### 4. data.py
-`VideoDataset` 클래스는 PyTorch의 `Dataset` 클래스를 상속받아 비디오 데이터를 로드하고 빛반사 전처리 후 frame단위로 인덱싱합니다.
-```python
-# dataloader 사용법
-from torch.utils.data import DataLoader
-
-dataset = VideoDataset('input/test.MOV')
-frame_loader = DataLoader(dataset, batch_size=1, shuffle=False, num_workers=0)
+DVA_LAB
+│
+├── backend
+├── models
+│ ├── BEV
+│ ├── bytetrack
+│ ├── efficientAD
+│ ├── refiner
+│ ├── sahi_detection
+│ └── SAM
+├── dataset
+├── docs
+├── my-react-app
+└── README.md
 ```
 
+## 2. backend
+This directory contains the backend logic of the DVA system, including APIs and services for data and model operations.
+### api/routers
+- `data_router.py`: API routes for handling data-related requests.
+- `model_router.py`: API routes for model-related operations.
+### services
+- `data_service.py`: Services for data manipulation and processing.
+- `model_service.py`: Services for interacting with the analysis models.
+### utils
+- `remove_glare`: 빛반사 제거 (to be updated)
+- `log_sync`: This module is for reading metadata and srt file from .MP4, .SRT. (to be updated)
+- `visualizing`: This file is for visualizing the result of detection and tracking.
+it shows a kind of dashboard at top-left side of frame. especially has the vessel violated?, distance between vessel and dolphin, speed of vessel and so on. (to be updated)
 
-### 5. visualize.py
-This file is for visualizing the result of detection and tracking.
-it shows a kind of dashboard at top-left side of frame. especially has the vessel violated?, distance between vessel and dolphin, speed of vessel and so on.
+## 3. models
+This directory contains different model directories, each operating as a microservice as part of a Microservices Architecture (MSA) to ensure modularity and avoid dependency conflicts. Each model serves a specific analysis purpose:
+- `BEV`: Implements a microservice for Bird's Eye View transformations and analysis, providing a top-down perspective of video data.
+- `bytetrack`: A microservice for tracking objects in video data, allowing for continuous object identification across frames.
+- `efficientAD`: An efficient anomaly detection microservice model designed to identify unusual patterns or anomalies in video data.
+- `refiner`: A microservice that refines detection or tracking results, improving the accuracy and reliability of the analysis.
+- `sahi_detection`: A dedicated microservice for detection operations, capable of identifying a wide range of objects in various conditions.
+- `SAM`: The Specific Application Model microservice for segmentation mask as util function.
+
+Each microservice is self-contained, with its own dedicated environment and dependencies, ensuring that updates or changes to one service do not impact the others, in line with the principles of MSA.
+
+## 4. dataset
+The dataset directory is where the video and image datasets are stored for analysis.
+
+## 5. my-react-app
+A React application for interactive video analysis.
 
 ## Contributors ✨
 
