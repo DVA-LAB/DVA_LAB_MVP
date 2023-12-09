@@ -6,12 +6,13 @@ from typing import Union
 import torch
 
 class RGLARE:
-    def __init__(self, video_path: str, save_path: str, queue_len: int, save:bool=True,
+    def __init__(self, video_path: str, queue_len: int, save:bool=True,
                  gamma:bool=False):
         self.cap = cv2.VideoCapture(video_path)
         self.out = None
-        if save:
-            self.video_save(save_path)
+        self.frame_size = (int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH)),
+                          int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT)))
+
         self.total_frame = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
         self.queue_len = queue_len
         self.frame_queue = []
@@ -19,11 +20,13 @@ class RGLARE:
         self.frame_count = 0
         self.frame_queue_done = 0
         self.gamma = gamma
-        self.device= ('cuda:0' if torch.cuda.is_available() else 'cpu')
-        if self.device=='cuda:0':
-            self.weight=self.get_gpu_weight()
+        self.device = ('cuda:0' if torch.cuda.is_available() else 'cpu')
+        if self.device == 'cuda:0':
+            self.weight = self.get_gpu_weight()
         else:
             self.weight = self.get_weight()
+        if save:
+            self.video_save(video_path)
 
     def get_weight(self) -> np.ndarray:
         '''
@@ -41,17 +44,16 @@ class RGLARE:
             weight.append(weight[-1]-0.1)
         return torch.Tensor(weight)[:,None,None,None].to(self.device)
 
-    def video_save(self, save_path) -> None:
+    def video_save(self, video_path) -> None:
         '''
         Video 저장을 위한 함수이며,
         Input으로 받은 Video의 코덱의 정수표현, FPS,사이즈들을 가지고 Writer 정의
         저장 경로는 result.mp4로 static
         '''
-        fourcc = int(self.cap.get(cv2.CAP_PROP_FOURCC))
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         fps = self.cap.get(cv2.CAP_PROP_FPS)
-        frame_size = (int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH)),
-                      int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT)))
-        self.out = cv2.VideoWriter(save_path, fourcc, fps, frame_size)
+        save_path = video_path.replace(video_path[-4:], '_result'+ video_path[-4:])
+        self.out = cv2.VideoWriter(save_path, fourcc, fps, self.frame_size)
 
     def gamma_correction(self, frame:np.ndarray, alpha:float=0.8) -> np.ndarray:
         '''
@@ -77,6 +79,7 @@ class RGLARE:
                     if self.frame_queue_done == self.queue_len:
                         break
                 else:
+                    frame = cv2.resize(frame, (1920,1920))
                     frame = cv2.medianBlur(frame,3)
                     hsv_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
@@ -111,8 +114,10 @@ class RGLARE:
 
                 out_frame = out_frame.clone().detach().permute(1,2,0).cpu().numpy().astype(np.uint8)
                 out_frame = cv2.cvtColor(out_frame, cv2.COLOR_HSV2BGR)
+                out_frame = cv2.resize(out_frame, self.frame_size)
                 self.out.write(out_frame)
                 pbar.update()
+                self.frame_count+=1
 
     def frame_gpu(self) -> Union[np.ndarray]:
         if self.queue_full:
@@ -124,6 +129,7 @@ class RGLARE:
                     torch.stack(self.frame_queue) * self.weight[:len(self.frame_queue),:,:,:],
                     axis=0)
             else:
+                frame = cv2.resize(frame,(1920,1920))
                 frame = cv2.medianBlur(frame,3)
                 hsv_frame = cv2.cvtColor(frame,cv2.COLOR_BGR2HSV)
                 tensor_frame = torch.tensor(hsv_frame / 255.0).permute(2, 0, 1).to(self.device)
@@ -142,6 +148,7 @@ class RGLARE:
 
             output_frame = out_frame.clone().detach().permute(1, 2, 0).cpu().numpy().astype(np.uint8)
             output_frame = cv2.cvtColor(output_frame.astype('uint8'), cv2.COLOR_HSV2BGR)
+            output_frame = cv2.resize(output_frame, self.frame_size)
             return output_frame
         else:
             while len(self.frame_queue) != self.queue_len-1:
@@ -152,7 +159,7 @@ class RGLARE:
             self.queue_full=True
             return self.frame_gpu()
 
-    def t_run(self):
+    def video_cpu(self):
         '''
         영상 전체를 반복하며 전처리된 Video를 저장하는 함수
         '''
@@ -194,7 +201,7 @@ class RGLARE:
         self.cap.release()
         self.out.release()
 
-    def f_run(self) ->Union[np.ndarray]:
+    def frame_cpu(self) ->Union[np.ndarray]:
         '''
         초기 함수 호출시 Frame queue에 선언된 Queue len만큼 이미지를 삽입하고,
         전처리 진행 후 첫 Frame부터 순차적으로 반환
@@ -239,9 +246,10 @@ if __name__ == '__main__':
                                                  '--save : save video ex) True'
                                                  '--video : video path '
                                                  '--gamma : gamma stretching ex) True')
-    parser.add_argument('--ql',default=3, type=int, required=True)
+    parser.add_argument('--ql',default=4, type=int, required=True)
     parser.add_argument('--save',default=True, type=bool, required=True)
     parser.add_argument('--video', default=None, type=str, required=True)
     parser.add_argument('--gamma', default=False, type=bool, required=True)
     args = parser.parse_args()
-    s = RGLARE(args.video, args.ql, args.save, args.gamma)
+    main = RGLARE(args.video, args.ql, args.save, args.gamma)
+    main.video_gpu()
