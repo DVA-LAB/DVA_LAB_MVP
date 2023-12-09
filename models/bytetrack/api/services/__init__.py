@@ -1,1 +1,0 @@
-from .inference_service import Predictor, predict_image
