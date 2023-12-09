@@ -90,7 +90,7 @@ curl -X 'POST' \
 영상에서 특정 포인트 2개와 그 사이의 실제 거리 정보를 서버로 보내려면 아래 curl 명령어를 사용하세요:
 ```bash
 curl -X 'POST' \
-  'http://112.216.237.124:8000/GSD/' \
+  'http://112.216.237.124:8005/user_input/' \
   -H 'accept: application/json' \
   -H 'Content-Type: application/json' \
   -d '{

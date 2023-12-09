@@ -51,6 +51,7 @@ async def upload_video(file: UploadFile = File(...), preprocess: bool = Form(...
             )
             remover = remove_glare.RGLARE(file_location, save_path, 4, True, True)
             remover.video_gpu()
+            # TODO@jh: GPU cache clear 확인 필요
             process_f_time = time.time()
             print(
                 f"removing glare time: {round(process_f_time - process_s_time, 0)} sec"
