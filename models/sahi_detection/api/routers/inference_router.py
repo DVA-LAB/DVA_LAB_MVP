@@ -105,12 +105,14 @@ class Predictor(object):
         self,
         det_model,
         cls_map,
+        sliced_path,
         device=torch.device("cuda:0"),
         fp16=False,
         args = None
     ):
         self.det_model = det_model
         self.cls_map = cls_map
+        self.sliced_path = sliced_path
         self.device = device
         self.fp16 = fp16
         self.args = args
@@ -132,9 +134,12 @@ class Predictor(object):
         img_info["width"] = width
         img_info["raw_img"] = img
         
-        file_name_without_extension, _ = os.path.splitext(os.path.basename(img_path))
-        result = get_sliced_prediction(img_path, self.det_model, slice_height=1024, slice_width=1024, output_file_name=file_name_without_extension)
-    
+        if self.sliced_path != None:
+            file_name_without_extension, _ = os.path.splitext(os.path.basename(img_path))
+            result = get_sliced_prediction(img_path, self.det_model, slice_height=1024, slice_width=1024, output_file_name=file_name_without_extension, interim_dir = self.sliced_path)
+        else:
+            result = get_sliced_prediction(img_path, self.det_model, slice_height=1024, slice_width=1024)
+        
         det_outputs = []
         for ann in result.to_coco_annotations():
             bbox = ann['bbox']
@@ -178,7 +183,7 @@ def write_csv(csv_file_path, det_results):
     print(f"데이터가 {csv_file_path}에 저장되었습니다.")
 
 
-def main(img_path=None, csv_path=None):
+def main(img_path=None, csv_path=None, sliced_path = None):
     args = make_parser().parse_args()
 
     args.device = torch.device("cuda" if args.device == "gpu" else "cpu")
@@ -241,7 +246,7 @@ def main(img_path=None, csv_path=None):
         m_cls_idx = cfg.CLASSES.index(cls)
         cls_map[m_cls_idx] = idx
 
-    predictor = Predictor(detection_model, cls_map, args.device, args.fp16, args)
+    predictor = Predictor(detection_model, cls_map, sliced_path, args.device, args.fp16, args)
 
     current_time = time.localtime()
     if args.demo == "image":
@@ -262,6 +267,7 @@ async def inference(request: Request):
     data = await request.json()
     img_path = data.get("img_path")
     csv_path = data.get("csv_path")
-    print(img_path,csv_path)
-    main(img_path, csv_path)
+    sliced_path = data.get("sliced_path")
+
+    main(img_path, csv_path, sliced_path)
     return

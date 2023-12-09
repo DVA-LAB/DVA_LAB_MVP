@@ -126,7 +126,7 @@ def get_sliced_prediction(
     image,
     detection_model=None,
     output_file_name=None,  # ADDED OUTPUT FILE NAME TO (OPTIONALLY) SAVE SLICES
-    interim_dir="slices/",  # ADDED INTERIM DIRECTORY TO (OPTIONALLY) SAVE SLICES
+    interim_dir=None,  # ADDED INTERIM DIRECTORY TO (OPTIONALLY) SAVE SLICES
     slice_height: int = None,
     slice_width: int = None,
     overlap_height_ratio: float = 0.2,
@@ -202,8 +202,7 @@ def get_sliced_prediction(
     slice_image_result = slice_image(
         image=image,
         output_file_name=output_file_name,  # ADDED OUTPUT FILE NAME TO (OPTIONALLY) SAVE SLICES
-        # output_dir=interim_dir,  # ADDED INTERIM DIRECTORY TO (OPTIONALLY) SAVE SLICES
-        output_dir= "/home/dva3/workspace/DVA_sahi/ByteTrack/slices",
+        output_dir=interim_dir,  # ADDED INTERIM DIRECTORY TO (OPTIONALLY) SAVE SLICES
         slice_height=slice_height,
         slice_width=slice_width,
         overlap_height_ratio=overlap_height_ratio,

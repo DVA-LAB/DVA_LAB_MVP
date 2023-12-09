@@ -352,7 +352,7 @@ def slice_image(
 
     image_pil_arr = np.asarray(image_pil)
     # iterate over slices
-    for slice_bbox in slice_bboxes:
+    for idx, slice_bbox in enumerate(slice_bboxes, 1):
         n_ims += 1
 
         # extract image
@@ -376,7 +376,13 @@ def slice_image(
             suffix = ".png"
 
         # set image file name and path
-        slice_file_name = f"{output_file_name}_{slice_suffixes}{suffix}"
+        idx = str(idx)
+        if output_dir is not None:
+            new_path = os.path.join(output_dir, output_file_name)
+            Path(new_path).mkdir(parents=True, exist_ok=True)
+            slice_file_name = f"{output_file_name}/{idx.zfill(4)}_{slice_suffixes}{suffix}"
+        else:
+            slice_file_name = f"{output_file_name}_{idx.zfill(4)}_{slice_suffixes}{suffix}"
 
         # create coco image
         slice_width = slice_bbox[2] - slice_bbox[0]
