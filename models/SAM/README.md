@@ -16,7 +16,7 @@ sample_bboxes = [
 segment = Segment("cpu")
 img = cv2.imread(sample_img)
 masks = segment.do_seg(img, sample_bboxes)
-# segment.show_mask(masks, random_color=True) # mask만 보고 싶을 때
+# SAM.show_mask(masks, random_color=True) # mask만 보고 싶을 때
 segment.show_mask_bbox(masks, sample_bboxes, random_color=True)
 ```
 

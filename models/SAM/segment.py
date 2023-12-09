@@ -99,5 +99,5 @@ if __name__ == "__main__":
     img = cv2.imread(sample_img)
     int_bbox = [[int(coord) for coord in convert_to_xyxy(bbox)] for bbox in sample_bboxes_coco]
     masks = segment.do_seg(img, int_bbox)
-    # segment.show_mask(masks, random_color=True)
+    # SAM.show_mask(masks, random_color=True)
     segment.show_mask_bbox(masks, int_bbox, random_color=True, save=save_img)
