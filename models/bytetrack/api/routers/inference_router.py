@@ -2,11 +2,13 @@ from fastapi import APIRouter, Depends, status, Request
 
 import argparse
 import time
+import os
 
 from loguru import logger
 
 from api.services import BYTETracker
 from api.services import Timer
+from interface.request import TrackingRequest
 
 import numpy as np
 
@@ -99,9 +101,9 @@ router = APIRouter(tags=["bytetrack"])
     status_code=status.HTTP_200_OK,
     summary="bytetrack",
 )
-async def inference(request: Request):
-    data = await request.json()
-    det_result_path = data.get("det_result_path")
-    result_path = data.get("result_path")
+async def inference(body: TrackingRequest):
+    det_result_path = body.det_result_path
+    result_path = body.result_path
+    os.makedirs(os.path.dirname(result_path), exist_ok=True)
     main(det_result_path, result_path)
-    return
+    return result_path
