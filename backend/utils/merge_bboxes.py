@@ -2,36 +2,58 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import csv
 
-def plot_detections(anomaly_detections, yolo_detections, final_detections, image_size=(4000, 3000)):
+def plot_detections(anomaly_detections, yolo_detections, output_detections, image_size=(4000, 3000)):
     """
-    Plots detections from anomaly detection and YOLO on a black background image.
-    Anomaly detections are plotted in red, YOLO detections in blue, and final detections in orange.
-    [x, y, x+w, y+h]
+    Plots detections from anomaly detection, YOLO, and final detections on a black background image.
+    Anomaly detections, YOLO detections, and final detections are plotted in red, blue, and green, respectively.
+    Detections format: [frame, x, y, x+w, y+h, ...]
     """
-    fig, ax = plt.subplots(1, figsize=(12, 9))
-    ax.set_xlim(0, image_size[0])
-    ax.set_ylim(image_size[1], 0)
-    ax.imshow([[0,0],[0,0]], cmap='gray', extent=[0, image_size[0], 0, image_size[1]])
-
-    # Plot anomaly detections in red
+    # Convert lists into dictionaries grouped by frame
+    grouped_anomaly_outputs = {}
     for det in anomaly_detections:
-        box = det[2:6]
-        rect = patches.Rectangle((box[0], box[1]), box[2], box[3], linewidth=1, edgecolor='red', facecolor='red')
-        ax.add_patch(rect)
+        frame = int(det[0])
+        grouped_anomaly_outputs.setdefault(frame, []).append(det)
 
-    # Plot YOLO detections in blue
+    grouped_detection_outputs = {}
     for det in yolo_detections:
-        box = det[2:6]
-        rect = patches.Rectangle((box[0], box[1]), box[2], box[3], linewidth=1, edgecolor='blue', facecolor='blue')
-        ax.add_patch(rect)
+        frame = int(det[0])
+        grouped_detection_outputs.setdefault(frame, []).append(det)
 
-    # Highlight final detections in orange
-    for det in final_detections:
-        box = det[1:5]
-        rect = patches.Rectangle((box[0], box[1]), box[2]-box[0], box[3]-box[1], linewidth=1, edgecolor='white', facecolor='none')
-        ax.add_patch(rect)
+    grouped_output_detections = {}
+    for det in output_detections:
+        frame = int(det[0])
+        grouped_output_detections.setdefault(frame, []).append(det)
 
-    plt.show()
+    # Set of all frames
+    all_frames = set(grouped_anomaly_outputs.keys()) | set(grouped_detection_outputs.keys()) | set(grouped_output_detections.keys())
+
+    for frame in all_frames:
+        fig, ax = plt.subplots(1, figsize=(12, 9))
+        ax.set_xlim(0, image_size[0])
+        ax.set_ylim(image_size[1], 0)
+        ax.imshow([[0,0],[0,0]], cmap='gray', extent=[0, image_size[0], 0, image_size[1]])
+        ax.set_title(f"Frame {frame}")
+
+        # Plot anomaly detections in red
+        for det in grouped_anomaly_outputs.get(frame, []):
+            box = det[2:6]
+            rect = patches.Rectangle((box[0], box[1]), box[2], box[3], linewidth=1, edgecolor='red', facecolor='none')
+            ax.add_patch(rect)
+
+        # Plot YOLO detections in blue
+        for det in grouped_detection_outputs.get(frame, []):
+            box = det[2:6]
+            rect = patches.Rectangle((box[0], box[1]), box[2], box[3], linewidth=1, edgecolor='blue', facecolor='none')
+            ax.add_patch(rect)
+
+        # Plot final detections in green
+        for det in grouped_output_detections.get(frame, []):
+            box = det[1:5]
+            rect = patches.Rectangle((box[0], box[1]), box[2]-box[0], box[3]-box[1], linewidth=1, edgecolor='green', facecolor='none')
+            ax.add_patch(rect)
+
+        plt.show()
+
 
 def calculate_distance(box1, box2):
     """
@@ -57,7 +79,7 @@ def match_and_ensemble(anomaly_outputs, detection_outputs, use_anomaly, output_f
     for det in detection_outputs:
         frame = int(det[0])
         grouped_detection_outputs.setdefault(frame, []).append(det)
-
+    
     # Process each frame
     for frame in grouped_detection_outputs:
         yolo_dets = grouped_detection_outputs[frame]
@@ -94,6 +116,7 @@ def read_file(file_path):
     detections = [[float(x) for x in line.strip().split(',')] for line in lines]
     return detections
 
+
 def read_csv_file(file_path):
     detections = []
     with open(file_path, 'r') as file:
@@ -107,9 +130,9 @@ def read_csv_file(file_path):
 if __name__ == "__main__":
     use_anomaly = True
     # Define file paths
-    anomaly_file_path = 'in/anomaly.txt'
-    detection_file_path = 'in/detection.txt'
-    output_file_path = 'out/output.txt'
+    anomaly_file_path = '/Users/seowoo/Desktop/Development/DVA_LAB/in/anomaly.csv'
+    detection_file_path = '/Users/seowoo/Desktop/Development/DVA_LAB/in/detection.csv'
+    output_file_path = '/Users/seowoo/Desktop/Development/DVA_LAB/out/output.txt'
 
     # Read inputs from files
     anomaly_detection_output = read_file(anomaly_file_path)
