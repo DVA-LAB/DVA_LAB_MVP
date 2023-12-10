@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+import csv
 
 def plot_detections(anomaly_detections, yolo_detections, final_detections, image_size=(4000, 3000)):
     """
@@ -91,6 +92,14 @@ def read_file(file_path):
     with open(file_path, 'r') as file:
         lines = file.readlines()
     detections = [[float(x) for x in line.strip().split(',')] for line in lines]
+    return detections
+
+def read_csv_file(file_path):
+    detections = []
+    with open(file_path, 'r') as file:
+        csv_reader = csv.reader(file)
+        for row in csv_reader:
+            detections.append([float(x) for x in row])
     return detections
 
 
