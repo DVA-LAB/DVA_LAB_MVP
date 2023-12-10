@@ -42,7 +42,6 @@ async def anomaly_inference(request_body: SegRequest):
 def ad_slice_inference(frame_path, slices_path, output_path):
     config = get_configurable_parameters("efficient_ad")
     config.trainer.resume_from_checkpoint = os.path.join(add_path, 'services', 'weights', 'model.ckpt')
-    slice_frame = slicing(frame, patch_size, overlap)
 
     efficient_ad = get_model(config)
     callbacks = get_callbacks(config)
@@ -54,7 +53,7 @@ def ad_slice_inference(frame_path, slices_path, output_path):
         else None
     )
     
-    image_size = (patch_size*resize_rate, patch_size*resize_rate)
+    image_size = (config.dataset.image_size[0], config.dataset.image_size[1])
     center_crop = config.dataset.get("center_crop")
     if center_crop is not None:
         center_crop = tuple(center_crop)
