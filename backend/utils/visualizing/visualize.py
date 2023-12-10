@@ -4,11 +4,23 @@ import argparse
 import numpy as np
 import pandas as pd
 from PIL import Image, ImageDraw, ImageFont
-from backend.utils.extract_meta import extract_video_metadata
+from utils.extract_meta import extract_video_metadata
 
 LEGAL_SPEED = 50
 GSD = 0.06 #m/px
 merged_dolphin_center = None
+
+def set_legal_speed(speed):
+    global LEGAL_SPEED
+    LEGAL_SPEED = speed
+
+def set_gsd(gsd):
+    global GSD
+    GSD = gsd
+
+def set_merged_dolphin_center(center):
+    global merged_dolphin_center
+    merged_dolphin_center = center
 
 def read_log_file(log_path):
     # Reading the CSV file into a DataFrame
@@ -108,7 +120,7 @@ def merge_bboxes(bboxes):
     return (min_x, min_y, max_x, max_y)
 
 
-def main():
+def show_result(log_path, video_path, output_video, bbox_path):
     parser = argparse.ArgumentParser()
     parser.add_argument('--log_path', type=str, default='in/DJI_0119_30.csv')
     parser.add_argument('--video_path', type=str, default='in/input.mp4')
@@ -116,13 +128,19 @@ def main():
     parser.add_argument('--bbox_path', type=str, default='in/bbox.txt')
     args = parser.parse_args()
 
+    args.log_path = log_path
+    args.video_path = video_path
+    args.output_video = output_video
+    args.bbox_path = bbox_path
+
     logs = read_log_file(args.log_path)
     print(logs.columns)
     # bbox 데이터를 읽어옵니다.
     bbox_data = read_bbox_data(args.bbox_path)
     frame_rate, _, frame_width, frame_height = extract_video_metadata(args.video_path)
     
-    font = ImageFont.truetype('AppleGothic.ttf', 40)
+    # font = ImageFont.truetype('AppleGothic.ttf', 40)
+    font = ImageFont.truetype('/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc', 40)
     fourcc = cv2.VideoWriter_fourcc(*'MP4V')
     out = cv2.VideoWriter(args.output_video, fourcc, frame_rate, (frame_width, frame_height))
     cap = cv2.VideoCapture(args.video_path)
@@ -260,15 +278,15 @@ def main():
         # 나머지 코드
         img = np.array(image)
         out.write(img)
-        cv2.imshow(args.video_path, img)
-        if cv2.waitKey(1) & 0xFF == ord("q"):
-            break
+        # cv2.imshow(args.video_path, img)
+        # if cv2.waitKey(1) & 0xFF == ord("q"):
+        #     break
 
         frame_count += 1
         
     cap.release()
     out.release()
-    cv2.destroyAllWindows()
+    # cv2.destroyAllWindows()
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()
