@@ -16,6 +16,7 @@ def create_app() -> FastAPI:
 
     app.include_router(routers.data_router.router)
     app.include_router(routers.model_router.router)
+    app.include_router(routers.result_router.router)
     return app
 
 app = create_app()
