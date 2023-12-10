@@ -12,9 +12,9 @@ from yolox.utils.visualize import plot_tracking
 from yolox.tracker.byte_tracker import BYTETracker
 from yolox.tracking_utils.timer import Timer
 
-from sahi.models.yolox import YoloxDetectionModel
-from sahi.predict import get_sliced_prediction
-from sahi import AutoDetectionModel
+from .sahi.models.yolox import YoloxDetectionModel
+from .sahi.predict import get_sliced_prediction
+from .sahi import AutoDetectionModel
 
 from .utils import config
 
