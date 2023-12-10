@@ -266,7 +266,7 @@ router = APIRouter(tags=["sahi"])
 async def inference(request: SahiRequest.SahiRequest):
     img_path = request.img_path
     csv_path = request.csv_path
-    os.makedirs(csv_path, exist_ok=True)
+    os.makedirs(os.path.dirname(csv_path), exist_ok=True)
     sliced_path = request.sliced_path
 
     main(img_path, csv_path, sliced_path)
