@@ -263,11 +263,11 @@ router = APIRouter(tags=["sahi"])
     status_code=status.HTTP_200_OK,
     summary="detection inference",
 )
-async def inference(request: Request):
-    data = await request.json()
-    img_path = data.get("img_path")
-    csv_path = data.get("csv_path")
-    sliced_path = data.get("sliced_path")
+async def inference(request: SahiRequest.SahiRequest):
+    img_path = request.img_path
+    csv_path = request.csv_path
+    os.makedirs(csv_path, exist_ok=True)
+    sliced_path = request.sliced_path
 
     main(img_path, csv_path, sliced_path)
-    return
+    return img_path, csv_path, sliced_path

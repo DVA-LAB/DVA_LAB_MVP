@@ -6,9 +6,9 @@ router = APIRouter(tags=["model"])
 
 
 @router.post(
-    "/model/inference",
+    "/inference",
     status_code=status.HTTP_200_OK,
-    summary="segmentation",
+    summary="AI model run",
 )
 async def model_inference(body: UserInput):
     point_1 = body.point1
@@ -18,3 +18,4 @@ async def model_inference(body: UserInput):
     # TODO@jh: mdoel inference 추가
 
     return point_1, point_2, distance
+
