@@ -17,27 +17,31 @@ use_segment = False
     summary="AI model run",
 )
 async def model_inference(body: ModelRequest):
+    # Detection
     img_path, csv_path, sliced_path = inference_detection(body.frame_path, body.detection_save_path, body.sliced_path)
+
     if use_segment:
         # TODO@jh: check segment service
         for frame in glob.glob(os.path.join(body.frame_path, '*.jpg')):
             frame_path, slices_path, output_path = inference_segmentation(frame, body.sliced_path, output_path)
 
-    # merge function test
-    anomaly_detection_output = read_csv_file(csv_path)
-    detection_output = read_csv_file(csv_path)
-
+    # Bbox merge
     os.makedirs(body.output_merge_path, exist_ok=True)
     delete_files_in_folder(body.output_merge_path)
-
+    anomaly_detection_output = read_csv_file(csv_path)
+    detection_output = read_csv_file(csv_path)
+    detection_save_path = os.path.join(body.output_merge_path, 'result.txt')
     output = match_and_ensemble(anomaly_detection_output, detection_output, use_anomaly=True,
-                                output_file=os.path.join(body.output_merge_path, 'result.txt'))
+                                output_file=detection_save_path)
     # TODO@jh: change to plt save function
     # plot_detections(anomaly_detection_output, detection_output, output)
 
-    # TODO@jh: tracking
-    # TODO@jh: visualization
-    return output
+    # Tracking
+    tracking_save_path = os.path.join('test', 'model', 'tracking', 'result.txt')
+    os.makedirs(os.path.dirname(tracking_save_path), exist_ok=True)
+    delete_files_in_folder(os.path.dirname(tracking_save_path))
+    result_path = inference_tracking(detection_save_path, tracking_save_path)
+    return result_path
 
 
 def inference_detection(img_path, csv_path, sliced_path):
@@ -65,6 +69,20 @@ def inference_segmentation(frame_path, slices_path, output_path):
         "frame_path": frame_path,
         "slices_path": slices_path,
         "output_path": output_path
+    }
+    response = requests.post(url, headers=headers, data=json.dumps(data))
+    return response.json()
+
+
+def inference_tracking(detection_path, save_path):
+    url = "http://localhost:8004/bytetrack/track"
+    headers = {
+        "accept": "application/json",
+        "Content-Type": "application/json",
+    }
+    data = {
+        "det_result_path": detection_path,
+        "result_path": save_path
     }
     response = requests.post(url, headers=headers, data=json.dumps(data))
     return response.json()
