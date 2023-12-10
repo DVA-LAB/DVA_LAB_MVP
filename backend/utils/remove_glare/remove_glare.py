@@ -118,7 +118,8 @@ class RGLARE:
                 self.out.write(out_frame)
                 pbar.update()
                 self.frame_count+=1
-            self.out.release()
+        self.cap.release()
+        self.out.release()
 
     def frame_gpu(self) -> Union[np.ndarray]:
         if self.queue_full:
