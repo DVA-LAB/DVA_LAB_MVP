@@ -37,7 +37,7 @@ async def upload_video(file: UploadFile = File(...), preprocess: bool = Form(...
         with open(file_location, "wb") as file_object:
             shutil.copyfileobj(file.file, file_object)
         save_time = time.time()
-        print(f"video saving time: {round(save_time - s_time, 0)} sec")
+        # print(f"video saving time: {round(save_time - s_time, 0)} sec")
 
         # TODO@jh: frame parsing을 background task로 처리하는 경우, 다 parsing되기전에 사용자 요청이 오는 경우 처리가 힘들지만 먼가 방법 고안이 필요함
         if preprocess:
