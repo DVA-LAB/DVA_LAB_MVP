@@ -29,7 +29,6 @@ def estimate_focal_length(image_width: int, sensor_width_mm: float, fov_degrees:
     - Estimated focal length in pixels.
     """
 
-    # sensor_width_mm = 6.3  # for 1/2.3" sensor, usually around 6.3mm
     focal_length_mm = (sensor_width_mm / 2) / math.tan(np.radians(fov_degrees / 2))
     focal_length_px = (focal_length_mm / sensor_width_mm) * image_width
     return focal_length_px
@@ -40,7 +39,7 @@ def get_params_from_csv(csv_file, idx = None):
     df.loc[:,"R"] = df["GIMBAL.roll"] # +  df["OSD.roll"]
     df.loc[:,"P"] = df["GIMBAL.pitch"] # + df["OSD.pitch"]
     df.loc[:,"Y"] = df["GIMBAL.yaw"] # + df["OSD.yaw"]
-    df.loc[:,"V"] = df["adjusted height"] # *0.3048 # *1000 # ft to M 
+    df.loc[:,"V"] = df["adjusted height"] # Meter
     df.loc[:,"Drone"] =  df["Drone type"].str.upper()
     
     df =  df.loc[:,["R", "P", "Y", "V", "Drone"]]
@@ -142,6 +141,8 @@ def BEV_1(frame_num, frame_path, csv_path, objects, realdistance, dst_dir, DEV =
     try :
         b, g, r, a, rectified_poinst = rectify_plane_parallel_with_point(bbox, boundary_rows, boundary_cols, gsd, eo, ground_height, R, focal_length, pixel_size, image, object_points)
         objects[3:3 + 4] = rectified_poinst
+        objects[5] -= objects[3] # Width
+        objects[6] -= objects[4] # Height
         if DEV : 
             create_pnga_optical_with_obj_for_dev(b, g, r, a, bbox, gsd, 5186, img_dst, rectified_poinst)  
         else : 
@@ -251,6 +252,8 @@ def BEV_2(frame_num, frame_path, csv_path, objects, dst_dir, gsd, DEV = False):
     try :
         b, g, r, a, rectified_poinst = rectify_plane_parallel_with_point(bbox, boundary_rows, boundary_cols, gsd, eo, ground_height, R, focal_length, pixel_size, image, object_points)
         objects[3:3 + 4] = rectified_poinst
+        objects[5] -= objects[3] # Width
+        objects[6] -= objects[4] # Height
         if DEV : 
             create_pnga_optical_with_obj_for_dev(b, g, r, a, bbox, gsd, 5186, img_dst, rectified_poinst)  
         else : 
@@ -264,15 +267,15 @@ def BEV_2(frame_num, frame_path, csv_path, objects, dst_dir, gsd, DEV = False):
 if __name__ == "__main__":
     ### Test Data ###
     frame_num = 200
-    frame_path = ".\Orthophoto_Maps\\Data\\frame_img\\DJI_0119_200.png"
-    csv_path = ".\Orthophoto_Maps\Data\DJI_0119.csv" 
+    frame_path = "C:\\Users\\MYJS\\Desktop\\DVA\\master_Pjt\\DVA_LAB\\models\\BEV\\api\\services\\Orthophoto_Maps\\Data\\frame_img\\DJI_0119_200.png"
+    csv_path = "C:\\Users\\MYJS\\Desktop\\DVA\\master_Pjt\\DVA_LAB\\models\\BEV\\api\\services\\Orthophoto_Maps\\Data\\DJI_0119.csv" 
     col1, row1  = 528.60, 537.70
     col2, row2  = col1 + 134.01, row1 + 258.51
 
     objects = [None, None, None, col1, row1, col2, row2, None, -1, -1, -1]
     realdistance = 20
 
-    dst_dir = ".\\Orthophoto_Maps\\Data\\result"
+    dst_dir = "C:\\Users\\MYJS\\Desktop\\DVA\\master_Pjt\\DVA_LAB\\models\\BEV\\api\\services\\Orthophoto_Maps\\Data\\result"
     # Test # 
     DEV = False
     rst, img_dst, objects, pixel_size, gsd = BEV_1(frame_num, frame_path, csv_path, objects, realdistance, dst_dir, DEV)
@@ -284,3 +287,6 @@ if __name__ == "__main__":
 
     objects = [None, None, None, col1, row1, col2, row2, None, -1, -1, -1]
     rst, img_dst, objects = BEV_2(frame_num, frame_path, csv_path, objects, dst_dir, gsd, DEV)
+    print("GSD2 Done")
+
+    
