@@ -134,3 +134,19 @@ class Refiner:
         else:
             color = np.array([30 / 255, 144 / 255, 255 / 255, 0.6])
         return color
+
+    @staticmethod
+    def calculate_length_along_major_axis(mask):
+        # 객체의 좌표 추출
+        y_coords, x_coords = np.where(mask == 255)
+        coords = np.column_stack((x_coords, y_coords))
+
+        # PCA를 사용하여 주축 계산
+        mean, eigenvectors = cv2.PCACompute(coords, mean=None)
+
+        # 주축을 따라 길이 측정
+        proj_coords = (coords - mean).dot(eigenvectors.T)
+        min_coord, max_coord = np.min(proj_coords, axis=0), np.max(proj_coords, axis=0)
+        length = np.linalg.norm(max_coord - min_coord)
+
+        return length
