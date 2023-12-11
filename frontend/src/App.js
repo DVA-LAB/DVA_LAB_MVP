@@ -11,9 +11,9 @@ import axios from 'axios';
 
 const { Title } = Typography;
 
-const API_URL =  'http://localhost:8000';
-//
-// const API_URL='http://112.216.237.124:8000';
+// const API_URL =  'http://localhost:8000';
+const API_URL='http://112.216.237.124:8000';
+const BEV_URL= 'http://112.216.237.124:8001';
 
 class App extends Component {
   constructor(props) {
@@ -497,9 +497,9 @@ loadVideo = () => {
     // Remove the last part (the extension)
     const fileNameWithoutExtension = parts.slice(0, -1).join('.');
     const frameNumberPadded = frameNumber.toString().padStart(5, '0'); // Pad frame number with leading zeros
-    const framePath = `${fileNameWithoutExtension}_${frameNumberPadded}.jpg`; 
-    const csvPath = "sync_log.csv";
-    const dstDir = "test/dstDir"; // Destination directory
+    const framePath = `/home/dva4/dva/backend/test/frame_origin/${fileNameWithoutExtension}_${frameNumberPadded}.jpg`; 
+    const csvPath = `/home/dva4/dva/backend/test/sync_csv/sync_log.csv`;
+    const dstDir = "api/services/Orthophoto_Maps/Data/result"; // Destination directory
   
     const formatObjectsArray = (lastEntry) => {
       if (!lastEntry) return null;
@@ -531,27 +531,27 @@ loadVideo = () => {
       this.setState({ isLoading: true });
   
       try {
-        const response = await axios.post(`${API_URL}/bev1`, payload, {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
+        const response = await axios.post(`${BEV_URL}/bev1`, payload, {
+            responseType: 'blob',  // Set response type to 'blob' for file download
         });
-  
-        // Assuming the response contains the path to the BEV image
-        if (response.data && response.data.bevImagePath) {
-          this.setState({
-            showBEV: true,
-            bevImageSrc: response.data.bevImagePath,
-            isLoading: false
-          });
+    
+        if (response.data) {
+            const blob = new Blob([response.data], { type: 'image/png' });
+            const bevImageSrc = URL.createObjectURL(blob);
+    
+            this.setState({
+                showBEV: true,
+                bevImageSrc,  // Use the created Blob URL here
+                isLoading: false,
+            });
         } else {
-          console.error("BEV conversion failed");
-          this.setState({ isLoading: false });
+            console.error("BEV conversion failed");
+            this.setState({ isLoading: false });
         }
-      } catch (error) {
+    } catch (error) {
         console.error("Error during API call:", error);
         this.setState({ isLoading: false });
-      }
+    }
     } else {
       this.setState({
         showBEV: false,
@@ -1080,16 +1080,16 @@ drawLabel = (startPoint, endPoint, text) => {
               </div>
             )}
             
-            <video
+            {!showBEV&&(<video
               ref={this.videoRef}
               crossOrigin='anonymous'
               src={this.state.videoSrc} // Set the src attribute to use videoSrc from the state
               onTimeUpdate={this.updateFrameNumber}
               style={videoStyle}
               // onLoadedData={this.handleVideoLoaded}
-            />
+            />)}
 
-{!videoPlaying && (
+{!videoPlaying && !showBEV && (
         <canvas
           ref={this.canvasRef}
           onMouseDown={this.handleMouseDown}
@@ -1111,7 +1111,6 @@ drawLabel = (startPoint, endPoint, text) => {
                     alt="Bird's Eye View"
                     ref={this.imageRef}
                     style={{ width: '100%', height: '100%' }}
-                    onClick={this.handleMouseDown}
                   />
                 )}
             
@@ -1221,7 +1220,7 @@ drawLabel = (startPoint, endPoint, text) => {
               <Button type="primary" onClick={this.handleMouseDown}>Draw Line</Button>
               )
             } */}
-            {this.state.syncCompleted&& aiModelActive && !videoPlaying && videoSrc && (
+            {!showBEV && this.state.syncCompleted&& aiModelActive && !videoPlaying && videoSrc && (
               <Button onClick={this.toggleAddingInfo}>{addingInfo ? 'Disable Adding Info' : 'Enable Adding Info'}</Button>
             )}
             {/* {
