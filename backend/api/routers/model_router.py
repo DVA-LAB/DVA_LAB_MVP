@@ -12,9 +12,6 @@ from utils.merge_bboxes import (match_and_ensemble, plot_detections,
 router = APIRouter(tags=["model"])
 
 
-use_segment = False
-
-
 @router.post(
     "/inference",
     status_code=status.HTTP_200_OK,
@@ -27,12 +24,12 @@ async def model_inference(body: ModelRequest):
             body.frame_path, body.detection_save_path, body.sliced_path
         )
 
-        if use_segment:
-            # TODO@jh: check segment service
-            for frame in glob.glob(os.path.join(body.frame_path, "*.jpg")):
-                frame_path, slices_path, output_path = inference_segmentation(
-                    frame, body.sliced_path, output_path
-                )
+        # if use_segment=True:
+        #     # TODO@jh: check segment service
+        #     for frame in glob.glob(os.path.join(body.frame_path, "*.jpg")):
+        #         frame_path, slices_path, output_path = inference_segmentation(
+        #             frame, body.sliced_path, output_path
+        #         )
 
         # Bbox merge
         os.makedirs(body.output_merge_path, exist_ok=True)
@@ -69,9 +66,9 @@ async def model_inference(body: ModelRequest):
 그리고 inference과정에서 생성한 이미지 패치를 저장할 경로(`sliced_path`)를 입력 받습니다.
 
 ### 예시
-- `img_path`: "/home/dva4/dva/backend/test/frame_origin"
-- `csv_path`: "/home/dva4/dva/backend/test/model/detection/result.csv"
-- `sliced_path`: "/home/dva4/dva/backend/test/model/sliced"
+- `img_path`: /home/dva4/dva/backend/test/frame_origin
+- `csv_path`: /home/dva4/dva/backend/test/model/detection/result.csv
+- `sliced_path`: /home/dva4/dva/backend/test/model/sliced
 """,
 )
 async def inference_detection(img_path, csv_path, sliced_path):
@@ -102,12 +99,12 @@ async def inference_detection(img_path, csv_path, sliced_path):
 그리고 결과를 저장할 경로(`output_path`)를 입력 받습니다.
 
 ### 예시
-- `frame_path`: "/home/dva4/dva/backend/test/frame_origin/DJI_0119_30_00000.jpg"
-- `slices_path`: "/home/dva4/dva/backend/test/model/sliced"
-- `output_path`: "/home/dva4/dva/backend/test/model/segment/DJI_0119_30_00000.jpg"
+- `frame_path`: /home/dva4/dva/backend/test/frame_origin/DJI_0119_30_00000.jpg
+- `slices_path`: /home/dva4/dva/backend/test/model/sliced
+- `output_path`: /home/dva4/dva/backend/test/model/segment/DJI_0119_30_00000.jpg
 """,
 )
-def inference_segmentation(frame_path, slices_path, output_path):
+async def inference_segmentation(frame_path, slices_path, output_path):
     url = "http://localhost:8003/anomaly/inference"
     headers = {
         "accept": "application/json",
@@ -129,6 +126,41 @@ def inference_segmentation(frame_path, slices_path, output_path):
 
 
 @router.post(
+    "/inference/merge",
+    status_code=status.HTTP_200_OK,
+    summary="detection - segmentation bbox merge",
+    description="""\
+이 엔드포인트는 detection과 segmentation 모델에서 나온 bbox 결과를 병합 합니다. \
+객체 탐지 결과 csv_path (`csv_path`)와 segmentation bbox 결과 (`anomaly_detection_output`) \
+그리고 병합한 결과를 저장할 (`output_merge_path`)를 입력 받습니다..
+
+### 예시
+- `output_merge_path`: /home/dva4/dva/backend/test/model/merged
+- `csv_path`: /home/dva4/dva/backend/test/model/detection/result.csv
+- `anomaly_detection_output`: /home/dva4/dva/backend/test/model/detection/result.csv -> 임시로 detection csv를 받게 함
+""",
+)
+async def inference_merge(
+    output_merge_path, csv_path, anomaly_detection_output, use_anomaly: bool = True
+):
+    try:
+        os.makedirs(output_merge_path, exist_ok=True)
+        delete_files_in_folder(output_merge_path)
+        anomaly_detection_output = read_csv_file(csv_path)
+        detection_output = read_csv_file(csv_path)
+        detection_save_path = os.path.join(output_merge_path, "result.txt")
+        output = match_and_ensemble(
+            anomaly_detection_output,
+            detection_output,
+            use_anomaly=use_anomaly,
+            output_file=detection_save_path,
+        )
+        return f"file saved: {detection_save_path}"
+    except Exception as e:
+        return f"Error: {str(e)}"
+
+
+@router.post(
     "/inference/tracking",
     status_code=status.HTTP_200_OK,
     summary="object tracking",
@@ -137,11 +169,11 @@ def inference_segmentation(frame_path, slices_path, output_path):
 사용자가 제공한 detection 결과(`det_result_path`)를 입력받아서 결과를 `result_path`에 저장합니다.
 
 ### 예시
-- `det_result_path`: "/home/dva4/dva/backend/test/model/merged/result.txt"
-- `result_path`: "/home/dva4/dva/backend/test/model/tracking/result.txt"
+- `det_result_path`: /home/dva4/dva/backend/test/model/merged/result.txt
+- `result_path`: /home/dva4/dva/backend/test/model/tracking/result.txt
 """,
 )
-def inference_tracking(detection_path, save_path):
+async def inference_tracking(detection_path, save_path):
     url = "http://localhost:8004/bytetrack/track"
     headers = {
         "accept": "application/json",
@@ -155,7 +187,7 @@ def inference_tracking(detection_path, save_path):
             detail=f"Error in external API: {response.text}",
         )
 
-    return response.json()
+    return f"file saved: {response.json()}"
 
 
 def delete_files_in_folder(folder_path):
