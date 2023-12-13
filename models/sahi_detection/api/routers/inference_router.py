@@ -38,7 +38,7 @@ def make_parser():
         "--demo", default="image", help="demo type, eg. image, video and webcam"
     )
     parser.add_argument(
-        "--model", default="yolov5", help="Model name | yolov5, yolox, yolov8"
+        "--model", default="yolov8", help="Model name | yolov5, yolox, yolov8"
     )
     parser.add_argument("-expn", "--experiment-name", type=str, default=None)
     parser.add_argument("-n", "--name", type=str, default=None, help="model name")
@@ -61,7 +61,7 @@ def make_parser():
         type=str,
         help="If you want to use yolox, pls input your expriment description file",
     )
-    parser.add_argument("-c", "--ckpt", default="/mnt/models/best_1203.pt", type=str, help="ckpt for eval")
+    parser.add_argument("-c", "--ckpt", default="/mnt/models/v8_m_best.pt", type=str, help="ckpt for inf")
     parser.add_argument(
         "--device",
         default="gpu",
@@ -227,18 +227,6 @@ def main(img_path=None, csv_path=None, sliced_path = None):
         model_path= args.ckpt,
         device='cuda:0', # or 'cpu'
         )
-    elif args.model == 'yolox':
-        # yolox 는 class에 백그라운드를 포함하지 않음
-        classes = ('dolphin','boat')
-        # detection_model = YoloxDetectionModel(
-        #     config_path = args.exp_file,
-        #     device="cpu",
-        #     confidence_threshold=0.3,
-        #     nms_threshold=0.4,
-        #     image_size = (640,640),
-        #     model_path=args.ckpt,
-        #     classes=classes
-        # )
 
     cls_map = {}
     # det 모델과 anomaly 모델 머지 input class를 맞춰주기 위함
