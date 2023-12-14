@@ -1,14 +1,15 @@
-from autologging import logged
-from fastapi import APIRouter, Depends, status
-from interface.request import VisRequest
-from utils.visualizing.visualize import show_result, set_gsd, set_merged_dolphin_center
-import requests
-import json
 import glob
+import json
 import os
+
+import requests
+from autologging import logged
 from fastapi import (APIRouter, Depends, FastAPI, File, Form, HTTPException,
                      UploadFile, status)
 from fastapi.responses import FileResponse, JSONResponse
+from interface.request import VisRequest
+from utils.visualizing.visualize import (set_gsd, set_merged_dolphin_center,
+                                         show_result)
 
 router = APIRouter(tags=["result"])
 
@@ -19,11 +20,11 @@ router = APIRouter(tags=["result"])
     summary="visualizing result",
 )
 async def model_inference(body: VisRequest):
-    log_file = glob.glob(os.path.join(body.log_path, '*.csv'))[0]
+    log_file = glob.glob(os.path.join(body.log_path, "*.csv"))[0]
     # TODO@jh: mp4 외 영상 옵션 추가
-    video_file = glob.glob(os.path.join(body.video_path, '*.mp4'))[0]
+    video_file = glob.glob(os.path.join(body.video_path, "*.mp4"))[0]
 
-    with open(os.path.join('test', 'GSD.txt'), 'r') as f:
+    with open(os.path.join("test", "GSD.txt"), "r") as f:
         gsd = f.read()
     set_gsd(float(gsd))
 

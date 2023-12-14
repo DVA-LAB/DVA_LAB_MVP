@@ -23,19 +23,13 @@ class UserInput(BaseModel):
     class Config:
         schema_extra = {
             "example": {
-                "frame_number": 1,
+                "frame_number": 1038,
                 "point_distances": [
                     {
-                        "point1": {"x": 100, "y": 150},
-                        "point2": {"x": 200, "y": 150},
-                        "distance": 5.0
+                        "point1": {"x": 860, "y": 682},
+                        "point2": {"x": 860, "y": 1034},
+                        "distance": 8.9
                     },
-                    {
-                        "point1": {"x": 300, "y": 350},
-                        "point2": {"x": 400, "y": 350},
-                        "distance": 10.0
-                    }
-                    # 추가적인 포인트 쌍과 거리들...
                 ]
             }
         }
