@@ -41,7 +41,7 @@ async def model_inference(body: VisRequest):
 @router.post(
     "/total_gsd",
     status_code=status.HTTP_200_OK,
-    summary="visualizing result with BEV",
+    summary="구할 수 있는 모든 gsd를 구합니다.",
 )
 async def get_all_gsd(body: VisRequestBev):
     gsds = dict()

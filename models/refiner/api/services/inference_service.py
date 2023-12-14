@@ -170,7 +170,7 @@ class Refiner:
         min_point = mean + min_proj.dot(eigenvectors)
         max_point = mean + max_proj.dot(eigenvectors)
 
-        min_point = tuple(min_point[0])
-        max_point = tuple(max_point[0])
+        min_point_tuple = tuple(min_point.ravel())
+        max_point_tuple = tuple(max_point.ravel())
 
-        return min_point[0], max_point[0]
+        return min_point_tuple, max_point_tuple
