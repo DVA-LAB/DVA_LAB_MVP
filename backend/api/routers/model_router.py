@@ -19,39 +19,40 @@ router = APIRouter(tags=["model"])
 )
 async def model_inference(body: ModelRequest):
     try:
-        # Detection
-        img_path, csv_path, sliced_path = inference_detection(
-            body.frame_path, body.detection_save_path, body.sliced_path
-        )
-
-        # if use_segment=True:
-        #     # TODO@jh: check segment service
-        #     for frame in glob.glob(os.path.join(body.frame_path, "*.jpg")):
-        #         frame_path, slices_path, output_path = inference_segmentation(
-        #             frame, body.sliced_path, output_path
-        #         )
-
-        # Bbox merge
-        os.makedirs(body.output_merge_path, exist_ok=True)
-        delete_files_in_folder(body.output_merge_path)
-        anomaly_detection_output = read_csv_file(csv_path)
-        detection_output = read_csv_file(csv_path)
-        detection_save_path = os.path.join(body.output_merge_path, "result.txt")
-        output = match_and_ensemble(
-            anomaly_detection_output,
-            detection_output,
-            use_anomaly=True,
-            output_file=detection_save_path,
-        )
-        # TODO@jh: change to plt save function
-        # plot_detections(anomaly_detection_output, detection_output, output)
-
-        # Tracking
-        tracking_save_path = os.path.join("test", "model", "tracking", "result.txt")
-        os.makedirs(os.path.dirname(tracking_save_path), exist_ok=True)
-        delete_files_in_folder(os.path.dirname(tracking_save_path))
-        result_path = inference_tracking(detection_save_path, tracking_save_path)
-        return result_path
+        # # Detection
+        # img_path, csv_path, sliced_path = inference_detection(
+        #     body.frame_path, body.detection_save_path, body.sliced_path
+        # )
+        #
+        # # if use_segment=True:
+        # #     # TODO@jh: check segment service
+        # #     for frame in glob.glob(os.path.join(body.frame_path, "*.jpg")):
+        # #         frame_path, slices_path, output_path = inference_segmentation(
+        # #             frame, body.sliced_path, output_path
+        # #         )
+        #
+        # # Bbox merge
+        # os.makedirs(body.output_merge_path, exist_ok=True)
+        # # delete_files_in_folder(body.output_merge_path)
+        # anomaly_detection_output = read_csv_file(csv_path)
+        # detection_output = read_csv_file(csv_path)
+        # detection_save_path = os.path.join(body.output_merge_path, "result.txt")
+        # output = match_and_ensemble(
+        #     anomaly_detection_output,
+        #     detection_output,
+        #     use_anomaly=True,
+        #     output_file=detection_save_path,
+        # )
+        # # TODO@jh: change to plt save function
+        # # plot_detections(anomaly_detection_output, detection_output, output)
+        #
+        # # Tracking
+        # tracking_save_path = os.path.join("test", "model", "tracking", "result.txt")
+        # os.makedirs(os.path.dirname(tracking_save_path), exist_ok=True)
+        # # delete_files_in_folder(os.path.dirname(tracking_save_path))
+        # result_path = inference_tracking(detection_save_path, tracking_save_path)
+        # return result_path
+        return "for test"
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -145,7 +146,7 @@ async def inference_merge(
 ):
     try:
         os.makedirs(output_merge_path, exist_ok=True)
-        delete_files_in_folder(output_merge_path)
+        # delete_files_in_folder(output_merge_path)
         anomaly_detection_output = read_csv_file(csv_path)
         detection_output = read_csv_file(csv_path)
         detection_save_path = os.path.join(output_merge_path, "result.txt")
