@@ -4,7 +4,7 @@ import threading
 import cv2
 
 
-def parse_video_to_frames(video_path, output_base_folder_path):
+def parse_video_to_frames(video_path, output_base_folder_path, frame_interval=5):
     """
     Parses a single video into frames and saves them in a subdirectory named after the original file.
     Filenames are in the format 'originalfilename_framenumber.jpg', where the frame number is zero-padded to 5 digits.
@@ -24,7 +24,6 @@ def parse_video_to_frames(video_path, output_base_folder_path):
         os.makedirs(output_folder_path)
 
     cap = cv2.VideoCapture(video_path)
-    frame_interval = 5
 
     if not cap.isOpened():
         print(f"Error opening video file: {filename_without_ext}")

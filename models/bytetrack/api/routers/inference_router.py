@@ -15,7 +15,7 @@ import numpy as np
 def make_parser():
     parser = argparse.ArgumentParser("ByteTrack")
 
-    parser.add_argument("--fps", default=30, type=int, help="frame rate (fps)")
+    parser.add_argument("--fps", default=5, type=int, help="frame rate (fps)")
     # tracking args
     parser.add_argument("--track_thresh", type=float, default=0.2, help="tracking confidence threshold")
     parser.add_argument("--track_buffer", type=int, default=30, help="the frames for keep lost tracks")
