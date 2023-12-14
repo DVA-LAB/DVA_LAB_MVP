@@ -30,8 +30,8 @@ def estimate_focal_length(image_width: int, sensor_width_mm: float, fov_degrees:
     """
 
     focal_length_mm = (sensor_width_mm / 2) / math.tan(np.radians(fov_degrees / 2))
-    focal_length_px = (focal_length_mm / sensor_width_mm) * image_width
-    return focal_length_px
+    # focal_length_px = (focal_length_mm / sensor_width_mm) * image_width
+    return focal_length_mm
 
 
 def get_params_from_csv(csv_file, idx = None):
@@ -50,7 +50,7 @@ def get_params_from_csv(csv_file, idx = None):
 
 
 
-def BEV_1(frame_num, frame_path, csv_path, objects, realdistance, dst_dir, DEV = False):
+def BEV_UserInputFrame(frame_num, frame_path, csv_path, objects, realdistance, dst_dir, DEV = False):
     """
     * Parameters 
     frame_num : int 
@@ -131,8 +131,8 @@ def BEV_1(frame_num, frame_path, csv_path, objects, realdistance, dst_dir, DEV =
 
     # Step 4. Compute GSD & Boundary size
     # GSD
-    if gsd == 0:
-        gsd = (pixel_size * (eo[2] - ground_height)) / focal_length  # unit: m/px
+    # if gsd == 0:
+    gsd = (pixel_size * (eo[2] - ground_height)) / focal_length  # unit: m/px
 
     # Boundary size
     boundary_cols = int((bbox[1, 0] - bbox[0, 0]) / gsd)
@@ -167,7 +167,7 @@ def BEV_1(frame_num, frame_path, csv_path, objects, realdistance, dst_dir, DEV =
     return rst, img_dst, objects, pixel_size, gsd
 
 
-def BEV_2(frame_num, frame_path, csv_path, objects, dst_dir, gsd, DEV = False):
+def BEV_FullFrame(frame_num, frame_path, csv_path, objects, dst_dir, gsd, DEV = False):
     """
     * Parameters 
     frame_num : int 
@@ -245,6 +245,10 @@ def BEV_2(frame_num, frame_path, csv_path, objects, dst_dir, gsd, DEV = False):
     bbox = boundary(restored_image, eo, R, ground_height, pixel_size, focal_length)
 
     # Step 4. Compute GSD & Boundary size
+    # GSD
+    if gsd == 0:
+        gsd = (pixel_size * (eo[2] - ground_height)) / focal_length  # unit: m/px
+
     # Boundary size
     boundary_cols = int((bbox[1, 0] - bbox[0, 0]) / gsd)
     boundary_rows = int((bbox[3, 0] - bbox[2, 0]) / gsd)
@@ -262,7 +266,7 @@ def BEV_2(frame_num, frame_path, csv_path, objects, dst_dir, gsd, DEV = False):
         rst = 1
         return rst, None, None
 
-    return rst, img_dst, objects
+    return rst, img_dst, objects, gsd
 
 if __name__ == "__main__":
     ### Test Data ###
@@ -278,7 +282,7 @@ if __name__ == "__main__":
     dst_dir = "C:\\Users\\MYJS\\Desktop\\DVA\\master_Pjt\\DVA_LAB\\models\\BEV\\api\\services\\Orthophoto_Maps\\Data\\result"
     # Test # 
     DEV = False
-    rst, img_dst, objects, pixel_size, gsd = BEV_1(frame_num, frame_path, csv_path, objects, realdistance, dst_dir, DEV)
+    rst, img_dst, objects, pixel_size, gsd = BEV_UserInputFrame(frame_num, frame_path, csv_path, objects, realdistance, dst_dir, DEV)
     print(gsd)
 
     print("GSD1 Done")
@@ -286,7 +290,7 @@ if __name__ == "__main__":
     col2, row2  = 134.01, 258.51
 
     objects = [None, None, None, col1, row1, col2, row2, None, -1, -1, -1]
-    rst, img_dst, objects = BEV_2(frame_num, frame_path, csv_path, objects, dst_dir, gsd, DEV)
+    rst, img_dst, objects = BEV_FullFrame(frame_num, frame_path, csv_path, objects, dst_dir, gsd, DEV)
     print("GSD2 Done")
 
     
