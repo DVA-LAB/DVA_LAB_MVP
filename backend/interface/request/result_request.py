@@ -7,7 +7,7 @@ __all__ = ["VisRequest"]
 @logged
 class VisRequest(BaseModel):
     log_path: str
-    video_path: str
+    input_dir: str
     output_video: str
     bbox_path: str
     set_merged_dolphin_center: bool = False
@@ -16,7 +16,7 @@ class VisRequest(BaseModel):
         schema_extra = {
             "example": {
                 "log_path": "/home/dva4/dva/backend/test/sync_csv",
-                "video_path": "/home/dva4/dva/backend/test/video_origin",
+                "input_dir": "/home/dva4/dva/backend/test/frame_origin",
                 "output_video": "/home/dva4/dva/backend/test/result/result.mp4",
                 "bbox_path": "/home/dva4/dva/backend/test/model/tracking/result.txt",
                 "set_merged_dolphin_center": False

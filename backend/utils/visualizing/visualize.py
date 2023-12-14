@@ -1,3 +1,4 @@
+import os
 import cv2
 import math
 import argparse
@@ -120,39 +121,52 @@ def merge_bboxes(bboxes):
     return (min_x, min_y, max_x, max_y)
 
 
-def show_result(log_path, video_path, output_video, bbox_path):
+def get_image_paths(directory: str) -> list:
+    image_paths = []
+    for root, _, files in os.walk(directory):
+        for file in files:
+            image_path = os.path.join(root, file)
+            image_paths.append(image_path)
+
+    return image_paths
+
+
+def show_result(log_path, input_dir, output_video, bbox_path):
     parser = argparse.ArgumentParser()
     parser.add_argument('--log_path', type=str, default='in/DJI_0119_30.csv')
-    parser.add_argument('--video_path', type=str, default='in/input.mp4')
+    parser.add_argument('--input_dir', type=str, default='/home/dva4/dva/backend/test/frame_origin')
     parser.add_argument('--output_video', type=str, default='out/output.mp4')
     parser.add_argument('--bbox_path', type=str, default='in/bbox.txt')
-    args = parser.parse_args()
 
+    args = parser.parse_args()
     args.log_path = log_path
-    args.video_path = video_path
+    args.input_dir = input_dir
     args.output_video = output_video
     args.bbox_path = bbox_path
 
+    image_paths = get_image_paths(args.input_dir)
+    
+    # 첫 번째 이미지를 기준으로 비디오 크기 설정
+    first_image = cv2.imread(image_paths[0])
+    frame_height, frame_width, layers = first_image.shape
+    frame_rate = 5
+
     logs = read_log_file(args.log_path)
     print(logs.columns)
-    # bbox 데이터를 읽어옵니다.
-    bbox_data = read_bbox_data(args.bbox_path)
-    frame_rate, _, frame_width, frame_height = extract_video_metadata(args.video_path)
-    
+
+    bbox_data = read_bbox_data(args.bbox_path) # bbox 데이터를 읽어옵니다.
+
     # font = ImageFont.truetype('AppleGothic.ttf', 40)
     font = ImageFont.truetype('/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc', 40)
     fourcc = cv2.VideoWriter_fourcc(*'MP4V')
     out = cv2.VideoWriter(args.output_video, fourcc, frame_rate, (frame_width, frame_height))
-    cap = cv2.VideoCapture(args.video_path)
     
     frame_count = 0
     previous_centers = {}
     max_ship_speed = 0
 
-    while cap.isOpened():
-        success, frame = cap.read()
-        if not success:
-            break
+    for image_path in image_paths:
+        frame = cv2.imread(image_path)
         date = logs['datetime'][frame_count]
         frame_bboxes = bbox_data.get(frame_count, [])
         image = Image.fromarray(frame)
@@ -279,7 +293,6 @@ def show_result(log_path, video_path, output_video, bbox_path):
 
         frame_count += 1
         
-    cap.release()
     out.release()
     # cv2.destroyAllWindows()
 

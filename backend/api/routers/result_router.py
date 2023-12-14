@@ -20,8 +20,6 @@ router = APIRouter(tags=["result"])
 )
 async def model_inference(body: VisRequest):
     log_file = glob.glob(os.path.join(body.log_path, '*.csv'))[0]
-    # TODO@jh: mp4 외 영상 옵션 추가
-    video_file = glob.glob(os.path.join(body.video_path, '*.mp4'))[0]
 
     with open(os.path.join('test', 'GSD.txt'), 'r') as f:
         gsd = f.read()
@@ -31,7 +29,7 @@ async def model_inference(body: VisRequest):
 
     os.makedirs(os.path.dirname(body.output_video), exist_ok=True)
     delete_files_in_folder(os.path.dirname(body.output_video))
-    show_result(log_file, video_file, body.output_video, body.bbox_path)
+    show_result(log_file, body.input_dir, body.output_video, body.bbox_path)
     return body.output_video
 
 
