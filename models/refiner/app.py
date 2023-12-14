@@ -15,5 +15,5 @@ app = create_app()
 if __name__ == "__main__":
     import os
 
-    os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+    os.environ["CUDA_VISIBLE_DEVICES"] = "0"
     uvicorn.run("app:app", reload=True, port=8005, host="0.0.0.0")

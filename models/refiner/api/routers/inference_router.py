@@ -1,14 +1,15 @@
+import csv
+import glob
+import json
+import os
+
 import cv2
 import numpy as np
+import requests
 from fastapi import APIRouter, Depends, status
 
 from api.services import Refiner
 from interface.request import DataRequest, ShipRequest
-import csv
-import os
-import glob
-import cv2
-import numpy as np
 
 router = APIRouter(tags=["data"])
 
@@ -32,42 +33,57 @@ async def inference(request_body: DataRequest):
 @router.post(
     "/check_size",
     status_code=status.HTTP_200_OK,
-    summary="check ship size with SAM",)
+    summary="check ship size with SAM",
+)
 async def inference(request_body: ShipRequest):
     refiner = Refiner("cuda")
 
     user_frame_no, mean_x, mean_y = check_user_input(request_body.user_input)
-    frames = glob.glob(os.path.join(request_body.frame_path, '*.jpg'))
+    frames = glob.glob(os.path.join(request_body.frame_path, "*.jpg"))
 
     tracking_result = request_body.tracking_result
     objs = read_file(tracking_result)
-    ship_id = [x for x in objs if (int(x[0]) == int(user_frame_no)) and (int(x[2])==1) and (is_point_in_bbox(mean_x, mean_y, x[3:7]))]
+    # TODO@jh: class 정책 변경 확인 필요 (ship)
+    ship_id = [
+        x[1]
+        for x in objs
+        if (int(x[0]) == int(user_frame_no))
+        and (int(x[2]) == 1)
+        and (is_point_in_bbox(mean_x, mean_y, x[3:7]))
+    ]
 
+    ships_info = []
     if len(ship_id):
         target_results = [x for x in objs if int(x[1]) == int(ship_id[0])]
         for idx, result in enumerate(target_results):
             frame_no = result[0]
             # TODO@jh: 매번 찾지 않고, 네이밍 규칙으로 읽도록 수정
-            frame = [x for x in frames if int(1) == int(x.split('_')[-1].split('.')[0])][0]
-            class_id = result[2]
+            frame = [
+                x for x in frames if int(1) == int(x.split("_")[-1].split(".")[0])
+            ][0]
             bbox_xyxy = refiner.convert_to_xyxy(result[3:7])
-            mask = refiner._do_seg(frame, bbox_xyxy)
-            ship_size = refiner.calculate_length_along_major_axis(mask)
-            # TODO@jh: ship size 로 BEV_1 endpoint 활용하여 GSD 계산
+            mask = refiner._do_seg(cv2.imread(frame), [bbox_xyxy])
+            # TODO@jh: 영상이 혹시 배의 길이보다 두께가 더 긴 화면이라면?? 시각화해서 확인해보기
+            (x1, y1), (x2, y2) = refiner.calculate_endpoints_along_major_axis(mask)
+            ships_info.append([frame_no, x1, y1, x2, y2])
+    return ships_info
+
 
 def read_csv_file(file_path):
     detections = []
-    with open(file_path, 'r') as file:
+    with open(file_path, "r") as file:
         csv_reader = csv.reader(file)
         for row in csv_reader:
             detections.append([float(x) for x in row])
     return detections
 
+
 def read_file(file_path):
-    with open(file_path, 'r') as file:
+    with open(file_path, "r") as file:
         lines = file.readlines()
-    detections = [[float(x) for x in line.strip().split(',')] for line in lines]
+    detections = [[float(x) for x in line.strip().split(",")] for line in lines]
     return detections
+
 
 def is_point_in_bbox(x, y, bbox):
     xmin, ymin, w, h = bbox
@@ -75,14 +91,13 @@ def is_point_in_bbox(x, y, bbox):
     ymax = ymin + h
     return xmin <= x <= xmax and ymin <= y <= ymax
 
+
 def check_user_input(input_path):
-    user_input = [x for x in os.listdir(input_path) if x.endswith('.txt')][0]
-    user_frame_no = os.path.splitext(user_input)[0]
-    with open(os.path.join(input_path, user_input), 'r') as f:
+    # TODO@jh: user input이 복수개일때 확인 필요
+    with open(input_path, "r") as f:
         ship_coord = f.read()
-    x1, y1, x2, y2 = map(float, ship_coord.split(' ')[0:4])
+    frame_number, x1, y1, x2, y2, distance = ship_coord.split(" ")
+    x1, y1, x2, y2 = map(float, [x1, y1, x2, y2])
     mean_x = (x1 + x2) / 2
     mean_y = (y1 + y2) / 2
-    return user_frame_no, mean_x, mean_y
-
-
+    return int(frame_number), mean_x, mean_y
