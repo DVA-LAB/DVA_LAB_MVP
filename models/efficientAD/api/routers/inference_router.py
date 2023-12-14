@@ -69,105 +69,82 @@ def ad_slice_inference(frame_path, slices_path, output_path):
 
     frame_img = cv2.imread(frame)
     h, w = frame_img.shape[:2]
-    patch_size = 512   # 최종적으로는 SAHI에서 적용된 값을 그대로 받아오도록 수정
-    overlap = 0.5      # 
-    resize_rate = 2
+    patch_size = 1024   # 최종적으로는 SAHI에서 적용된 값을 그대로 받아오도록 수정
+    overlap = 0.25      # 
+    step = 1 - overlap
+    resize_rate = 1
 
-    folder_path = slices_path
-    file_paths = sorted(glob.glob(os.path.join(folder_path, '*')))  
-
-    # SHAI file명: 'filename_0000n_*.png'라고 가정
-    grouped_files = {k: list(g) for k, g in groupby(file_paths, key=lambda x: int(x.split('_')[1]))}
-
+    # SHAI folder : sahi_path > frame > slices('filename_0000n_*.png'라고 가정)
+    sahi_path = slices_path
+        
     output_list = []
-    for frame_number, slc_files in grouped_files.items():
+    for frame_number, frame_folder in enumerate(sorted(os.listdir(sahi_path))):
+        frame_path = os.path.join(sahi_path, frame_folder)
 
         inf = []
-        for slice in slc_files :
-            dataset = InferenceDataset(
-                slice, 
-                image_size=tuple(config.dataset.image_size), 
-                transform=transform  # type: ignore
-                )
-            dataloader = DataLoader(dataset)
+        output_bbox = []
+        dataset = InferenceDataset(
+            frame_path, 
+            image_size=tuple(config.dataset.image_size), 
+            transform=transform  # type: ignore
+            )
+        dataloader = DataLoader(dataset)
+        result = trainer.predict(model=efficient_ad, dataloaders=[dataloader])
 
-            result = trainer.predict(model=efficient_ad, dataloaders=[dataloader])
-            pred_mask = result[0]["pred_masks"][0]
-            inf.append(pred_mask)
+        for i in range(len(result)):
+            inf.append(result[i]["anomaly_maps"][0])
 
         ''' merge slices ''' 
-        merge_result = merge_tensors_max(inf, h, w, resize_rate, patch_size, overlap)    # -> torch.Tensor
-        output_t = merge_result.squeeze().numpy()
+        merge_result = merge_tensors_max(inf, h, w, resize_rate, patch_size, step)    # -> torch.Tensor
+        
+        ''' anomaly map -> mask '''
+        anomaly_map = merge_result.squeeze()
+        mask: np.ndarray = np.zeros_like(anomaly_map).astype(np.uint8)
+        mask[anomaly_map > 0.5] = 1
+        kernel = morphology.disk(4)
+        mask = morphology.opening(mask, kernel)
+        mask *= 255
 
-        ''' original resizing '''
-        original_size = (w, h)
-        resized_result = cv2.resize(output_t, original_size)
-
+        ''' score map '''
+        score_map = anomaly_map.clone()
+        score_map[anomaly_map <= 0.5] = 0
+        score_map = score_map.numpy()
+        
         ''' output '''
-        v = mark_boundaries(frame_img, resized_result, color=(1, 0, 0), mode="thick")
-        output_img = (v * 255).astype(np.uint8)    # -> numpy.ndarray
-        output_mask = (resized_result * 255).astype(np.uint8)    # -> numpy.ndarray
-
-        mask_contours, _ = cv2.findContours(output_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        output_bbox = []    # -> list (x, y, w, h)
+        output_mask = cv2.resize(mask, (w, h))
+        output_score_mask = cv2.resize(score_map, (w, h))
+        mask_contours, _ = cv2.findContours(output_mask.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         for contour in mask_contours:
-            x, y, w, h = cv2.boundingRect(contour)
+            x1, y1, w1, h1 = cv2.boundingRect(contour)
             class_id = 1
-            pred_score = 1  # 수정 예정
-            output_bbox.append((frame_number, class_id, x, y, w, h, pred_score))
+            
+            ''' anomaly score '''
+            anomaly_region = output_score_mask[y1:y1+h1, x1:x1+w1]
+            anomaly_score = np.mean(anomaly_region[anomaly_region != 0])
+            
+            output_bbox.append((frame_number, class_id, x1, y1, w1, h1, anomaly_score))
         output_list.append(output_bbox) 
 
-    save_path = output_path
+        ''' visualization '''    # 정상구동 확인용
+        background_image = np.zeros_like(output_mask)
+        background_image[output_mask == 255] = 128
+        for bbox in output_bbox:
+            _, _, x2, y2, w2, h2, _ = bbox
+            cv2.rectangle(background_image, (x2, y2), (x2 + w2, y2 + h2), (255, 255, 255), 2)  
+        #cv2.imwrite(f"results/output_bbox_{frame_number}.jpg", background_image)
 
+        v = mark_boundaries(frame_img, mask, color=(1, 0, 0), mode="thick")
+        output_img = (v * 255).astype(np.uint8)    # -> numpy.ndarray
+        #cv2.imwrite(f"results/output_img_{frame_number}.jpg", output_img)
+
+    ''' save output '''
+    save_path = output_path
     with open(save_path, 'w') as f:
         for j in output_list[0]:
-            frame_number, class_id, x, y, w, h, pred_score = j
-            f.write(f"{frame_number},{class_id},{x},{y},{w},{h},{pred_score}\n")
+            frame_number, class_id, xx, yy, ww, hh, anomaly_score = j
+            f.write(f"{frame_number},{class_id},{xx},{yy},{ww},{hh},{anomaly_score}\n")
 
 
     return output_img, output_mask, output_list
 
 
-
-def ad_inference():
-    config = get_configurable_parameters("efficient_ad")
-    config.trainer.resume_from_checkpoint = "services/weights/model.ckpt"
-    config.visualization.mode = "full"
-
-    # api에 맞추어 frame 수정필요
-    frame = "services/datasets/sample/002/0001.jpg"
-
-    efficient_ad = get_model(config)
-    callbacks = get_callbacks(config)
-    trainer = Trainer(callbacks=callbacks, **config.trainer)
-
-    transform_config = (
-        config.dataset.transform_config.eval
-        if "transform_config" in config.dataset.keys()
-        else None
-    )
-    image_size = (config.dataset.image_size[0], config.dataset.image_size[1])
-    center_crop = config.dataset.get("center_crop")
-    if center_crop is not None:
-        center_crop = tuple(center_crop)
-    normalization = InputNormalizationMethod(config.dataset.normalization)
-    transform = get_transforms(
-        config=transform_config,
-        image_size=image_size,
-        center_crop=center_crop,
-        normalization=normalization,
-    )
-
-    dataset = InferenceDataset(
-        frame, image_size=tuple(config.dataset.image_size), transform=transform  # type: ignore
-    )
-    dataloader = DataLoader(dataset)
-
-    result = trainer.predict(model=efficient_ad, dataloaders=[dataloader])
-
-    img = result[0]["image"]  # torch.Tensor
-    pred_boxes = result[0]["pred_boxes"][0].tolist()[0]  # list
-    pred_scores = result[0]["pred_scores"][0].tolist()  # float
-    # print(img, pred_boxes, pred_scores)
-
-    return img, pred_boxes, pred_scores
