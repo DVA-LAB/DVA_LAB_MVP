@@ -164,42 +164,51 @@ async def save_input(request: UserInput):
     ][0]
     try:
         gsds = []
+        inputs = []
         for pd in point_distances:
-            url = "http://112.216.237.124:8001/bev1"
-            headers = {"accept": "application/json", "Content-Type": "application/json"}
-            data = {
-                "frame_num": frame_number,
-                "frame_path": frame_file,
-                "csv_path": "/home/dva4/dva/backend/test/sync_csv/sync_log.csv",
-                "objects": [
-                    None,
-                    None,
-                    None,
-                    pd.point1.x,
-                    pd.point1.y,
-                    pd.point2.x,
-                    pd.point2.y,
-                    None,
-                    -1,
-                    -1,
-                    -1,
-                ],
-                "realdistance": pd.distance,
-                "dst_dir": "/home/dva4/dva/backend/test/frame_bev",
-            }
-            response = requests.post(url, headers=headers, data=json.dumps(data))
-            result = response.json()
-            print(response.json())
-            if result[0] == 0:
-                gsds.append(result[-1])
+            inputs.append(f'{pd.point1.x} {pd.point1.y} {pd.point2.x} {pd.point2.y} {pd.distance}')
+            gsd = get_gsd(frame_number, frame_file, pd.point1.x, pd.point1.y, pd.point2.x, pd.point2.y, pd.distance)
+            if gsd != 0:
+                gsds.append(gsd)
         gsd_mean = sum(gsds) / len(gsds)
         with open(os.path.join("test", "GSD.txt"), "w") as f:
-            f.write(str(gsd_mean))
-        print(gsd_mean)
+            f.write(f'{frame_number} {gsd_mean}')
+        with open(os.path.join(input_path, 'user_input.txt'), 'w') as f:
+            f.write('\n'.join(inputs))
         return f'초기 gsd값이 {os.path.abspath(os.path.join("test", "GSD.txt"))}에 저장되었습니다.'
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
+def get_gsd(frame_number, frame_file, x1, y1, x2, y2, m_distance):
+    url = "http://112.216.237.124:8001/bev1"
+    headers = {"accept": "application/json", "Content-Type": "application/json"}
+    data = {
+        "frame_num": frame_number,
+        "frame_path": frame_file,
+        "csv_path": "/home/dva4/dva/backend/test/sync_csv/sync_log.csv",
+        "objects": [
+            None,
+            None,
+            None,
+            x1,
+            y1,
+            x2,
+            y2,
+            None,
+            -1,
+            -1,
+            -1,
+        ],
+        "realdistance": m_distance,
+        "dst_dir": "/home/dva4/dva/backend/test/frame_bev",
+    }
+    response = requests.post(url, headers=headers, data=json.dumps(data))
+    result = response.json()
+    if result[0] == 0:
+        return result[-1]
+    else:
+        return 0
 
 def calculate_pixel_distance(point1, point2):
     return ((point2.x - point1.x) ** 2 + (point2.y - point1.y) ** 2) ** 0.5
