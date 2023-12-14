@@ -1,18 +1,19 @@
 import glob
+import json
 import os
 import shutil
 import time
 from typing import List
 
+import requests
 import torch
+from api.services.data_service import parse_videos_multithreaded
 from fastapi import (APIRouter, Depends, FastAPI, File, Form, HTTPException,
                      UploadFile, status)
 from fastapi.responses import FileResponse, JSONResponse
 from interface.request.user_input_request import UserInput
 from utils.log_sync.adjust_log import do_sync
 from utils.remove_glare import remove_glare
-
-from api.services.data_service import parse_videos_multithreaded
 
 router = APIRouter(tags=["data"])
 
@@ -156,14 +157,46 @@ async def save_input(request: UserInput):
     # delete_files_in_folder(input_path)
     frame_number = request.frame_number
     point_distances = request.point_distances
+    frame_file = [
+        x
+        for x in glob.glob(os.path.join(frame_path, "*.jpg"))
+        if int(x.split("_")[-1].split(".")[0]) == frame_number
+    ][0]
     try:
-        with open(os.path.join(input_path, f"{frame_number}.txt"), "a") as f:
-            for pd in point_distances:
-                f.write(
-                    f"{pd.point1.x} {pd.point1.y} {pd.point2.x} {pd.point2.y} {pd.distance}\n"
-                )
-
-        return {"message": f"User input for frame {frame_number} saved successfully"}
+        gsds = []
+        for pd in point_distances:
+            url = "http://112.216.237.124:8001/bev1"
+            headers = {"accept": "application/json", "Content-Type": "application/json"}
+            data = {
+                "frame_num": frame_number,
+                "frame_path": frame_file,
+                "csv_path": "/home/dva4/dva/backend/test/sync_csv/sync_log.csv",
+                "objects": [
+                    None,
+                    None,
+                    None,
+                    pd.point1.x,
+                    pd.point1.y,
+                    pd.point2.x,
+                    pd.point2.y,
+                    None,
+                    -1,
+                    -1,
+                    -1,
+                ],
+                "realdistance": pd.distance,
+                "dst_dir": "/home/dva4/dva/backend/test/frame_bev",
+            }
+            response = requests.post(url, headers=headers, data=json.dumps(data))
+            result = response.json()
+            print(response.json())
+            if result[0] == 0:
+                gsds.append(result[-1])
+        gsd_mean = sum(gsds) / len(gsds)
+        with open(os.path.join("test", "GSD.txt"), "w") as f:
+            f.write(str(gsd_mean))
+        print(gsd_mean)
+        return f'초기 gsd값이 {os.path.abspath(os.path.join("test", "GSD.txt"))}에 저장되었습니다.'
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
