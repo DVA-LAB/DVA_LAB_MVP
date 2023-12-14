@@ -16,13 +16,13 @@ from api.services.data_service import parse_videos_multithreaded
 
 router = APIRouter(tags=["data"])
 
-video_path = os.path.join("test", "video_origin")
-processed_video_path = os.path.join("test", "video_origin_remove")
-frame_path = os.path.join("test", "frame_origin")
-csv_path = os.path.join("test", "csv")
-srt_path = os.path.join("test", "srt")
-sync_path = os.path.join("test", "sync_csv")
-input_path = os.path.join("test", "input")
+video_path = os.path.abspath(os.path.join("test", "video_origin"))
+processed_video_path = os.path.abspath(os.path.join("test", "video_origin_remove"))
+frame_path = os.path.abspath(os.path.join("test", "frame_origin"))
+csv_path = os.path.abspath(os.path.join("test", "csv"))
+srt_path = os.path.abspath(os.path.join("test", "srt"))
+sync_path = os.path.abspath(os.path.join("test", "sync_csv"))
+input_path = os.path.abspath(os.path.join("test", "input"))
 
 
 @router.post("/video/")
