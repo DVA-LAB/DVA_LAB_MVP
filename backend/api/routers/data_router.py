@@ -30,8 +30,8 @@ async def upload_video(file: UploadFile = File(...), preprocess: bool = Form(...
     s_time = time.time()
     os.makedirs(video_path, exist_ok=True)
     os.makedirs(frame_path, exist_ok=True)
-    delete_files_in_folder(video_path)
-    delete_files_in_folder(frame_path)
+    # delete_files_in_folder(video_path)
+    # delete_files_in_folder(frame_path)
     try:
         file_location = os.path.join(video_path, lowercase_extensions(file.filename))
         with open(file_location, "wb") as file_object:
@@ -45,7 +45,7 @@ async def upload_video(file: UploadFile = File(...), preprocess: bool = Form(...
             print(f"GPU for removing glare: {is_cuda_available}")
             process_s_time = time.time()
             os.makedirs(processed_video_path, exist_ok=True)
-            delete_files_in_folder(processed_video_path)
+            # delete_files_in_folder(processed_video_path)
             save_path = os.path.join(
                 processed_video_path, lowercase_extensions(file.filename)
             )
@@ -109,7 +109,7 @@ async def get_frame(frame_number: int):
 async def upload_csv(file: UploadFile = File(...)):
     csv_storage_path = csv_path
     os.makedirs(csv_storage_path, exist_ok=True)
-    delete_files_in_folder(csv_storage_path)
+    # delete_files_in_folder(csv_storage_path)
     try:
         file_location = os.path.join(
             csv_storage_path, lowercase_extensions(file.filename)
@@ -125,7 +125,7 @@ async def upload_csv(file: UploadFile = File(...)):
 async def upload_srt(file: UploadFile = File(...)):
     srt_storage_path = srt_path
     os.makedirs(srt_storage_path, exist_ok=True)
-    delete_files_in_folder(srt_storage_path)
+    # delete_files_in_folder(srt_storage_path)
     try:
         file_location = os.path.join(
             srt_storage_path, lowercase_extensions(file.filename)
@@ -140,7 +140,7 @@ async def upload_srt(file: UploadFile = File(...)):
 @router.post("/sync/")
 async def sync_log():
     os.makedirs(sync_path, exist_ok=True)
-    delete_files_in_folder(sync_path)
+    # delete_files_in_folder(sync_path)
     try:
         do_sync(video_path, csv_path, srt_path, sync_path)
         return {"message": "synchronized csv saved successfully"}
@@ -153,7 +153,7 @@ async def sync_log():
 @router.post("/user_input/")
 async def save_input(request: UserInput):
     os.makedirs(input_path, exist_ok=True)
-    delete_files_in_folder(input_path)
+    # delete_files_in_folder(input_path)
     frame_number = request.frame_number
     point_distances = request.point_distances
     try:
@@ -189,15 +189,15 @@ def lowercase_extensions(file_name):
     return new_file_name
 
 
-@router.delete("/reset/")
-async def reset_data():
-    try:
-        delete_files_in_folder(video_path)
-        delete_files_in_folder(frame_path)
-        delete_files_in_folder(csv_path)
-        delete_files_in_folder(srt_path)
-        delete_files_in_folder(sync_path)
-        delete_files_in_folder(input_path)
-        return {"message": "All data reset successfully"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error during data reset: {e}")
+# @router.delete("/reset/")
+# async def reset_data():
+#     try:
+#         delete_files_in_folder(video_path)
+#         delete_files_in_folder(frame_path)
+#         delete_files_in_folder(csv_path)
+#         delete_files_in_folder(srt_path)
+#         delete_files_in_folder(sync_path)
+#         delete_files_in_folder(input_path)
+#         return {"message": "All data reset successfully"}
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=f"Error during data reset: {e}")
