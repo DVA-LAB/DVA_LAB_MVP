@@ -1,4 +1,3 @@
-가import glob
 import os
 import shutil
 
