@@ -174,11 +174,6 @@ def show_result(log_path, video_path, output_video, bbox_path):
             track_id = bbox_info['track_id']
             x, y, w, h = bbox_info['bbox']
             class_id = bbox_info['class']
-            if class_id == 2:
-                class_id = 0 # dolphin
-            else:
-                class_id = 1 # boat
-
             conf_score = round(bbox_info['conf'], 2)
             if class_id == 1 and conf_score < 0.6:
                 continue
