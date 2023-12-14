@@ -166,7 +166,7 @@ async def save_input(request: UserInput):
         gsds = []
         inputs = []
         for pd in point_distances:
-            inputs.append(f'{pd.point1.x} {pd.point1.y} {pd.point2.x} {pd.point2.y} {pd.distance}')
+            inputs.append(f'{frame_number} {pd.point1.x} {pd.point1.y} {pd.point2.x} {pd.point2.y} {pd.distance}')
             gsd = get_gsd(frame_number, frame_file, pd.point1.x, pd.point1.y, pd.point2.x, pd.point2.y, pd.distance)
             if gsd != 0:
                 gsds.append(gsd)
