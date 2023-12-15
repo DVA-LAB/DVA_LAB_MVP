@@ -1,3 +1,6 @@
+import sys
+sys.path.append("C:\\Users\\MYJS\\Desktop\\DVA\\master_Pjt\\DVA_LAB\\models\\BEV")
+
 import os
 import numpy as np
 import time
@@ -138,11 +141,16 @@ def BEV_UserInputFrame(frame_num, frame_path, csv_path, objects, realdistance, d
     boundary_cols = int((bbox[1, 0] - bbox[0, 0]) / gsd)
     boundary_rows = int((bbox[3, 0] - bbox[2, 0]) / gsd)
 
+
     try :
         b, g, r, a, rectified_poinst = rectify_plane_parallel_with_point(bbox, boundary_rows, boundary_cols, gsd, eo, ground_height, R, focal_length, pixel_size, image, object_points)
         objects[3:3 + 4] = rectified_poinst
-        objects[5] -= objects[3] # Width
-        objects[6] -= objects[4] # Height
+        cols = [objects[3], objects[5]]
+        rows = [objects[4], objects[6]]
+        objects[3] = min(cols)
+        objects[4] = min(rows)
+        objects[5] = max(cols)
+        objects[6] = max(rows)
         if DEV : 
             create_pnga_optical_with_obj_for_dev(b, g, r, a, bbox, gsd, 5186, img_dst, rectified_poinst)  
         else : 
@@ -256,15 +264,21 @@ def BEV_FullFrame(frame_num, frame_path, csv_path, objects, dst_dir, gsd, DEV = 
     try :
         b, g, r, a, rectified_poinst = rectify_plane_parallel_with_point(bbox, boundary_rows, boundary_cols, gsd, eo, ground_height, R, focal_length, pixel_size, image, object_points)
         objects[3:3 + 4] = rectified_poinst
-        objects[5] -= objects[3] # Width
-        objects[6] -= objects[4] # Height
+        
+        cols = [objects[3], objects[5]]
+        rows = [objects[4], objects[6]]
+        objects[3] = min(cols)
+        objects[4] = min(rows)
+        objects[5] = max(cols)
+        objects[6] = max(rows)
+
         if DEV : 
             create_pnga_optical_with_obj_for_dev(b, g, r, a, bbox, gsd, 5186, img_dst, rectified_poinst)  
         else : 
             create_pnga_optical(b, g, r, a, bbox, gsd, 5186, img_dst)  
     except : 
         rst = 1
-        return rst, None, None
+        return rst, None, None, None
 
     return rst, img_dst, objects, gsd
 
@@ -290,7 +304,7 @@ if __name__ == "__main__":
     col2, row2  = 134.01, 258.51
 
     objects = [None, None, None, col1, row1, col2, row2, None, -1, -1, -1]
-    rst, img_dst, objects = BEV_FullFrame(frame_num, frame_path, csv_path, objects, dst_dir, gsd, DEV)
+    rst, img_dst, objects, gsd = BEV_FullFrame(frame_num, frame_path, csv_path, objects, dst_dir, gsd, DEV)
     print("GSD2 Done")
 
     
