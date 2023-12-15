@@ -131,7 +131,7 @@ def get_image_paths(directory: str) -> list:
     return image_paths
 
 
-def show_result(log_path, input_dir, output_video, bbox_path):
+def show_result(log_path, input_dir, output_video, bbox_path, frame_rate=5):
     parser = argparse.ArgumentParser()
     parser.add_argument('--log_path', type=str, default='in/DJI_0119_30.csv')
     parser.add_argument('--input_dir', type=str, default='/home/dva4/dva/backend/test/frame_origin')
@@ -149,7 +149,6 @@ def show_result(log_path, input_dir, output_video, bbox_path):
     # 첫 번째 이미지를 기준으로 비디오 크기 설정
     first_image = cv2.imread(image_paths[0])
     frame_height, frame_width, layers = first_image.shape
-    frame_rate = 5
 
     logs = read_log_file(args.log_path)
     print(logs.columns)
@@ -287,14 +286,22 @@ def show_result(log_path, input_dir, output_video, bbox_path):
         # 나머지 코드
         img = np.array(image)
         out.write(img)
-        # cv2.imshow(args.video_path, img)
-        # if cv2.waitKey(1) & 0xFF == ord("q"):
-        #     break
 
-        frame_count += 1
+        # cv2.imshow(args.video_path, img) # 
+        # if cv2.waitKey(1) & 0xFF == ord("q"): # 
+        #     break # 
+
+        frame_count += frame_rate
         
     out.release()
-    # cv2.destroyAllWindows()
+
+    cv2.destroyAllWindows() #
 
 # if __name__ == "__main__":
-#     main()
+#     parser = argparse.ArgumentParser()
+#     parser.add_argument('--log_path', type=str, default='../../../in/DJI_0150.csv')
+#     parser.add_argument('--video_path', type=str, default='../../../in/DJI_0150.MP4')
+#     parser.add_argument('--output_video', type=str, default='../../../out/DJI_0150.MP4')
+#     parser.add_argument('--bbox_path', type=str, default='../../../in/result.txt')
+#     args = parser.parse_args()
+#     show_result(args)
