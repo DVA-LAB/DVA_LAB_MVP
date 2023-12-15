@@ -11,9 +11,10 @@ import axios from 'axios';
 
 const { Title } = Typography;
 
-// const API_URL =  'http://localhost:8000';
-const API_URL='http://112.216.237.124:8000';
-const BEV_URL= 'http://112.216.237.124:8001';
+const API_URL =  'http://localhost:8000';
+const BEV_URL = 'http://localhost:8001';
+// const API_URL='http://112.216.237.124:8000';
+// const BEV_URL= 'http://112.216.237.124:8001';
 
 class App extends Component {
   constructor(props) {
@@ -783,62 +784,47 @@ drawLabel = (startPoint, endPoint, text) => {
   // Run AI Model 버튼 클릭 핸들러
   runAIModel = async () => {
     this.setState({aiModelActive:true, showProgressBar: true, showControlButtons: true });
-  
-    // TODO: Implement the AI model logic here
 
-    // setTimeout(() => {
-    //   this.setState({ showProgressBar: false, showControlButtons: true});
-    // }, 3000); 
-  
-  // After the AI model logic is done, update the state to hide the progress bar and show control buttons
-    // this.setState({ showProgressBar: false, showControlButtons: true });
-    
-    
-    // const { points, pointDistances, videoSrc } = this.state;
-    // if (videoSrc && points.length === 2 && pointDistances.length > 0) {
-      
-    //   const payload = {
-    //     point1: points[0],
-    //     point2: points[1],
-    //     distance: parseFloat(pointDistances[0])
-    //   };
-      
-      
-    //   // FormData를 사용하여 파일을 업로드합니다.
-      
-      
-    //   const formData = new FormData();
-      
-      
-    //   formData.append('video_path', videoSrc);
+    setTimeout(()=>{
+      this.setState({ showProgressBar: false });
+    }, 30000)
 
-    //   fetch("http://localhost:8000/", {
-    //     method: "POST",
-    //     body: formData, // FormData를 전송합니다.
-    //   })
-    //     .then((response) => {
-    //       if (!response.ok) {
-    //         throw new Error("Network response was not ok");
-    //       }
-    //       return response.json();
-    //     })
-    //     .then((data) => {
-    //       console.log(data);
-    //       alert("Video path uploaded successfully");
+    // Prepare the payload for the API request
+    const payload = {
+        frame_path: "/home/dva4/dva/backend/test/frame_origin"/* path to the frame images */,
+        detection_save_path:"/home/dva4/dva/backend/test/model/detection/result" /* path where detection results should be saved */,
+        sliced_path: "/home/dva4/dva/backend/test/model/sliced"/* path for sliced images, if applicable */,
+        output_merge_path: "/home/dva4/dva/backend/test/model/merged"/* path for merged output */,
+        // ... include other necessary fields based on your API's requirements
+    };
 
-    //       // 서버에서 받은 결과 데이터에서 동영상 경로 추출
-    //       const newVideoPath = data.result.match(/Embedded Video Local Path: (.+)/)[1];
+    //완성되면 아래 코드로 inference 연결하기!
 
-    //       // 추출한 경로를 사용하여 비디오를 다시 로드
-    //       this.reLoadVideo(newVideoPath);
+    // try {
+    //     // Make the API call
+    //     const response = await axios.post(`${API_URL}/inference`, payload);
 
-    //       this.setState({ aiModelActive: true });
-    //     })
-    //     .catch((error) => {
-    //       console.error("There was a problem with the fetch operation:", error);
-    //       alert("Failed to upload video path");
-    //     });
+    //     if (response.status === 200) {
+    //         // Handle successful response
+    //         console.log("Model inference successful:", response.data);
+    //         this.setState({aiModelActive: false, showResults: true})
+
+    //         // Update your application state as necessary
+    //         // For example, if response contains a path to a result file, update the state to reflect this
+    //     } else {
+    //         // Handle non-successful responses
+    //         console.error("Model inference failed with status:", response.status);
+    //         // Update your application state as necessary
+    //     }
+    // } catch (error) {
+    //     console.error("Error during model inference:", error);
+    //     // Update your application state to reflect the error
+    // } finally {
+    //     // Update state to indicate that the AI model has finished running
+    //     this.setState({aiModelActive: false, showProgressBar: false});
     // }
+  
+    
   };
 
 
@@ -992,6 +978,8 @@ drawLabel = (startPoint, endPoint, text) => {
             Drone Video Analysis for MARC
           </Button>
 
+          <Space direction="vertical">
+
           
           {/* Toggle Button */}
           <Button onClick={this.toggleDisplayMode}>
@@ -1034,7 +1022,9 @@ drawLabel = (startPoint, endPoint, text) => {
           ) : (
             <img src="result.png" alt="Results" style={{ ...videoStyle, objectFit: 'contain' }} />
           )}
+          </Space>
         </div>
+        
       );
     }
     
@@ -1043,7 +1033,7 @@ drawLabel = (startPoint, endPoint, text) => {
     return (
       <div className="App" style={{ height: screenHeight + 'px', position: 'relative' }}>
         
-        {this.state.showProgressBar && <ProgressBar/>}
+        {this.state.showProgressBar && <div className="loading-bar"></div>}
         
         <Space direction="vertical" style={{ marginTop: '40px' }}>
         <Button
@@ -1144,7 +1134,7 @@ drawLabel = (startPoint, endPoint, text) => {
                   {!isLoading && <Button type="primary" onClick={this.saveVideo}>Save Video</Button>}
                 </div>
               </>
-            )}
+            )} 
             
           </Space>
           
@@ -1153,10 +1143,10 @@ drawLabel = (startPoint, endPoint, text) => {
             )} */}
           <Space style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <Space style={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
-            {videoSrc && logFile && srtFile && !showBEV && !this.state.aiModelActive && syncCompleted && (
+            {syncCompleted && !showBEV && !this.state.aiModelActive && (
               <div>
                 <Button style={{ backgroundColor: 'red', color: 'white' }} onClick={this.runAIModel}>
-                  Run AI Model
+                  AI 모델 실행
                 </Button>
               </div>
             )}
@@ -1182,8 +1172,8 @@ drawLabel = (startPoint, endPoint, text) => {
               checked={this.state.preprocessChecked}
               onChange={e => this.setState({ preprocessChecked: e.target.checked })}
             />
-            <label>Enable Preprocess?<br/></label>
-            <label>Check this first before you upload the video.</label>
+            <label>빛 반사 방지 모듈을 적용하시겠어요?<br/></label>
+            <label>영상 업로드 전 체크해주세요.</label>
             </div>)}
             
             </div>
@@ -1221,7 +1211,7 @@ drawLabel = (startPoint, endPoint, text) => {
               )
             } */}
             {!showBEV && this.state.syncCompleted&& aiModelActive && !videoPlaying && videoSrc && (
-              <Button onClick={this.toggleAddingInfo}>{addingInfo ? 'Disable Adding Info' : 'Enable Adding Info'}</Button>
+              <Button onClick={this.toggleAddingInfo}>{addingInfo ? '거리 정보 추가 마치기' : '거리 정보 추가하기'}</Button>
             )}
             {/* {
               lines.map((line,index)=>
@@ -1250,7 +1240,7 @@ drawLabel = (startPoint, endPoint, text) => {
                   accept=".mp4,.mov"
                   customRequest={({ file }) => this.handleFileUpload(file)}
                 >
-                  {videoSrc ? <Button>Re-upload Video</Button> : <Button>Upload Video</Button>}
+                  {videoSrc ? <Button>다른 영상 업로드</Button> : <Button>영상 업로드</Button>}
                 </Upload>
               )}
               <Upload
@@ -1258,14 +1248,14 @@ drawLabel = (startPoint, endPoint, text) => {
                 accept=".csv"
                 customRequest={({ file }) => this.handleCsvFileUpload(file)}
               >
-                {logFile ? <Button>Re-upload Log File</Button> : <Button>Upload Log File</Button>}
+                {logFile ? <Button>로그 파일 재업로드</Button> : <Button>로그 파일 업로드(.csv)</Button>}
               </Upload>
               <Upload
                 showUploadList={false}
                 accept=".srt"
                 customRequest={({ file }) => this.handleSrtFileUpload(file)}
               >
-                {srtFile ? <Button>Re-upload SRT File</Button> : <Button>Upload SRT File</Button>}
+                {srtFile ? <Button>SRT 파일 재업로드</Button> : <Button>SRT 파일 업로드</Button>}
               </Upload>
               {/* {allFillUpload && <Button onClick={this.runAIModel}>Run AI Model</Button>} */}
 
@@ -1274,9 +1264,9 @@ drawLabel = (startPoint, endPoint, text) => {
             
           </Space>)}
           <div>
-          {showBEV && (
+          {aiModelActive && (
           <Button type="primary" onClick={this.seeResults}>
-            See Results
+            결과 확인하러 가기!
           </Button>
         )}
           </div>

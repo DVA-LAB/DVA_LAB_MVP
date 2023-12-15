@@ -97,6 +97,23 @@ input:checked + .slider:before {
   100% { transform: rotate(360deg); }
 }
 
+.loading-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(to right, #4d9f0c, #b4ec51);
+  animation: load 30s linear forwards;
+}
 
+@keyframes load {
+  from {
+      left: -100%;
+  }
+  to {
+      left: 100%;
+  }
+}
 
 
