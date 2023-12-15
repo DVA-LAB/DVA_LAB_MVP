@@ -16,12 +16,12 @@ class BEV1(BaseModel):
     class Config:
         schema_extra = {
             "example": {
-                "frame_num": 200,
-                "frame_path": "api/services/Orthophoto_Maps/Data/frame_img/DJI_0119_200.png",
-                "csv_path": "api/services/Orthophoto_Maps/Data/DJI_0119.csv",
-                "objects": [None, None, None, 528.60, 537.70, 528.60 + 134.01, 537.70 + 258.51, None, -1, -1, -1],
-                "realdistance": 20,
-                "dst_dir": "api/services/Orthophoto_Maps/Data/result",
+                "frame_num": 1038,
+                "frame_path": "/home/dva4/dva/backend/test/frame_origin/DJI_0149_01038.jpg",
+                "csv_path": "/home/dva4/dva/backend/test/sync_csv/sync_log.csv",
+                "objects": [None, None, None, 860, 682, 860, 1034, None, -1, -1, -1],
+                "realdistance": 8.9,
+                "dst_dir": "/home/dva4/dva/backend/test/frame_bev",
             }
         }
 

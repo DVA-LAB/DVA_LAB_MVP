@@ -137,9 +137,10 @@ class Refiner:
 
     @staticmethod
     def calculate_length_along_major_axis(mask):
-        # 객체의 좌표 추출
-        y_coords, x_coords = np.where(mask == 255)
+        mask_2d = mask[0, 0, :, :].numpy()  # 첫 번째 채널을 2차원 배열로 변환
+        y_coords, x_coords = np.where(mask_2d)
         coords = np.column_stack((x_coords, y_coords))
+        coords = coords.astype(np.float32)
 
         # PCA를 사용하여 주축 계산
         mean, eigenvectors = cv2.PCACompute(coords, mean=None)
@@ -150,3 +151,26 @@ class Refiner:
         length = np.linalg.norm(max_coord - min_coord)
 
         return length
+
+    @staticmethod
+    def calculate_endpoints_along_major_axis(mask):
+        mask_2d = mask[0, 0, :, :].numpy()  # 첫 번째 채널을 2차원 배열로 변환
+        y_coords, x_coords = np.where(mask_2d)
+        coords = np.column_stack((x_coords, y_coords))
+        coords = coords.astype(np.float32)
+
+        # PCA를 사용하여 주축 계산
+        mean, eigenvectors = cv2.PCACompute(coords, mean=None)
+
+        # 주축을 따라 길이 측정
+        proj_coords = (coords - mean).dot(eigenvectors.T)
+        min_proj, max_proj = np.min(proj_coords, axis=0), np.max(proj_coords, axis=0)
+
+        # 원래 좌표계로 변환
+        min_point = mean + min_proj.dot(eigenvectors)
+        max_point = mean + max_proj.dot(eigenvectors)
+
+        min_point_tuple = tuple(min_point.ravel())
+        max_point_tuple = tuple(max_point.ravel())
+
+        return min_point_tuple, max_point_tuple

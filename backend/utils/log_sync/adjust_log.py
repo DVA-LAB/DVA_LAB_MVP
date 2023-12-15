@@ -136,12 +136,9 @@ def match_srt(pd_log, pd_srt, pd_idx):
         end_idx = coord_end.index[start_time.index(min(start_time))]
         print('match type: time')
     else:
-        if min(start_dist) <= 0.05:
-            start_idx = coord_start.index[start_dist.index(min(start_dist))]
-            end_idx = coord_end.index[start_dist.index(min(start_dist))]
-            print('match type: distance')
-        else:
-            return
+        start_idx = coord_start.index[start_dist.index(min(start_dist))]
+        end_idx = coord_end.index[start_dist.index(min(start_dist))]
+        print('match type: distance')
 
     return pd_log[start_idx:end_idx+1], start_idx, end_idx
 
