@@ -1,22 +1,24 @@
+from extract_meta import extract_video_metadata
 import os
 import cv2
+import csv
 import math
 import argparse
 import numpy as np
 import pandas as pd
 from PIL import Image, ImageDraw, ImageFont
-from utils.extract_meta import extract_video_metadata
 
-LEGAL_SPEED = 50
-GSD = 0.06 #m/px
-merged_dolphin_center = None
+# Hypothetical sensor width and image width for Mavic 2
+sensor_width_mm = 6.3  # mm
+sensor_height_mm = 4.7  # mm
+image_width_pixels = 3840  # pixels
+image_height_pixels =2160
 
-def set_legal_speed(speed):
-    global LEGAL_SPEED
-    LEGAL_SPEED = speed
-
-def set_gsd(gsd):
+def set_gsd(logs, frame_num):
     global GSD
+    flight_height = logs['adjusted height'][frame_num] # m
+    focal_length = logs['focal_length'][frame_num] / 50 # mm
+    gsd = (sensor_height_mm / image_height_pixels) * (flight_height / focal_length)
     GSD = gsd
 
 def set_merged_dolphin_center(center):
@@ -27,7 +29,6 @@ def read_log_file(log_path):
     # Reading the CSV file into a DataFrame
     df = pd.read_csv(log_path)
 
-    # Displaying the first few rows of the DataFrame
     return df
 
 def calculate_nearest_distance(centers, classes, track_ids, GSD):
@@ -100,7 +101,8 @@ def draw_radius_circles(draw, center, radii_info, font):
         # 원을 그립니다.
         draw.ellipse([center[0] - radius, center[1] - radius, center[0] + radius, center[1] + radius], outline=color, width=15)
         # 원의 선 위에 텍스트를 표시합니다.
-        draw.text((center[0] + radius + 10, center[1] - 10), f"{radius*GSD}m", font=font, fill=color)
+        draw.text((center[0] + radius + 10, center[1] - 10), f"{round(radius*GSD,2)}m", font=font, fill=color)
+
 
 def merge_bboxes(bboxes):
     """
@@ -120,18 +122,17 @@ def merge_bboxes(bboxes):
     merged_dolphin_center = (min_x + (max_x - min_x) / 2, min_y + (max_y - min_y) / 2)
     return (min_x, min_y, max_x, max_y)
 
-
 def get_image_paths(directory: str) -> list:
     image_paths = []
     for root, _, files in os.walk(directory):
-        for file in files:
+        for file in sorted(files):  # Sort files before appending
             image_path = os.path.join(root, file)
             image_paths.append(image_path)
 
     return image_paths
 
-
-def show_result(log_path, input_dir, output_video, bbox_path, frame_rate=5):
+def show_result(log_path, input_dir, output_video, bbox_path, frame_rate=30):
+    # frame_rate=30
     parser = argparse.ArgumentParser()
     parser.add_argument('--log_path', type=str, default='in/DJI_0119_30.csv')
     parser.add_argument('--input_dir', type=str, default='/home/dva4/dva/backend/test/frame_origin')
@@ -151,10 +152,8 @@ def show_result(log_path, input_dir, output_video, bbox_path, frame_rate=5):
     frame_height, frame_width, layers = first_image.shape
 
     logs = read_log_file(args.log_path)
-    print(logs.columns)
-
-    bbox_data = read_bbox_data(args.bbox_path) # bbox 데이터를 읽어옵니다.
-
+    bbox_data = read_bbox_data(args.bbox_path)
+    
     # font = ImageFont.truetype('AppleGothic.ttf', 40)
     font = ImageFont.truetype('/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc', 40)
     fourcc = cv2.VideoWriter_fourcc(*'MP4V')
@@ -163,22 +162,22 @@ def show_result(log_path, input_dir, output_video, bbox_path, frame_rate=5):
     frame_count = 0
     previous_centers = {}
     max_ship_speed = 0
-
+    data = []
+    
     for image_path in image_paths:
+        set_gsd(logs, frame_count)
         frame = cv2.imread(image_path)
         date = logs['datetime'][frame_count]
         frame_bboxes = bbox_data.get(frame_count, [])
         image = Image.fromarray(frame)
         draw = ImageDraw.Draw(image)
 
-        # 좌상단에 흰색 배경 사각형을 그립니다.
-        dashboard_background = (0, 0, 700, 350)  # 좌표 (x0, y0, x1, y1)
-        draw.rectangle(dashboard_background, fill=(255, 255, 255))
         
         dolphin_bboxes = []
         track_ids=[]
         centers = []  # bbox 중심점들을 저장합니다.
         classes = []  # bbox의 클래스 정보를 저장합니다.
+        points = []
         ships_within_50m = set()
         ships_within_300m = set()
         ship_speeds = {}
@@ -188,7 +187,11 @@ def show_result(log_path, input_dir, output_video, bbox_path, frame_rate=5):
             x, y, w, h = bbox_info['bbox']
             class_id = bbox_info['class']
             conf_score = round(bbox_info['conf'], 2)
-            if class_id == 1 and conf_score < 0.6:
+            
+            if class_id == 2 : class_id = 0
+            if class_id == 0 and conf_score < 0.5:
+                continue
+            if class_id == 1 and conf_score < 0.8:
                 continue
             
             # bbox의 중심점을 계산합니다.
@@ -207,7 +210,6 @@ def show_result(log_path, input_dir, output_video, bbox_path, frame_rate=5):
                 outer_radius = 10  # 외부 원의 반지름
                 draw.ellipse((center_x - outer_radius, center_y - outer_radius, center_x + outer_radius, center_y + outer_radius), outline=(0, 0, 255), width=10)
 
-
                 # 중심점 저장
                 if track_id not in previous_centers:
                     previous_centers[track_id] = (center_x, center_y)
@@ -218,8 +220,10 @@ def show_result(log_path, input_dir, output_video, bbox_path, frame_rate=5):
                     max_ship_speed = max(max_ship_speed, speed_kmh)
                     # 중심점 업데이트
                     previous_centers[track_id] = (center_x, center_y)
-
-            if class_id == 0:
+                # point csv
+                points = [frame_count, track_id, class_id, x, y, x+w, y+h, conf_score,-1,-1,-1 ]
+        
+            if class_id == 0: # 돌고래인 경우
                 dolphin_bboxes.append(bbox_info)
 
         # 모든 돌고래 bbox를 하나로 합칩니다.
@@ -230,6 +234,9 @@ def show_result(log_path, input_dir, output_video, bbox_path, frame_rate=5):
             # 그리고 해당 bbox를 그립니다.
             draw.rectangle(xy=merged_dolphin_bbox, width=5, outline=(0, 0, 255))
 
+            # point csv
+            points = [frame_count, track_id, class_id, merged_dolphin_bbox[0],merged_dolphin_bbox[1],merged_dolphin_bbox[2], merged_dolphin_bbox[3],conf_score,-1,-1,-1 ]
+        
         # 모든 bbox 중심점들 사이에 선을 그리고 거리를 표시합니다.
         draw_lines_and_distances(draw, centers, classes, font)
 
@@ -269,16 +276,24 @@ def show_result(log_path, input_dir, output_video, bbox_path, frame_rate=5):
             min_distance = "-"  # Or any other placeholder you prefer
         font_color = (0, 0, 0) # if violation else (0, 255, 0)
 
+        # csv data add
+        if len(points)>0:
+            data.append(points)
+
         # 텍스트를 흰색 배경 사각형 위에 그립니다.
         text_positions = [(30, 30), (30, 80), (30, 130), (30, 180), (30, 230), (30, 280)]
         texts = [
             f"일시: {date}",
             f"프레임 숫자: {frame_count}",
+            f"픽셀 사이즈: {round(GSD,5)}m/px",
             f"선박과 가장 가까운 거리: {min_distance}m",
-            f"선박 최대 속도: {max_ship_speed}km/h",
             f"50m 이내의 선박 수: {len(ships_within_50m)}",
             f"300m 이내의 선박 수: {len(ships_within_300m)}"
         ]
+
+        # 좌상단에 흰색 배경 사각형을 그립니다.
+        dashboard_background = (0, 0, 700, 350)  # 좌표 (x0, y0, x1, y1)
+        draw.rectangle(dashboard_background, fill=(255, 255, 255))
 
         for text, pos in zip(texts, text_positions):
             draw.text(pos, text, font=font, fill=font_color)
@@ -286,22 +301,24 @@ def show_result(log_path, input_dir, output_video, bbox_path, frame_rate=5):
         # 나머지 코드
         img = np.array(image)
         out.write(img)
+        # cv2.imshow(args.video_path, img)
+        # if cv2.waitKey(1) & 0xFF == ord("q"):
+        #     break
 
-        # cv2.imshow(args.video_path, img) # 
-        # if cv2.waitKey(1) & 0xFF == ord("q"): # 
-        #     break # 
+        frame_count += 1
 
-        frame_count += frame_rate
-        
+    f = open("backend/utils/visualizing/bev_points.csv", "w")
+    writer = csv.writer(f)
+    writer.writerows(data)
+    f.close()
     out.release()
-
-    cv2.destroyAllWindows() #
 
 # if __name__ == "__main__":
 #     parser = argparse.ArgumentParser()
-#     parser.add_argument('--log_path', type=str, default='../../../in/DJI_0150.csv')
-#     parser.add_argument('--video_path', type=str, default='../../../in/DJI_0150.MP4')
-#     parser.add_argument('--output_video', type=str, default='../../../out/DJI_0150.MP4')
-#     parser.add_argument('--bbox_path', type=str, default='../../../in/result.txt')
+#     parser.add_argument('--log_path', type=str, default='backend/test/sync_csv/sync_log.csv')
+#     parser.add_argument('--input_dir', type=str, default='backend/test/frame_origin')
+#     parser.add_argument('--output_video', type=str, default='backend/test/visualize.mp4')
+#     parser.add_argument('--bbox_path', type=str, default='backend/test/model/tracking/result.txt')
+#     parser.add_argument('--GSD_path', type=str, default='backend/test/GSD.txt')
 #     args = parser.parse_args()
 #     show_result(args)
