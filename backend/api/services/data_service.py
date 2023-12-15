@@ -4,7 +4,7 @@ import threading
 import cv2
 
 
-def parse_video_to_frames(video_path, output_base_folder_path):
+def parse_video_to_frames(video_path, output_base_folder_path, frame_interval=5):
     """
     Parses a single video into frames and saves them in a subdirectory named after the original file.
     Filenames are in the format 'originalfilename_framenumber.jpg', where the frame number is zero-padded to 5 digits.
@@ -37,9 +37,10 @@ def parse_video_to_frames(video_path, output_base_folder_path):
             break
 
         # Save frame with padded frame number
-        padded_frame_number = str(frame_count).zfill(5)
-        frame_filename = f"{filename_without_ext}_{padded_frame_number}.jpg"
-        cv2.imwrite(os.path.join(output_folder_path, frame_filename), frame)
+        if frame_count % frame_interval == 0:
+            padded_frame_number = str(frame_count).zfill(5)
+            frame_filename = f"{filename_without_ext}_{padded_frame_number}.jpg"
+            cv2.imwrite(os.path.join(output_folder_path, frame_filename), frame)
 
         frame_count += 1
 
