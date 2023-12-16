@@ -316,7 +316,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--log_path', type=str, default='backend/test/sync_csv/sync_log.csv')
     parser.add_argument('--input_dir', type=str, default='backend/test/frame_origin')
-    parser.add_argument('--output_video', type=str, default='backend/test/visualize.mp4')
+    parser.add_argument('--output_video', type=str, default='backend/test/visualize.avi')
     parser.add_argument('--bbox_path', type=str, default='backend/test/model/tracking/result.txt')
     parser.add_argument('--GSD_path', type=str, default='backend/test/GSD.txt')
     args = parser.parse_args()
