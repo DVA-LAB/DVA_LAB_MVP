@@ -31,7 +31,7 @@ async def inference(request_body: DataRequest):
 
 
 @router.post(
-    "/check_size",
+    "/ship_size",
     status_code=status.HTTP_200_OK,
     summary="check ship size with SAM",
 )
