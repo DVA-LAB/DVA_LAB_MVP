@@ -1,4 +1,3 @@
-from extract_meta import extract_video_metadata
 import os
 import cv2
 import csv
@@ -131,19 +130,19 @@ def get_image_paths(directory: str) -> list:
 
     return image_paths
 
-def show_result(log_path, input_dir, output_video, bbox_path, frame_rate=30):
-    # frame_rate=30
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--log_path', type=str, default='in/DJI_0119_30.csv')
-    parser.add_argument('--input_dir', type=str, default='/home/dva4/dva/backend/test/frame_origin')
-    parser.add_argument('--output_video', type=str, default='out/output.mp4')
-    parser.add_argument('--bbox_path', type=str, default='in/bbox.txt')
+def show_result(args): #log_path, input_dir, output_video, bbox_path, frame_rate=30):
+    frame_rate=30
+    # parser = argparse.ArgumentParser()
+    # parser.add_argument('--log_path', type=str, default='in/DJI_0119_30.csv')
+    # parser.add_argument('--input_dir', type=str, default='/home/dva4/dva/backend/test/frame_origin')
+    # parser.add_argument('--output_video', type=str, default='out/output.mp4')
+    # parser.add_argument('--bbox_path', type=str, default='in/bbox.txt')
 
-    args = parser.parse_args()
-    args.log_path = log_path
-    args.input_dir = input_dir
-    args.output_video = output_video
-    args.bbox_path = bbox_path
+    # args = parser.parse_args()
+    # args.log_path = log_path
+    # args.input_dir = input_dir
+    # args.output_video = output_video
+    # args.bbox_path = bbox_path
 
     image_paths = get_image_paths(args.input_dir)
     
@@ -185,7 +184,7 @@ def show_result(log_path, input_dir, output_video, bbox_path, frame_rate=30):
         for bbox_info in frame_bboxes:
             track_id = bbox_info['track_id']
             x, y, w, h = bbox_info['bbox']
-            class_id = bbox_info['class']
+            class_id = int(bbox_info['class'])
             conf_score = round(bbox_info['conf'], 2)
             
             if class_id == 2 : class_id = 0
@@ -220,7 +219,7 @@ def show_result(log_path, input_dir, output_video, bbox_path, frame_rate=30):
                     max_ship_speed = max(max_ship_speed, speed_kmh)
                     # 중심점 업데이트
                     previous_centers[track_id] = (center_x, center_y)
-                # point csv
+                
                 points = [frame_count, track_id, class_id, x, y, x+w, y+h, conf_score,-1,-1,-1 ]
         
             if class_id == 0: # 돌고래인 경우
@@ -234,9 +233,9 @@ def show_result(log_path, input_dir, output_video, bbox_path, frame_rate=30):
             # 그리고 해당 bbox를 그립니다.
             draw.rectangle(xy=merged_dolphin_bbox, width=5, outline=(0, 0, 255))
 
-            # point csv
-            points = [frame_count, track_id, class_id, merged_dolphin_bbox[0],merged_dolphin_bbox[1],merged_dolphin_bbox[2], merged_dolphin_bbox[3],conf_score,-1,-1,-1 ]
-        
+            if class_id == 0:
+                points = [frame_count, 999999, class_id, merged_dolphin_bbox[0],merged_dolphin_bbox[1],merged_dolphin_bbox[2], merged_dolphin_bbox[3],conf_score,-1,-1,-1]
+            
         # 모든 bbox 중심점들 사이에 선을 그리고 거리를 표시합니다.
         draw_lines_and_distances(draw, centers, classes, font)
 
@@ -313,12 +312,12 @@ def show_result(log_path, input_dir, output_video, bbox_path, frame_rate=30):
     f.close()
     out.release()
 
-# if __name__ == "__main__":
-#     parser = argparse.ArgumentParser()
-#     parser.add_argument('--log_path', type=str, default='backend/test/sync_csv/sync_log.csv')
-#     parser.add_argument('--input_dir', type=str, default='backend/test/frame_origin')
-#     parser.add_argument('--output_video', type=str, default='backend/test/visualize.mp4')
-#     parser.add_argument('--bbox_path', type=str, default='backend/test/model/tracking/result.txt')
-#     parser.add_argument('--GSD_path', type=str, default='backend/test/GSD.txt')
-#     args = parser.parse_args()
-#     show_result(args)
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--log_path', type=str, default='backend/test/sync_csv/sync_log.csv')
+    parser.add_argument('--input_dir', type=str, default='backend/test/frame_origin')
+    parser.add_argument('--output_video', type=str, default='backend/test/visualize.mp4')
+    parser.add_argument('--bbox_path', type=str, default='backend/test/model/tracking/result.txt')
+    parser.add_argument('--GSD_path', type=str, default='backend/test/GSD.txt')
+    args = parser.parse_args()
+    show_result(args)
