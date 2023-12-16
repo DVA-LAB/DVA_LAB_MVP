@@ -141,11 +141,16 @@ Thanks go to these wonderful people ([emoji key](https://allcontributors.org/doc
                     href="https://github.com/DVA-LAB/DVA_LAB/commits?author=lemonbuilder"
                     title="Documentation">📖</a><a
                     title="Reviewed Pull Requests">👀</a></td>
-                      <td align="center" valign="top" width="14.28%"><a href="https://github.com/dkccccc"><img
+            <td align="center" valign="top" width="14.28%"><a href="https://github.com/SungHunYang"><img
                         src="https://avatars.githubusercontent.com/u/143378988?v=4?s=100" width="100px;"
+                        alt="Sunghun Yang" /><br /><sub><b>Dongki Chung</b></sub></a><br /><a
+                  href="https://github.com/DVA-LAB/DVA_LAB/commits?author=SungHunYang"
+                  title="Code">💻</a> </td>
+            <td align="center" valign="top" width="14.28%"><a href="https://github.com/dkccccc"><img
+                        src="https://avatars.githubusercontent.com/u/89681203?v=4?s=100" width="100px;"
                         alt="Dongki Chung" /><br /><sub><b>Dongki Chung</b></sub></a><br /><a
-                    href="https://github.com/DVA-LAB/DVA_LAB/commits?author=dkccccc"
-                    title="Code">💻</a> </td>
+                  href="https://github.com/DVA-LAB/DVA_LAB/commits?author=dkccccc"
+                  title="Code">💻</a> </td>
         </tr>
     </tbody>
 </table>
