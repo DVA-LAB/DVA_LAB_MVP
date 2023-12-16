@@ -74,7 +74,6 @@ def rectify_plane_parallel_with_point(boundary, boundary_rows, boundary_cols, gs
 
     return b, g, r, a, rectify_points
 
-
 @jit(nopython=True, parallel=True)
 def rectify_plane_parallel(boundary, boundary_rows, boundary_cols, gsd, eo, ground_height, R, focal_length, pixel_size, image):
     # 1. projection
@@ -122,6 +121,7 @@ def rectify_plane_parallel(boundary, boundary_rows, boundary_cols, gsd, eo, grou
 
             # 3. resample
             # Nearest Neighbor
+            image_shape = image.shape
             coord_ICS_col = int(image.shape[1] / 2 + coord_CCS_px_x)  # column
             coord_ICS_row = int(image.shape[0] / 2 + coord_CCS_px_y)  # row
 
@@ -135,7 +135,8 @@ def rectify_plane_parallel(boundary, boundary_rows, boundary_cols, gsd, eo, grou
                 r[row, col] = image[coord_ICS_row, coord_ICS_col][2]
                 a[row, col] = 255
 
-    return b, g, r, a
+    return b, g, r, a, image_shape, col, row, coord_CCS_px_x,coord_CCS_px_y
+
 
 
 @jit(nopython=True)
