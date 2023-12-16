@@ -1,3 +1,6 @@
+import sys
+sys.path.append("C:\\Users\\MYJS\\Desktop\\DVA\\master_Pjt\\DVA_LAB\\models\\BEV")
+
 import os
 import numpy as np
 import time
@@ -136,6 +139,7 @@ def BEV_UserInputFrame(frame_num, frame_path, csv_path, objects, realdistance, d
     # Boundary size
     boundary_cols = int((bbox[1, 0] - bbox[0, 0]) / gsd)
     boundary_rows = int((bbox[3, 0] - bbox[2, 0]) / gsd)
+
 
     try :
         b, g, r, a, rectified_poinst = rectify_plane_parallel_with_point(bbox, boundary_rows, boundary_cols, gsd, eo, ground_height, R, focal_length, pixel_size, image, object_points)
@@ -289,6 +293,7 @@ def BEV_FullFrame(frame_num, frame_path, csv_path, dst_dir, gsd, DEV = False):
         rst = 1
         return rst, None, None, None, None, None, None, None
 
+
     return rst, img_dst, gsd, image_shape, col, row, coord_CCS_px_x,coord_CCS_px_y
 
 if __name__ == "__main__":
@@ -313,7 +318,7 @@ if __name__ == "__main__":
     col2, row2  = 134.01, 258.51
 
     objects = [None, None, None, col1, row1, col2, row2, None, -1, -1, -1]
-    rst, img_dst, objects = BEV_FullFrame(frame_num, frame_path, csv_path, objects, dst_dir, gsd, DEV)
+    rst, img_dst, objects, gsd = BEV_FullFrame(frame_num, frame_path, csv_path, objects, dst_dir, gsd, DEV)
     print("GSD2 Done")
 
     
