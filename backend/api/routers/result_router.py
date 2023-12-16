@@ -78,7 +78,7 @@ async def get_all_gsd(body: VisRequestBev):
                 result.append(f'{frame_no} {0}')
         file.write('\n'.join(result))
 
-    return f'새롭게 계산한 GSD값이 {body.GSD_save_path}에 저장되었습니다. 소요시간: {round(time.time - s_time, 0)} sec'
+    return f'새로 계산한 GSD: {body.GSD_save_path}, 소요시간: {round(time.time - s_time, 0)} sec, refiner 모듈이 계산한 선박 개수: {len(ships_size)}'
 
 
 @router.get(
