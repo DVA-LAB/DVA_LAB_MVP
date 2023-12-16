@@ -60,14 +60,19 @@ async def get_all_gsd(body: VisRequestBev):
     with open(body.user_input, 'r') as f:
         distance = float(f.read().split(' ')[-1])
 
+    r_s_time = time.time()
     ships_size = get_ship_size(body.user_input, body.frame_path, body.tracking_result)
+    r_f_time = time.time()
     frame_nos = [int(x.split('_')[-1].split('.')[0]) for x in glob.glob(os.path.join(body.frame_path, '*.jpg'))]
+
+    g_s_time = time.time()
     for ship_size in ships_size:  # [frame_no, point[0][0], point[0][1], point[1][0], point[1][0]]
         frame = ship_size[0]
         x1, y1, x2, y2 = ship_size[1:]
         frame_file = [x for x in glob.glob(os.path.join(body.frame_path, '*.jpg')) if int(x.split('_')[-1].split('.')[0])==int(frame)][0]
         gsd = get_gsd(frame, frame_file, x1, y1, x2, y2, distance)
         gsds[frame] = gsd
+    g_f_time = time.time()
 
     with open(body.GSD_save_path, 'w') as file:
         result = []
@@ -78,7 +83,11 @@ async def get_all_gsd(body: VisRequestBev):
                 result.append(f'{frame_no} {0}')
         file.write('\n'.join(result))
 
-    return f'새로 계산한 GSD: {body.GSD_save_path}, 소요시간: {round(time.time - s_time, 0)} sec, refiner 모듈이 계산한 선박 개수: {len(ships_size)}'
+    return (f'새로 계산한 GSD: {body.GSD_save_path}',
+            f'소요시간: {round(time.time - s_time, 0)} sec',
+            f'refiner 모듈이 계산한 선박 개수: {len(ships_size)}',
+            f'refiner 계산에 소요된 시간: {round(r_f_time - r_s_time, 0)} sec',
+            f'추가 gsd 계산에 소요된 시간: {round(g_f_time - g_s_time, 0)} sec')
 
 
 @router.get(
