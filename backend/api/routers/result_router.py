@@ -4,6 +4,7 @@ import os
 import requests
 import json
 import pandas as pd
+import time
 
 import requests
 from autologging import logged
@@ -48,6 +49,7 @@ async def model_inference(body: VisRequest):
     summary="구할 수 있는 모든 gsd를 구합니다.",
 )
 async def get_all_gsd(body: VisRequestBev):
+    s_time = time.time()
     gsds = dict()
     with open(body.GSD_path, 'r') as f:
         initial_frame, initial_gsd = f.read().split(' ')
@@ -76,7 +78,7 @@ async def get_all_gsd(body: VisRequestBev):
                 result.append(f'{frame_no} {0}')
         file.write('\n'.join(result))
 
-    return f'새롭게 계산한 GSD값이 {body.GSD_save_path}에 저장되었습니다.'
+    return f'새롭게 계산한 GSD값이 {body.GSD_save_path}에 저장되었습니다. 소요시간: {round(time.time - s_time, 0)} sec'
 
 
 @router.get(
@@ -108,6 +110,7 @@ def get_ship_size(user_input, frame_path, tracking_result):
         "tracking_result": tracking_result
     }
     response = requests.post(url, headers=headers, data=json.dumps(data))
+    print(response)
     response_data = response.json()
     return response_data
 
