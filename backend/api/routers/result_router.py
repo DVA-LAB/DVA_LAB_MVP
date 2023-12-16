@@ -3,6 +3,7 @@ import json
 import os
 import requests
 import json
+import pandas as pd
 
 import requests
 from autologging import logged
@@ -22,17 +23,22 @@ router = APIRouter(tags=["result"])
     summary="visualizing result",
 )
 async def model_inference(body: VisRequest):
-    log_file = glob.glob(os.path.join(body.log_path, '*.csv'))[0]
+    log_file_path = glob.glob(os.path.join(body.log_path, '*.csv'))[0]
+    logs = pd.read_csv(log_file_path)
 
-    with open(os.path.join("test", "GSD.txt"), "r") as f:
-        gsd = f.read()
-    set_gsd(float(gsd))
+    # Read GSD.txt and parse the frame number
+    with open(os.path.abspath(os.path.join("test", "GSD.txt")), "r") as f:
+        gsd_txt = f.read().split()
+    frame_num = int(gsd_txt[0])  # Assuming the first value is the frame number
+
+    # Call set_gsd with the DataFrame and frame number
+    set_gsd(logs, frame_num)
 
     set_merged_dolphin_center(body.set_merged_dolphin_center)
 
     os.makedirs(os.path.dirname(body.output_video), exist_ok=True)
     delete_files_in_folder(os.path.dirname(body.output_video))
-    show_result(log_file, body.input_dir, body.output_video, body.bbox_path)
+    show_result(log_file_path, body.input_dir, body.output_video, body.bbox_path)
     return body.output_video
 
 
