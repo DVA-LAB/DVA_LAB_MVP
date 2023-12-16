@@ -144,17 +144,18 @@ def main(args):
         ship_speeds = {}
         center_x, center_y = None, None
         
+        rst, img_dst, gsd, image_shape, col, row, coord_CCS_px_x,coord_CCS_px_y = BEV_FullFrame(frame_count, image_path, args.log_path, args.output_dir,  GSD)
+
         if len(frame_bboxes) > 0 :
             for bbox_info in frame_bboxes:
                 track_id = bbox_info['track_id']
                 a, b, c, d = bbox_info['bbox']
                 class_id = bbox_info['class']
-                rst, img_dst, objects, gsd = BEV_FullFrame(frame_count, image_path, args.log_path,bbox_info['bbox'], args.output_dir,  GSD)
-                print("rst",rst)
                 if rst:
                     continue
                 else:
                     GSD = gsd
+                    objects = BEV_Points(image_shape, col, row, coord_CCS_px_x,coord_CCS_px_y, bbox_info['bbox'])
                 
                 x1, y1, x2, y2 = objects
 

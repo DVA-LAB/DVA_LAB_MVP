@@ -1,10 +1,10 @@
 import os
 import numpy as np
 import time
-from api.services.Orthophoto_Maps.module.ExifData import *
-from api.services.Orthophoto_Maps.module.EoData import *
-from api.services.Orthophoto_Maps.module.Boundary import boundary
-from api.services.Orthophoto_Maps.module.BackprojectionResample import rectify_plane_parallel_with_point, rectify_plane_parallel, createGeoTiff, create_pnga_optical, create_pnga_optical_with_obj_for_dev
+from .module.ExifData import *
+from .module.EoData import *
+from .module.Boundary import boundary
+from .module.BackprojectionResample import rectify_plane_parallel_with_point, rectify_plane_parallel, createGeoTiff, create_pnga_optical, create_pnga_optical_with_obj_for_dev
 from rich.console import Console
 from rich.table import Table
 import pandas as pd
@@ -47,7 +47,6 @@ def get_params_from_csv(csv_file, idx = None):
         return df
     else : 
         return df.iloc[idx, :]
-
 
 
 def BEV_UserInputFrame(frame_num, frame_path, csv_path, objects, realdistance, dst_dir, DEV = False):
@@ -141,11 +140,15 @@ def BEV_UserInputFrame(frame_num, frame_path, csv_path, objects, realdistance, d
     try :
         b, g, r, a, rectified_poinst = rectify_plane_parallel_with_point(bbox, boundary_rows, boundary_cols, gsd, eo, ground_height, R, focal_length, pixel_size, image, object_points)
         objects[3:3 + 4] = rectified_poinst
-        objects[5] -= objects[3] # Width
-        objects[6] -= objects[4] # Height
+        cols = [objects[3], objects[5]]
+        rows = [objects[4], objects[6]]
+        objects[3] = min(cols)
+        objects[4] = min(rows)
+        objects[5] = max(cols)
+        objects[6] = max(rows)
         if DEV : 
             create_pnga_optical_with_obj_for_dev(b, g, r, a, bbox, gsd, 5186, img_dst, rectified_poinst)  
-        else : 
+        else :  
             create_pnga_optical(b, g, r, a, bbox, gsd, 5186, img_dst)  
     except : 
         rst = 1
@@ -167,7 +170,37 @@ def BEV_UserInputFrame(frame_num, frame_path, csv_path, objects, realdistance, d
     return rst, img_dst, objects, pixel_size, gsd
 
 
-def BEV_FullFrame(frame_num, frame_path, csv_path, objects, dst_dir, gsd, DEV = False):
+def BEV_Points(image_shape, col, row, coord_CCS_px_x,coord_CCS_px_y, obj_points): #, image.shape[1], coord_CCS_px_x, coord_CCS_px_y, dst_dir, gsd, DEV = False):
+    """
+    * Parameters 
+    frame_num : int 
+    frame_path : str, png file path
+    csv_path : str, csv file path
+    drone_model : int, 
+    objects : list [frame_id, track_id, label, bbox, score, -1, -1, -1 ]
+    
+    * return 
+    rst : result flag // 0 : Success, 1 : rectify fail, 2 : gsd calc Fail
+    img_dst : string 
+    objects : list object
+    """
+    # 3. resample
+    # Nearest Neighbor
+    rectify_points = []
+    coord_ICS_col = int(image_shape[1] / 2 + coord_CCS_px_x)  # column
+    coord_ICS_row = int(image_shape[0] / 2 + coord_CCS_px_y)  # row
+
+    if coord_ICS_col == obj_points[0] and coord_ICS_row == obj_points[1] : 
+        rectify_points[0] = col
+        rectify_points[1] = row
+    if coord_ICS_col == obj_points[2] and coord_ICS_row == obj_points[3] : 
+        rectify_points[2] = col
+        rectify_points[3] = row
+    
+    return rectify_points
+
+
+def BEV_FullFrame(frame_num, frame_path, csv_path, dst_dir, gsd, DEV = False):
     """
     * Parameters 
     frame_num : int 
@@ -195,12 +228,6 @@ def BEV_FullFrame(frame_num, frame_path, csv_path, objects, dst_dir, gsd, DEV = 
     fov_degrees = DRONE_SENSOR_INFO[drone_model][2]
     gsd = gsd # From BEV1
 
-    # Objects Point : Col1, Row1, Col2, Row2
-    object_points = [int(x) for x in objects[3:3 + 4]]
-    # BEV2 : Detected Objects Format
-    object_points[2] = object_points[0] + object_points[2]
-    object_points[3] = object_points[1] + object_points[3]
-    
     # Save Path
     filename = os.path.basename(frame_path).split(".")[0]
     dst_file_name = "Transformed_{}".format(filename)
@@ -211,9 +238,8 @@ def BEV_FullFrame(frame_num, frame_path, csv_path, objects, dst_dir, gsd, DEV = 
     if DEV : 
         ## Visualize Original Image
         origin_img = image.copy()
-        cv2.line(origin_img, (object_points[0], object_points[1]), (object_points[2], object_points[3]), color=(255, 0, 0), thickness = 10)
+        # cv2.line(origin_img, (object_points[0], object_points[1]), (object_points[2], object_points[3]), color=(255, 0, 0), thickness = 10)
         cv2.imwrite(img_dst + '_Origin' + '.png', origin_img, [int(cv2.IMWRITE_PNG_COMPRESSION), 3])   # from 0 to 9, default: 
-
 
     # Step 1. Extract metadata from a df and advance information
     # focal_length, orientation, eo, maker = get_metadata(file_path)  # unit: m, _, ndarray
@@ -254,19 +280,16 @@ def BEV_FullFrame(frame_num, frame_path, csv_path, objects, dst_dir, gsd, DEV = 
     boundary_rows = int((bbox[3, 0] - bbox[2, 0]) / gsd)
 
     try :
-        b, g, r, a, rectified_poinst = rectify_plane_parallel_with_point(bbox, boundary_rows, boundary_cols, gsd, eo, ground_height, R, focal_length, pixel_size, image, object_points)
-        objects[3:3 + 4] = rectified_poinst
-        objects[5] -= objects[3] # Width
-        objects[6] -= objects[4] # Height
-        if DEV : 
-            create_pnga_optical_with_obj_for_dev(b, g, r, a, bbox, gsd, 5186, img_dst, rectified_poinst)  
-        else : 
-            create_pnga_optical(b, g, r, a, bbox, gsd, 5186, img_dst)  
+        b, g, r, a, image_shape, col, row, coord_CCS_px_x,coord_CCS_px_y = rectify_plane_parallel(bbox, boundary_rows, boundary_cols, gsd, eo, ground_height, R, focal_length, pixel_size, image)
+        # if DEV : 
+            # create_pnga_optical_with_obj_for_dev(b, g, r, a, bbox, gsd, 5186, img_dst, rectified_poinst)  
+        # else : 
+        create_pnga_optical(b, g, r, a, bbox, gsd, 5186, img_dst)  
     except : 
         rst = 1
-        return rst, None, None
+        return rst, None, None, None, None, None, None, None
 
-    return rst, img_dst, objects, gsd
+    return rst, img_dst, gsd, image_shape, col, row, coord_CCS_px_x,coord_CCS_px_y
 
 if __name__ == "__main__":
     ### Test Data ###
