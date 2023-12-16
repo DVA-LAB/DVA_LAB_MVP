@@ -155,7 +155,7 @@ def show_result(args): #log_path, input_dir, output_video, bbox_path, frame_rate
     
     # font = ImageFont.truetype('AppleGothic.ttf', 40)
     font = ImageFont.truetype('/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc', 40)
-    fourcc = cv2.VideoWriter_fourcc(*'DIVX')
+    fourcc = cv2.VideoWriter_fourcc(*'X264')
     out = cv2.VideoWriter(args.output_video, fourcc, frame_rate, (frame_width, frame_height))
     
     frame_count = 0
@@ -224,7 +224,10 @@ def show_result(args): #log_path, input_dir, output_video, bbox_path, frame_rate
         
             if class_id == 0: # 돌고래인 경우
                 dolphin_bboxes.append(bbox_info)
-
+            # csv data add
+            if len(points)>0:
+                data.append(points)
+                points = []
         # 모든 돌고래 bbox를 하나로 합칩니다.
         merged_dolphin_bbox = merge_bboxes(dolphin_bboxes)
         if merged_dolphin_bbox is not None:
