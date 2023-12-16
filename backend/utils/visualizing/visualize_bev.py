@@ -118,7 +118,7 @@ def main(args):
     
     # font = ImageFont.truetype('AppleGothic.ttf', 40)
     font = ImageFont.truetype('/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc', 40)
-    fourcc = cv2.VideoWriter_fourcc(*'DIVX')
+    fourcc = cv2.VideoWriter_fourcc(*'MJPG')
     out = cv2.VideoWriter(args.output_video, fourcc, frame_rate, (frame_width, frame_height))
     
     min_distance = '-'
