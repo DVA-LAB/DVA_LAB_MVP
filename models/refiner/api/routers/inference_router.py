@@ -61,21 +61,24 @@ async def inference(request_body: ShipRequest):
     if len(ship_id):
         target_results = [x for x in objs if int(x[1]) == int(ship_id[0])]
         for idx, result in enumerate(target_results):
-            frame_no = result[0]
-
-            # TODO@jh: 서버에 저장된 tracking 결과가 5의 배수로 inference한 결과가 아니라서 별도 처리함 (추후 수정 필요)
-            if frame_no % 5 != 0:
-                continue
-            # TODO@jh: 매번 찾지 않고, 네이밍 규칙으로 읽도록 수정 필요
-            frame = [
-                x for x in frames if frame_no == int(x.split("_")[-1].split(".")[0])
-            ][0]
-            bbox_xyxy = refiner.convert_to_xyxy(result[3:7])
-            mask = refiner._do_seg(cv2.imread(frame), [bbox_xyxy])
-            _, _, point = refiner.find_rotated_bounding_box_and_max_length(mask)
-            ships_info.append(
-                [frame_no, point[0][0], point[0][1], point[1][0], point[1][0]]
-            )
+            try:
+                frame_no = result[0]
+                # TODO@jh: 서버에 저장된 tracking 결과가 5의 배수로 inference한 결과가 아니라서 별도 처리함 (추후 수정 필요)
+                if frame_no % 5 != 0:
+                    continue
+                # TODO@jh: 매번 찾지 않고, 네이밍 규칙으로 읽도록 수정 필요
+                frame = [
+                    x for x in frames if frame_no == int(x.split("_")[-1].split(".")[0])
+                ][0]
+                bbox_xyxy = refiner.convert_to_xyxy(result[3:7])
+                mask = refiner._do_seg(cv2.imread(frame), [bbox_xyxy])
+                _, _, point = refiner.find_rotated_bounding_box_and_max_length(mask)
+                ships_info.append(
+                    [frame_no, point[0][0], point[0][1], point[1][0], point[1][0]]
+                )
+            except Exception as e:
+                # TODO@jh: 이미지가 읽히지 않는 프레임이 있는 것 같음. 추후 확인 필요
+                print(e)
     ships_info = [list(map(int, sublist)) for sublist in ships_info]
     return ships_info
 
