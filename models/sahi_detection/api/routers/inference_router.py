@@ -148,6 +148,16 @@ class Predictor(object):
             else:    
                 conf = ann['score']
             label = ann['category_id']
+
+            if bbox[0] < 0:
+                bbox[0] = 0.0
+            if bbox[1] < 0:
+                bbox[1] = 0.0
+            if bbox[2] > width:
+                bbox[2] = float(width)
+            if bbox[3] > height:
+                bbox[3] = float(height)
+
             # output : [x1, y1, x2, y2, conf, label]
             if label in self.cls_map.keys():
                 det_outputs.append([frame_id, self.cls_map[label], bbox[0], bbox[1], bbox[2], bbox[3], conf])
