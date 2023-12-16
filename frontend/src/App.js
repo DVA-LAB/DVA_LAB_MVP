@@ -11,7 +11,7 @@ import axios from 'axios';
 
 const { Title } = Typography;
 
-const API_URL =  'http://localhost:8000';
+const API_URL =  'http://0.0.0.0:8000';
 const BEV_URL = 'http://localhost:8001';
 // const API_URL='http://112.216.237.124:8000';
 // const BEV_URL= 'http://112.216.237.124:8001';
@@ -230,7 +230,7 @@ class App extends Component {
         // Reset states before upload
         videoFileName: null,
         videoSrc: null,
-        logFile: null,
+        // logFile: null,
         videoPlaying: false,
         frameNumber: 0,
         addingInfo: false,
@@ -342,7 +342,7 @@ loadVideo = () => {
 
             console.log(response.data);
             // Handle any additional state updates or actions on successful upload
-            this.setState({ allFillUpload: true, isLoading: false });
+            this.setState({ isLoading: false });
 
         } catch (error) {
             console.error('Error uploading CSV file:', error);
@@ -367,7 +367,7 @@ loadVideo = () => {
             });
 
             console.log(response.data);
-            this.setState({ allFillUpload: true, isLoading: false });
+            this.setState({ isLoading: false });
         } catch (error) {
             console.error('Error uploading SRT file:', error);
             this.setState({ isLoading: false });
@@ -916,8 +916,26 @@ drawLabel = (startPoint, endPoint, text) => {
     }
   }
 
-  seeResults = () => {
+  seeResults = async () => {
+
+    const formData = {
+      // 서버에 연결할때는 위에꺼 쓰기
+      // "log_path": "/home/dva4/dva/backend/test/sync_csv",
+      // "input_dir": "/home/dva4/dva/backend/test/frame_origin",
+      // "output_video": "/home/dva4/dva/backend/test/result/result.mp4",
+      // "bbox_path": "/home/dva4/dva/backend/test/model/tracking/result.txt",
+      // "set_merged_dolphin_center": false,
+      // "video_path": ""/home/dva4/dva/backend/test/video_origin"
+      "log_path": "/Users/dongwookim/DVA_LAB/backend/test/sync_csv",
+      "input_dir": "/Users/dongwookim/DVA_LAB/backend/test/frame_origin",
+      "output_video": "/Users/dongwookim/DVA_LAB/backend/test/result/result.mp4",
+      "bbox_path": "/Users/dongwookim/DVA_LAB/backend/test/model/tracking/result.txt",
+      "set_merged_dolphin_center": false,
+      "video_path": "/Users/dongwookim/DVA_LAB/backend/test/video_origin"
+    }
     
+    const response = await axios.post(`${API_URL}/visualize/`, formData);
+
     
     this.setState({ 
       showResults: true,
@@ -1065,7 +1083,7 @@ drawLabel = (startPoint, endPoint, text) => {
                 textAlign: 'center'
               }}>
                 <div className="loader" style={{ margin: '0 auto' }}></div>
-                {this.state.uploadStatus === 'saving' && <div style={{ marginTop: '20px' }}>Saving video and parsing frames.<br/>This might take a while.</div>}
+                {this.state.uploadStatus === 'saving' && <div style={{ marginTop: '20px' }}>영상을 저장하고 프레임을 파싱 중입니다.<br/>시간이 오래 걸릴 수 있습니다.</div>}
                 {this.state.uploadStatus === 'loading' && <div style={{ marginTop: '20px' }}>Loading video...</div>}
               </div>
             )}
@@ -1157,7 +1175,7 @@ drawLabel = (startPoint, endPoint, text) => {
                 onClick={this.syncFile}
                 disabled={this.state.isLoading} // Disable the button when loading
               >
-                {this.state.syncCompleted ? 'Sync Again' : 'Sync Log File'}
+                {this.state.syncCompleted ? '싱크 다시 맞추기' : '로그 파일 싱크 맞추기'}
               </Button>
             </div>
           )}
@@ -1202,7 +1220,7 @@ drawLabel = (startPoint, endPoint, text) => {
           <div>
             {this.state.infoAdded && !videoPlaying && videoSrc &&  this.state.showControlButtons && (
             <Button type="primary" onClick={this.toggleBEVView}>
-              {showBEV ? 'Return to Video' : 'Convert to BEV'}
+              {showBEV ? '동영상으로 돌아가기' : 'BEV 전환하기'}
             </Button>
             )}
 
