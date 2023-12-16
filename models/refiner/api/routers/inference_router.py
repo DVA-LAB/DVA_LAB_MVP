@@ -46,7 +46,9 @@ async def inference(request_body: ShipRequest):
 
     frames = glob.glob(os.path.join(request_body.frame_path, "*.jpg"))
     tracking_result = request_body.tracking_result
-    objs = read_file(tracking_result)  # frame_number, track_id, class_id, x, y, w, h, -1,-1,-1
+    objs = read_file(
+        tracking_result
+    )  # frame_number, track_id, class_id, x, y, w, h, -1,-1,-1
     ship_id = [
         x[1]
         for x in objs
@@ -71,7 +73,9 @@ async def inference(request_body: ShipRequest):
             bbox_xyxy = refiner.convert_to_xyxy(result[3:7])
             mask = refiner._do_seg(cv2.imread(frame), [bbox_xyxy])
             _, _, point = refiner.find_rotated_bounding_box_and_max_length(mask)
-            ships_info.append([frame_no, point[0][0], point[0][1], point[1][0], point[1][0]])
+            ships_info.append(
+                [frame_no, point[0][0], point[0][1], point[1][0], point[1][0]]
+            )
     ships_info = [list(map(int, sublist)) for sublist in ships_info]
     return ships_info
 

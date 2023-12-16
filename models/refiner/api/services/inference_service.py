@@ -157,7 +157,9 @@ class Refiner:
         mask_np = mask.numpy().astype(np.uint8)
         mask_np = mask_np.squeeze()
 
-        contours, _ = cv2.findContours(mask_np, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours, _ = cv2.findContours(
+            mask_np, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+        )
 
         rect = cv2.minAreaRect(contours[0])
         box = cv2.boxPoints(rect)
