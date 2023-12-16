@@ -51,26 +51,32 @@ async def get_all_gsd(body: VisRequestBev):
     gsds = dict()
     with open(body.GSD_path, 'r') as f:
         initial_frame, initial_gsd = f.read().split(' ')
-    gsds[initial_frame] = initial_gsd
+
+    # TODO@jh: user_input이 올바르게 저장되어 있지 않아서 임의로 가장 가까운 5의 배수로 수정함
+    gsds[round(int(initial_frame) / 5) * 5] = initial_gsd
 
     with open(body.user_input, 'r') as f:
         distance = float(f.read().split(' ')[-1])
 
     ships_size = get_ship_size(body.user_input, body.frame_path, body.tracking_result)
-    for ship_size in ships_size:
+    frame_nos = [int(x.split('_')[-1].split('.')[0]) for x in glob.glob(os.path.join(body.frame_path, '*.jpg'))]
+    for ship_size in ships_size:  # [frame_no, point[0][0], point[0][1], point[1][0], point[1][0]]
         frame = ship_size[0]
         x1, y1, x2, y2 = ship_size[1:]
         frame_file = [x for x in glob.glob(os.path.join(body.frame_path, '*.jpg')) if int(x.split('_')[-1].split('.')[0])==int(frame)][0]
         gsd = get_gsd(frame, frame_file, x1, y1, x2, y2, distance)
         gsds[frame] = gsd
 
-    sorted_gsds = dict(sorted(gsds.items()))
+    with open(body.GSD_save_path, 'w') as file:
+        result = []
+        for frame_no in sorted(frame_nos):
+            try:
+                result.append(f'{frame_no} {gsds[frame_no]}')
+            except:
+                result.append(f'{frame_no} {0}')
+        file.write('\n'.join(result))
 
-    with open(body.GSD_path, 'w') as file:
-        for frame, gsd in sorted_gsds.items():
-            file.write(f'{frame} {gsd}\n')
-
-    return f'새롭게 계산한 GSD값이 {body.GSD_path}에 저장되었습니다.'
+    return f'새롭게 계산한 GSD값이 {body.GSD_save_path}에 저장되었습니다.'
 
 
 @router.get(
@@ -91,7 +97,7 @@ def delete_files_in_folder(folder_path):
             os.remove(file)
 
 def get_ship_size(user_input, frame_path, tracking_result):
-    url = 'http://112.216.237.124:8005/check_size'
+    url = 'http://112.216.237.124:8005/ship_size'
     headers = {
         'accept': 'application/json',
         'Content-Type': 'application/json'
