@@ -38,12 +38,15 @@ async def inference(request_body: DataRequest):
 async def inference(request_body: ShipRequest):
     refiner = Refiner("cuda")
 
+    # TODO@jh: user가 여러대의 선박에 대한 입력을 저장할 경우 처리 필요
     user_frame_no, mean_x, mean_y = check_user_input(request_body.user_input)
-    frames = glob.glob(os.path.join(request_body.frame_path, "*.jpg"))
 
+    # TODO@jh: user_input이 올바르게 저장되어 있지 않아서 임의로 가장 가까운 5의 배수로 수정함
+    user_frame_no = round(user_frame_no / 5) * 5
+
+    frames = glob.glob(os.path.join(request_body.frame_path, "*.jpg"))
     tracking_result = request_body.tracking_result
-    objs = read_file(tracking_result)
-    # TODO@jh: class 정책 변경 확인 필요 (ship)
+    objs = read_file(tracking_result)  # frame_number, track_id, class_id, x, y, w, h, -1,-1,-1
     ship_id = [
         x[1]
         for x in objs
@@ -57,15 +60,21 @@ async def inference(request_body: ShipRequest):
         target_results = [x for x in objs if int(x[1]) == int(ship_id[0])]
         for idx, result in enumerate(target_results):
             frame_no = result[0]
-            # TODO@jh: 매번 찾지 않고, 네이밍 규칙으로 읽도록 수정
+
+            # TODO@jh: 서버에 저장된 tracking 결과가 5의 배수로 inference한 결과가 아니라서 별도 처리함 (추후 수정 필요)
+            if frame_no % 5 != 0:
+                continue
+            # TODO@jh: 매번 찾지 않고, 네이밍 규칙으로 읽도록 수정 필요
             frame = [
-                x for x in frames if int(1) == int(x.split("_")[-1].split(".")[0])
+                x for x in frames if frame_no == int(x.split("_")[-1].split(".")[0])
             ][0]
             bbox_xyxy = refiner.convert_to_xyxy(result[3:7])
+            print(bbox_xyxy)
             mask = refiner._do_seg(cv2.imread(frame), [bbox_xyxy])
-            # TODO@jh: 영상이 혹시 배의 길이보다 두께가 더 긴 화면이라면?? 시각화해서 확인해보기
-            (x1, y1), (x2, y2) = refiner.calculate_endpoints_along_major_axis(mask)
-            ships_info.append([frame_no, x1, y1, x2, y2])
+
+            print(mask.shape)
+            _, _, point = refiner.find_rotated_bounding_box_and_max_length(mask)
+            ships_info.append([frame_no, point[0][0], point[0][1], point[1][0], point[1][0]])
     return ships_info
 
 
@@ -101,3 +110,10 @@ def check_user_input(input_path):
     mean_x = (x1 + x2) / 2
     mean_y = (y1 + y2) / 2
     return int(frame_number), mean_x, mean_y
+
+
+def visualize_points(image_path, points, output_path):
+    image = cv2.imread(image_path)
+    for point in points:
+        cv2.circle(image, point, radius=5, color=(0, 0, 255), thickness=-1)
+    cv2.imwrite(output_path, image)
