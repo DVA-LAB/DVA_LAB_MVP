@@ -206,8 +206,8 @@ def BEV_FullFrame(frame_num, frame_path, csv_path, objects, dst_dir, gsd, DEV = 
     # Objects Point : Col1, Row1, Col2, Row2
     object_points = [int(x) for x in objects[3:3 + 4]]
     # BEV2 : Detected Objects Format
-    object_points[2] = object_points[0] + object_points[2]
-    object_points[3] = object_points[1] + object_points[3]
+    # object_points[2] = object_points[0] + object_points[2]
+    # object_points[3] = object_points[1] + object_points[3]
     
     # Save Path
     filename = os.path.basename(frame_path).split(".")[0]
