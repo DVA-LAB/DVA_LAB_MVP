@@ -122,7 +122,6 @@ def get_ship_size(user_input, frame_path, tracking_result):
         "tracking_result": tracking_result
     }
     response = requests.post(url, headers=headers, data=json.dumps(data))
-    print(response)
     response_data = response.json()
     return response_data
 
