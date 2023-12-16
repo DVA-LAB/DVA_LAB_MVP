@@ -2,6 +2,7 @@ import os
 import cv2
 import csv
 import math
+import time
 import argparse
 import numpy as np
 import pandas as pd
@@ -131,6 +132,7 @@ def get_image_paths(directory: str) -> list:
     return image_paths
 
 def show_result(args): #log_path, input_dir, output_video, bbox_path, frame_rate=30):
+    start_time = time.time()
     frame_rate=30
     # parser = argparse.ArgumentParser()
     # parser.add_argument('--log_path', type=str, default='in/DJI_0119_30.csv')
@@ -183,6 +185,13 @@ def show_result(args): #log_path, input_dir, output_video, bbox_path, frame_rate
 
         for bbox_info in frame_bboxes:
             track_id = bbox_info['track_id']
+            bbox_info['bbox'] = np.array(bbox_info['bbox'])
+            bbox_info['bbox'][bbox_info['bbox']<0]=0
+            if bbox_info['bbox'][0] > frame.shape[1]:
+                bbox_info['bbox'][0] = frame.shape[1]
+            if bbox_info['bbox'][1] > frame.shape[0]:
+                bbox_info['bbox'][1] = frame.shape[0]
+            
             x, y, w, h = bbox_info['bbox']
             class_id = int(bbox_info['class'])
             conf_score = round(bbox_info['conf'], 2)
@@ -201,10 +210,6 @@ def show_result(args): #log_path, input_dir, output_video, bbox_path, frame_rate
             track_ids.append(track_id)
             
             if class_id == 1:  # 선박인 경우
-                # 기존에 주어진 x, y, w, h를 사용하여 bounding box의 중심 좌표를 계산
-                center_x = x + w // 2
-                center_y = y + h // 2
-
                 # 중심 좌표에 작은 초록색 점을 그림
                 outer_radius = 10  # 외부 원의 반지름
                 draw.ellipse((center_x - outer_radius, center_y - outer_radius, center_x + outer_radius, center_y + outer_radius), outline=(0, 0, 255), width=10)
@@ -221,13 +226,14 @@ def show_result(args): #log_path, input_dir, output_video, bbox_path, frame_rate
                     previous_centers[track_id] = (center_x, center_y)
                 
                 points = [frame_count, track_id, class_id, x, y, x+w, y+h, conf_score,-1,-1,-1 ]
-        
-            if class_id == 0: # 돌고래인 경우
+            else : # 돌고래인 경우
                 dolphin_bboxes.append(bbox_info)
+            
             # csv data add
             if len(points)>0:
                 data.append(points)
                 points = []
+
         # 모든 돌고래 bbox를 하나로 합칩니다.
         merged_dolphin_bbox = merge_bboxes(dolphin_bboxes)
         if merged_dolphin_bbox is not None:
@@ -235,7 +241,7 @@ def show_result(args): #log_path, input_dir, output_video, bbox_path, frame_rate
             draw_radius_circles(draw, (center_x, center_y), [(50/GSD, "black"), (300/GSD, "yellow")], font)
             # 그리고 해당 bbox를 그립니다.
             draw.rectangle(xy=merged_dolphin_bbox, width=5, outline=(0, 0, 255))
-
+            
             if class_id == 0:
                 points = [frame_count, 999999, class_id, merged_dolphin_bbox[0],merged_dolphin_bbox[1],merged_dolphin_bbox[2], merged_dolphin_bbox[3],conf_score,-1,-1,-1]
             
@@ -314,6 +320,10 @@ def show_result(args): #log_path, input_dir, output_video, bbox_path, frame_rate
     writer.writerows(data)
     f.close()
     out.release()
+    end_time = time.time()
+    # 걸린 시간 계산
+    elapsed_time = end_time - start_time
+    # print(f"코드 실행 시간: {elapsed_time} 초")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
