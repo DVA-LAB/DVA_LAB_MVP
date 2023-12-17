@@ -76,11 +76,11 @@ def read_bbox_data(file_path, img_shape):
             data[frame_id].append({'track_id': int(track_id), 'bbox': (a, b, c, d), 'class': class_id, 'conf': conf})
     return data
 
-def draw_lines_and_distances(draw, centers, classes, font, line_color=(0, 0, 255)):
+def draw_lines_and_distances(draw, centers, merged_dolphin_center, classes, font, line_color=(0, 0, 255)):
     for i in range(len(centers)):
         if classes[i] == 1:  # 선박인 경우
             # 병합된 돌고래 바운딩 박스 중심과 선박 중심점 사이에 선을 그립니다.
-            start, end = centers[i], 1
+            start, end = centers[i], merged_dolphin_center
             draw.line([start, end], fill=line_color, width=2)
 
             # 두 점 사이의 거리를 계산합니다.
@@ -88,7 +88,6 @@ def draw_lines_and_distances(draw, centers, classes, font, line_color=(0, 0, 255
             mid_point = ((start[0] + end[0]) / 2, (start[1] + end[1]) / 2)
             
             draw.text(mid_point, f"{round(distance*GSD, 2)}m", font=font, fill=line_color)
-
 
 def draw_radius_circles(draw, center, radii_info, font):
     """
@@ -110,6 +109,30 @@ def get_image_paths(directory: str) -> list:
 
     return image_paths
 
+def get_max_dimensions(image_paths):
+    max_width = 0
+    max_height = 0
+    for path in image_paths:
+        with Image.open(path) as img:
+            width, height = img.size
+            max_width = max(max_width, width)
+            max_height = max(max_height, height)
+    return max_width, max_height
+
+def make_video(image_paths, video_name, fps=30):
+    max_width, max_height = get_max_dimensions(image_paths)
+    fourcc = cv2.VideoWriter_fourcc(*'MP4V')
+    video = cv2.VideoWriter(video_name, fourcc, fps, (max_width, max_height))
+
+    for path in image_paths:
+        img = cv2.imread(path)
+        h, w, _ = img.shape
+        if (w, h) != (max_width, max_height):
+            img = cv2.resize(img, (max_width, max_height))
+        video.write(img)
+
+    video.release()
+
 def main(args):
     global GSD
     frame_rate=30
@@ -124,27 +147,19 @@ def main(args):
 
     # font = ImageFont.truetype('AppleGothic.ttf', 40)
     font = ImageFont.truetype('/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc', 40)
-    fourcc = cv2.VideoWriter_fourcc(*'MP4V')
-    out = cv2.VideoWriter(args.output_video, fourcc, frame_rate, (frame_width, frame_height))
+
     
     min_distance = '-'
     frame_count = 0
     previous_centers = {}
     max_ship_speed = 0
     
-    # DEV_sampling_rate = 50
     for image_path in image_paths:
-        # if frame_count % DEV_sampling_rate != 0 :
-        #     continue
-        # if frame_count != 1265 :
-        #     continue
-
         set_gsd(logs, frame_count)
         frame = cv2.imread(image_path)
         date = logs['datetime'][frame_count]
         frame_bboxes = bbox_data.get(frame_count, [])
-        image = Image.fromarray(frame)
-        draw = ImageDraw.Draw(image)
+
         
         dolphin_bboxes = []
         track_ids=[]
@@ -154,30 +169,46 @@ def main(args):
         ships_within_300m = set()
         ship_speeds = {}
         center_x, center_y = None, None
+        dolphin_present = False
 
         rst, transformed_img, bbox, boundary_rows, boundary_cols, gsd, eo, R, focal_length, pixel_size = BEV_FullFrame(frame_count, image_path, args.log_path, args.output_dir, GSD, DEV = False)
+        if rst:
+            continue
+        else:
+            GSD = gsd
+            image = Image.fromarray(transformed_img)
+            draw = ImageDraw.Draw(image)
 
         if len(frame_bboxes) > 0 :
             for bbox_info in frame_bboxes:
                 track_id = bbox_info['track_id']
-                a, b, c, d = bbox_info['bbox']
                 class_id = bbox_info['class']
-
+                
                 if rst:
                     continue
                 else:
-                    GSD = gsd
                     rectify_points = BEV_Points(frame.shape, bbox, boundary_rows, boundary_cols, GSD, eo, R, focal_length, pixel_size, bbox_info['bbox'])
 
                 x1, y1, x2, y2 = rectify_points
-
-                # bbox의 중심점을 계산합니다.
-                center_x, center_y = (x1 + x2) / 2, (y1 + y2) / 2
+                if x2<x1:
+                    x2=x1
+                if y2<y1:
+                    y2=y1
+                
+                if class_id == 1:
+                    center_x, center_y = x2, y2
+                else:
+                    # bbox의 중심점을 계산합니다.
+                    center_x, center_y = (x1 + x2) / 2, (y1 + y2) / 2
                 
                 centers.append((center_x, center_y))
                 classes.append(class_id)
                 track_ids.append(track_id)
-                
+
+                if track_id == 999999:
+                    dolphin_present = True
+                    merged_dolphin_center = (center_x, center_y)
+
                 if class_id == 1:  # 선박인 경우
                     # 중심 좌표에 작은 초록색 점을 그림
                     outer_radius = 10  # 외부 원의 반지름
@@ -197,80 +228,80 @@ def main(args):
                 else: # 돌고래인 경우
                     dolphin_bboxes.append(bbox_info)
                     dolphin_present = True
-            if not (center_x == None and center_y == None):
-                # 모든 돌고래 bbox를 하나로 합칩니다.
-                draw_radius_circles(draw, (center_x, center_y), [(50/GSD, "black"), (300/GSD, "yellow")], font)
-                # 그리고 해당 bbox를 그립니다.
-                draw.rectangle(xy=(a,b,c,d), width=5, outline=(0, 0, 255))
-
-                # 모든 bbox 중심점들 사이에 선을 그리고 거리를 표시합니다.
-                draw_lines_and_distances(draw, centers, classes, font)
-
-                nearest_distances = calculate_nearest_distance(centers, classes, track_ids, GSD)
-                for (track_id, cls), distance in nearest_distances.items():
-                    if cls == 1:
-                        if distance <= 300:
-                            ships_within_300m.add(track_id)
-                        if distance <= 50:
-                            ships_within_50m.add(track_id)
-                violation = False
-
-                if dolphin_present:
-                    # Apply the rules based on the distance and speed
-                    for ship_id, speed in ship_speeds.items():
-                        if ship_id in ships_within_300m:
-                            distance = nearest_distances.get((ship_id, 1), float('inf'))  # Assuming class 1 is for ships
-                            if distance <= 50:
-                                violation = True  # Rule 1
-                            elif 50 < distance <= 300 and speed > 0:
-                                violation = True  # Rule 2
-                            elif 300 < distance <= 750 and speed >= 9.26:
-                                violation = True  # Rule 3
-                            elif 750 < distance <= 1500 and speed >= 18.52:
-                                violation = True  # Rule 4
-                            elif distance <= 300 and len(ships_within_300m) >= 3:
-                                violation = True  # Rule 5
-                else:
-                    # Rule 6: No dolphins, no violation
-                    violation = False
-
-                if nearest_distances:
-                    min_distance = min(nearest_distances.values())
-                    min_distance = round(min_distance, 2)  # Round after finding the minimum
-                    min_distance = str(min_distance)
-                else:
-                    min_distance = "-"  # Or any other placeholder you prefer
                 
-            font_color = (0, 0, 0) # if violation else (0, 255, 0)
+                if not (center_x == None and center_y == None):
+                    if class_id == 0:
+                        draw_radius_circles(draw, merged_dolphin_center, [(50/GSD, "black"), (300/GSD, "yellow")], font)
+                        draw.rectangle(xy=(x1, y1, x2, y2), width=5, outline=(0, 0, 255))
 
-            # 텍스트를 흰색 배경 사각형 위에 그립니다.
-            text_positions = [(30, 30), (30, 80), (30, 130), (30, 180), (30, 230), (30, 280)]
+                    # 모든 bbox 중심점들 사이에 선을 그리고 거리를 표시합니다.
+                    if dolphin_present:
+                        draw_lines_and_distances(draw, centers, merged_dolphin_center, classes, font)
+                        nearest_distances = calculate_nearest_distance(dolphin_present, merged_dolphin_center, centers, classes, track_ids, GSD)
+                        for (track_id, cls), distance in nearest_distances.items():
+                            if cls == 1:
+                                if distance <= 300:
+                                    ships_within_300m.add(track_id)
+                                if distance <= 50:
+                                    ships_within_50m.add(track_id)
+                        violation = False
 
-            texts = [
-                f"일시: {date}",
-                f"프레임 숫자: {frame_count}",
-                f"픽셀 사이즈: {round(GSD,5)}m/px",
-                f"선박과 가장 가까운 거리: {min_distance}m",
-                f"50m 이내의 선박 수: {len(ships_within_50m)}",
-                f"300m 이내의 선박 수: {len(ships_within_300m)}"
-            ]
+                        # Apply the rules based on the distance and speed
+                        for ship_id, speed in ship_speeds.items():
+                            if ship_id in ships_within_300m:
+                                distance = nearest_distances.get((ship_id, 1), float('inf'))  # Assuming class 1 is for ships
+                                if distance <= 50:
+                                    violation = True  # Rule 1
+                                elif 50 < distance <= 300 and speed > 0:
+                                    violation = True  # Rule 2
+                                elif 300 < distance <= 750 and speed >= 9.26:
+                                    violation = True  # Rule 3
+                                elif 750 < distance <= 1500 and speed >= 18.52:
+                                    violation = True  # Rule 4
+                                elif distance <= 300 and len(ships_within_300m) >= 3:
+                                    violation = True  # Rule 5
+                    else:
+                        # Rule 6: No dolphins, no violation
+                        violation = False
+                        nearest_distances = {}
 
-            # 좌상단에 흰색 배경 사각형을 그립니다.
-            dashboard_background = (0, 0, 700, 350)  # 좌표 (x0, y0, x1, y1)
-            draw.rectangle(dashboard_background, fill=(255, 255, 255))
-            
-            for text, pos in zip(texts, text_positions):
-                draw.text(pos, text, font=font, fill=font_color)
+                    if nearest_distances:
+                        min_distance = min(nearest_distances.values())
+                        min_distance = round(min_distance, 2)  # Round after finding the minimum
+                        min_distance = str(min_distance)
+                    else:
+                        min_distance = "-"  # Or any other placeholder you prefer
+                
+        font_color = (0, 0, 0) # if violation else (0, 255, 0)
+
+        # 텍스트를 흰색 배경 사각형 위에 그립니다.
+        text_positions = [(30, 30), (30, 80), (30, 130), (30, 180), (30, 230), (30, 280)]
+
+        texts = [
+            f"일시: {date}",
+            f"프레임 숫자: {frame_count}",
+            f"픽셀 사이즈: {round(GSD,5)}m/px",
+            f"선박과 가장 가까운 거리: {min_distance}m",
+            f"50m 이내의 선박 수: {len(ships_within_50m)}",
+            f"300m 이내의 선박 수: {len(ships_within_300m)}"
+        ]
+
+        # 좌상단에 흰색 배경 사각형을 그립니다.
+        dashboard_background = (0, 0, 700, 350)  # 좌표 (x0, y0, x1, y1)
+        draw.rectangle(dashboard_background, fill=(255, 255, 255))
+        
+        for text, pos in zip(texts, text_positions):
+            draw.text(pos, text, font=font, fill=font_color)
         
         # 나머지 코드
         img = np.array(image)
-        out.write(img)
         # 결과 이미지 저장
         output_frame_path = os.path.join(args.output_dir, f'frame_{frame_count}.png')
         cv2.imwrite(output_frame_path, img)
         frame_count += 1
+
+    make_video(image_paths, args.output_video)
     
-    out.release()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

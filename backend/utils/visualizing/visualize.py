@@ -225,7 +225,7 @@ def show_result(args): #log_path, input_dir, output_video, bbox_path, frame_rate
                     # 중심점 업데이트
                     previous_centers[track_id] = (center_x, center_y)
                 
-                points = [frame_count, track_id, class_id, x, y, x+w, y+h, conf_score,-1,-1,-1 ]
+                points = [frame_count, track_id, class_id, -1, -1, center_x, center_y, conf_score,-1,-1,-1 ]
             else : # 돌고래인 경우
                 dolphin_bboxes.append(bbox_info)
             
