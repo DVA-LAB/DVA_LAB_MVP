@@ -17,10 +17,14 @@ jobs:
     - name: Kill running app.py process on port 8000
       run: |
         PID=$(lsof -t -i:8000 -sTCP:LISTEN)
+        echo "PID found: $PID"
         if [ ! -z "$PID" ]; then
           echo "Killing process on port 8000 with PID $PID"
           kill $PID
+        else
+          echo "No process found on port 8000"
         fi
+
 
     - name: Run app.py in backend environment
       run: |
