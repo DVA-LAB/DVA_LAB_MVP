@@ -145,8 +145,6 @@ def main(args):
         if len(frame_bboxes) > 0 :
             for bbox_info in frame_bboxes:
                 track_id = bbox_info['track_id']
-                a, b, c, d = bbox_info['bbox']
-                print("before",a,b,c,d)
                 class_id = bbox_info['class']
                 rst, png_image, objects, gsd = BEV_FullFrame(frame_count, image_path, args.log_path, bbox_info['bbox'], args.output_dir, GSD)
                 image = Image.fromarray(png_image)
@@ -158,7 +156,6 @@ def main(args):
                     GSD = gsd
                     
                 x1, y1, x2, y2 = objects
-                print("after",x1, y1, x2, y2)
                 # bbox의 중심점을 계산합니다.
                 center_x, center_y = (x1 + x2) / 2, (y1 + y2) / 2
                 
