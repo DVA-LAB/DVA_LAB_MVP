@@ -14,13 +14,16 @@ jobs:
         source ~/anaconda3/etc/profile.d/conda.sh
         conda activate backend
 
-    - name: Kill running app.py process on specific port
+    - name: Kill running app.py process on port 8000
       run: |
         PID=$(lsof -t -i:8000 -sTCP:LISTEN)
         if [ ! -z "$PID" ]; then
-          echo "Killing process on port [PORT] with PID $PID"
+          echo "Killing process on port 8000 with PID $PID"
           kill $PID
         fi
 
-    - name: Run app.py
-      run: python /home/dva4/DVA_LAB/backend/app.py
+    - name: Run app.py in backend environment
+      run: |
+        source ~/anaconda3/etc/profile.d/conda.sh
+        conda activate backend
+        python /home/dva4/DVA_LAB/backend/app.py
