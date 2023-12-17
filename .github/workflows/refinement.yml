@@ -16,7 +16,7 @@ jobs:
 
     - name: Check if port 8005 is in use
       run: |
-        PID=$(lsof -t -i:8000 -sTCP:LISTEN) || true
+        PID=$(lsof -t -i:8005 -sTCP:LISTEN) || true
         if [ -z "$PID" ]; then
           echo "No process found on port 8005. Proceeding to start the app."
         else
