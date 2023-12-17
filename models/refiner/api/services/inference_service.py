@@ -153,24 +153,29 @@ class Refiner:
         return length
 
     @staticmethod
-    def calculate_endpoints_along_major_axis(mask):
-        mask_2d = mask[0, 0, :, :].numpy()  # 첫 번째 채널을 2차원 배열로 변환
-        y_coords, x_coords = np.where(mask_2d)
-        coords = np.column_stack((x_coords, y_coords))
-        coords = coords.astype(np.float32)
+    def find_rotated_bounding_box_and_max_length(mask):
+        mask_np = mask.numpy().astype(np.uint8)
+        mask_np = mask_np.squeeze()
 
-        # PCA를 사용하여 주축 계산
-        mean, eigenvectors = cv2.PCACompute(coords, mean=None)
+        contours, _ = cv2.findContours(
+            mask_np, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+        )
 
-        # 주축을 따라 길이 측정
-        proj_coords = (coords - mean).dot(eigenvectors.T)
-        min_proj, max_proj = np.min(proj_coords, axis=0), np.max(proj_coords, axis=0)
+        rect = cv2.minAreaRect(contours[0])
+        box = cv2.boxPoints(rect)
+        box = np.int0(box)
 
-        # 원래 좌표계로 변환
-        min_point = mean + min_proj.dot(eigenvectors)
-        max_point = mean + max_proj.dot(eigenvectors)
+        # 가장 긴 변의 길이와 해당 변을 이루는 두 포인트를 찾습니다.
+        max_length = 0
+        longest_edge_points = None
 
-        min_point_tuple = tuple(min_point.ravel())
-        max_point_tuple = tuple(max_point.ravel())
+        for i in range(4):
+            p1 = box[i]
+            p2 = box[(i + 1) % 4]
+            edge_length = np.linalg.norm(p1 - p2)
 
-        return min_point_tuple, max_point_tuple
+            if edge_length > max_length:
+                max_length = edge_length
+                longest_edge_points = (p1, p2)
+
+        return max_length, box, longest_edge_points
