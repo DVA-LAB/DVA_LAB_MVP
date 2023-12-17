@@ -12,7 +12,7 @@ class TrackingRequest(BaseModel):
     class Config:
         schema_extra = {
             "example": {
-                "det_result_path": "/home/dva4/dva/backend/test/model/merged/result.txt",
-                "result_path": "/home/dva4/dva/backend/test/model/tracking/result.txt",
+                "det_result_path": "/home/dva4/DVA_LAB/backend/test/model/merged/result.txt",
+                "result_path": "/home/dva4/DVA_LAB/backend/test/model/tracking/result.txt",
             }
         }

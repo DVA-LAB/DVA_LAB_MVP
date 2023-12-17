@@ -136,7 +136,7 @@ def show_result(args): #log_path, input_dir, output_video, bbox_path, frame_rate
     frame_rate=30
     # parser = argparse.ArgumentParser()
     # parser.add_argument('--log_path', type=str, default='in/DJI_0119_30.csv')
-    # parser.add_argument('--input_dir', type=str, default='/home/dva4/dva/backend/test/frame_origin')
+    # parser.add_argument('--input_dir', type=str, default='/home/dva4/DVA_LAB/backend/test/frame_origin')
     # parser.add_argument('--output_video', type=str, default='out/output.mp4')
     # parser.add_argument('--bbox_path', type=str, default='in/bbox.txt')
 

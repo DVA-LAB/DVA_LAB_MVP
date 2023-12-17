@@ -498,8 +498,8 @@ loadVideo = () => {
     // Remove the last part (the extension)
     const fileNameWithoutExtension = parts.slice(0, -1).join('.');
     const frameNumberPadded = frameNumber.toString().padStart(5, '0'); // Pad frame number with leading zeros
-    const framePath = `/home/dva4/dva/backend/test/frame_origin/${fileNameWithoutExtension}_${frameNumberPadded}.jpg`; 
-    const csvPath = `/home/dva4/dva/backend/test/sync_csv/sync_log.csv`;
+    const framePath = `/home/dva4/DVA_LAB/backend/test/frame_origin/${fileNameWithoutExtension}_${frameNumberPadded}.jpg`; 
+    const csvPath = `/home/dva4/DVA_LAB/backend/test/sync_csv/sync_log.csv`;
     const dstDir = "api/services/Orthophoto_Maps/Data/result"; // Destination directory
   
     const formatObjectsArray = (lastEntry) => {
@@ -791,10 +791,10 @@ drawLabel = (startPoint, endPoint, text) => {
 
     // Prepare the payload for the API request
     const payload = {
-        frame_path: "/home/dva4/dva/backend/test/frame_origin"/* path to the frame images */,
-        detection_save_path:"/home/dva4/dva/backend/test/model/detection/result" /* path where detection results should be saved */,
-        sliced_path: "/home/dva4/dva/backend/test/model/sliced"/* path for sliced images, if applicable */,
-        output_merge_path: "/home/dva4/dva/backend/test/model/merged"/* path for merged output */,
+        frame_path: "/home/dva4/DVA_LAB/backend/test/frame_origin"/* path to the frame images */,
+        detection_save_path:"/home/dva4/DVA_LAB/backend/test/model/detection/result" /* path where detection results should be saved */,
+        sliced_path: "/home/dva4/DVA_LAB/backend/test/model/sliced"/* path for sliced images, if applicable */,
+        output_merge_path: "/home/dva4/DVA_LAB/backend/test/model/merged"/* path for merged output */,
         // ... include other necessary fields based on your API's requirements
     };
 
@@ -920,12 +920,12 @@ drawLabel = (startPoint, endPoint, text) => {
 
     const formData = {
       // 서버에 연결할때는 위에꺼 쓰기
-      // "log_path": "/home/dva4/dva/backend/test/sync_csv",
-      // "input_dir": "/home/dva4/dva/backend/test/frame_origin",
-      // "output_video": "/home/dva4/dva/backend/test/result/result.mp4",
-      // "bbox_path": "/home/dva4/dva/backend/test/model/tracking/result.txt",
+      // "log_path": "/home/dva4/DVA_LAB/backend/test/sync_csv",
+      // "input_dir": "/home/dva4/DVA_LAB/backend/test/frame_origin",
+      // "output_video": "/home/dva4/DVA_LAB/backend/test/result/result.mp4",
+      // "bbox_path": "/home/dva4/DVA_LAB/backend/test/model/tracking/result.txt",
       // "set_merged_dolphin_center": false,
-      // "video_path": ""/home/dva4/dva/backend/test/video_origin"
+      // "video_path": ""/home/dva4/DVA_LAB/backend/test/video_origin"
       "log_path": "/Users/dongwookim/DVA_LAB/backend/test/sync_csv",
       "input_dir": "/Users/dongwookim/DVA_LAB/backend/test/frame_origin",
       "output_video": "/Users/dongwookim/DVA_LAB/backend/test/result/result.mp4",

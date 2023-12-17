@@ -99,7 +99,7 @@ async def get_all_gsd(body: VisRequestBev):
     summary="export origin video",
 )
 async def export_origin():
-    video_storage_path = "/home/dva4/dva/backend/test/result/result.mp4"
+    video_storage_path = "/home/dva4/DVA_LAB/backend/test/result/result.mp4"
     return FileResponse(video_storage_path)
 
 
@@ -131,7 +131,7 @@ def get_gsd(frame_number, frame_file, x1, y1, x2, y2, m_distance):
     data = {
         "frame_num": frame_number,
         "frame_path": frame_file,
-        "csv_path": "/home/dva4/dva/backend/test/sync_csv/sync_log.csv",
+        "csv_path": "/home/dva4/DVA_LAB/backend/test/sync_csv/sync_log.csv",
         "objects": [
             None,
             None,
@@ -146,7 +146,7 @@ def get_gsd(frame_number, frame_file, x1, y1, x2, y2, m_distance):
             -1,
         ],
         "realdistance": m_distance,
-        "dst_dir": "/home/dva4/dva/backend/test/frame_bev",
+        "dst_dir": "/home/dva4/DVA_LAB/backend/test/frame_bev",
     }
     response = requests.post(url, headers=headers, data=json.dumps(data))
     result = response.json()

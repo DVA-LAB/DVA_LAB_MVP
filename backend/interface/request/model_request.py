@@ -14,9 +14,9 @@ class ModelRequest(BaseModel):
     class Config:
         schema_extra = {
             "example": {
-                "frame_path": "/home/dva4/dva/backend/test/frame_origin",
-                "detection_save_path": "/home/dva4/dva/backend/test/model/detection/result.csv",
-                "sliced_path": "/home/dva4/dva/backend/test/model/sliced",
-                "output_merge_path": "/home/dva4/dva/backend/test/model/merged",
+                "frame_path": "/home/dva4/DVA_LAB/backend/test/frame_origin",
+                "detection_save_path": "/home/dva4/DVA_LAB/backend/test/model/detection/result.csv",
+                "sliced_path": "/home/dva4/DVA_LAB/backend/test/model/sliced",
+                "output_merge_path": "/home/dva4/DVA_LAB/backend/test/model/merged",
             }
         }

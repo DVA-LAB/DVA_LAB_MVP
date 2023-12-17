@@ -13,8 +13,8 @@ class ShipRequest(BaseModel):
     class Config:
         schema_extra = {
             "example": {
-                "user_input": "/home/dva4/dva/backend/test/input/user_input.txt",
-                "frame_path": "/home/dva4/dva/backend/test/frame_origin",
-                "tracking_result": "/home/dva4/dva/backend/test/model/tracking/result.txt",
+                "user_input": "/home/dva4/DVA_LAB/backend/test/input/user_input.txt",
+                "frame_path": "/home/dva4/DVA_LAB/backend/test/frame_origin",
+                "tracking_result": "/home/dva4/DVA_LAB/backend/test/model/tracking/result.txt",
             }
         }
