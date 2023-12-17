@@ -5,8 +5,8 @@ import cv2
 import datetime
 import pandas as pd
 from haversine import haversine
-# import adjust_height
-from .adjust_height import get_offset
+from utils.log_sync.adjust_height import get_offset
+# from log_sync import adjust_height
 
 use_cols = ['OSD.latitude', 'OSD.longitude', 'OSD.height [ft]', 'OSD.altitude [ft]',
             'OSD.xSpeed [MPH]', 'OSD.ySpeed [MPH]', 'OSD.zSpeed [MPH]', 'OSD.directionOfTravel',
@@ -31,7 +31,7 @@ def get_log(csv_path):
 
     pd_use_log.insert(0, 'CUSTOM.date [local]', record_time)
     pd_use_log = pd_use_log.drop(columns='OSD.flyTime [s]')
-
+    #print(pd_use_log)
     return pd_use_log, base_time.strftime('%Y%m%d%H%M%S')
 
 
@@ -113,6 +113,7 @@ def get_num_frame(mov_path):
     return cnt_frame
 
 
+
 # match SRT and log file
 def match_srt(pd_log, pd_srt, pd_idx):
     # get lat/lon info of start & end point in input SRT file
@@ -141,6 +142,39 @@ def match_srt(pd_log, pd_srt, pd_idx):
         print('match type: distance')
 
     return pd_log[start_idx:end_idx+1], start_idx, end_idx
+
+
+# # match SRT and log file
+# def match_srt(pd_log, pd_srt, pd_idx):
+#     # get lat/lon info of start & end point in input SRT file
+#     start_point = list(pd_srt[['time_now','latitude','longitude']].iloc[0])
+
+#     # get lat/lon info of start & end point in entire CSV file
+#     coord_start = pd_log[['CUSTOM.date [local]','OSD.latitude','OSD.longitude']].iloc[list(pd_idx['idx_start'])]
+#     coord_end = pd_log[['CUSTOM.date [local]','OSD.latitude','OSD.longitude']].iloc[list(pd_idx['idx_end'])]
+
+#     # calculate time & distance of start point
+#     start_dist, start_time = [], []
+#     for idx in range(len(coord_start)):
+#         start_dist.append(haversine(start_point[1:],
+#                                     [float(coord_start['OSD.latitude'].iloc[idx]),
+#                                      float(coord_start['OSD.longitude'].iloc[idx])]))
+#         start_time.append(get_time_diff(start_point[0], coord_start['CUSTOM.date [local]'].iloc[idx]))
+
+#     # get SRT matching region based on time (major) & distance (minor)
+#     if min(start_time) <= 60:
+#         start_idx = coord_start.index[start_time.index(min(start_time))]
+#         end_idx = coord_end.index[start_time.index(min(start_time))]
+#         print('match type: time')
+#     else:
+#         if min(start_dist) <= 0.05:
+#             start_idx = coord_start.index[start_dist.index(min(start_dist))]
+#             end_idx = coord_end.index[start_dist.index(min(start_dist))]
+#             print('match type: distance')
+#         else:
+#             return
+
+#     return pd_log[start_idx:end_idx+1], start_idx, end_idx
 
 
 # adjust SRT matching region based on SRT file
@@ -278,7 +312,7 @@ def do_sync(video_path, csv_path, srt_path, save_path):
     pd_use_log, flight_date = get_log(log_dir)
     osd_dronetype = list(set(pd_use_log['OSD.droneType']))[0]
     osd_typ = drone_type[osd_dronetype]
-
+    
     out_dir = os.path.join(save_path, 'sync_log.csv')
 
     if len(srt_dir_list):
