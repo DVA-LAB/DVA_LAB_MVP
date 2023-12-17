@@ -211,7 +211,7 @@ def BEV_Points(image_shape, boundary, boundary_rows, boundary_cols, gsd, eo, R, 
     obj_points = [int(x) for x in obj_points]
     rectify_points = [0,0,0,0]
 
-    margin = 5
+    margin = 1
     def in_range(n, start, end = 0):
         return start <= n <= end if end >= start else end <= n <= start
 
