@@ -1,4 +1,4 @@
-name: Run DVA LAB Application in Anaconda Environment
+name: Run DVA Application in Anaconda Environment
 
 on: [push]
 
