@@ -1,0 +1,26 @@
+name: Run Backend Application in Anaconda Environment
+
+on: [push]
+
+jobs:
+  run-backend-app:
+    runs-on: self-hosted
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
+
+    - name: Set up Anaconda environment
+      run: |
+        source ~/anaconda3/etc/profile.d/conda.sh
+        conda activate backend
+
+    - name: Kill running app.py process on specific port
+      run: |
+        PID=$(lsof -t -i:[8000] -sTCP:LISTEN)
+        if [ ! -z "$PID" ]; then
+          echo "Killing process on port [PORT] with PID $PID"
+          kill $PID
+        fi
+
+    - name: Run app.py
+      run: python /home/dva4/DVA_LAB/backend/app.py
