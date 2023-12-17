@@ -16,7 +16,7 @@ jobs:
 
     - name: Kill running app.py process on specific port
       run: |
-        PID=$(lsof -t -i:[8000] -sTCP:LISTEN)
+        PID=$(lsof -t -i:8000 -sTCP:LISTEN)
         if [ ! -z "$PID" ]; then
           echo "Killing process on port [PORT] with PID $PID"
           kill $PID
