@@ -47,7 +47,7 @@ Each microservice is self-contained, with its own dedicated environment and depe
 ## 4. dataset
 The dataset directory is where the video and image datasets are stored for analysis.
 
-## 5. my-react-app
+## 5. frontend
 A React application for interactive video analysis.
 
 ## Contributors ✨
