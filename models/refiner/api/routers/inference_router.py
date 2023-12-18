@@ -42,7 +42,7 @@ async def inference(request_body: ShipRequest):
     user_frame_no, mean_x, mean_y = check_user_input(request_body.user_input)
 
     # TODO@jh: user_input이 올바르게 저장되어 있지 않아서 임의로 가장 가까운 5의 배수로 수정함
-    user_frame_no = round(user_frame_no / 5) * 5
+    # user_frame_no = round(user_frame_no / 5) * 5
 
     frames = glob.glob(os.path.join(request_body.frame_path, "*.jpg"))
     tracking_result = request_body.tracking_result
@@ -64,8 +64,6 @@ async def inference(request_body: ShipRequest):
             try:
                 frame_no = result[0]
                 # TODO@jh: 서버에 저장된 tracking 결과가 5의 배수로 inference한 결과가 아니라서 별도 처리함 (추후 수정 필요)
-                if frame_no % 5 != 0:
-                    continue
                 # TODO@jh: 매번 찾지 않고, 네이밍 규칙으로 읽도록 수정 필요
                 frame = [
                     x for x in frames if frame_no == int(x.split("_")[-1].split(".")[0])

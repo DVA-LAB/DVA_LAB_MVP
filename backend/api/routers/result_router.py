@@ -12,8 +12,7 @@ from fastapi import (APIRouter, Depends, FastAPI, File, Form, HTTPException,
                      UploadFile, status)
 from fastapi.responses import FileResponse, JSONResponse
 from interface.request import VisRequest, VisRequestBev
-from utils.visualizing.visualize import (set_gsd, set_merged_dolphin_center,
-                                         show_result)
+from utils.visualizing.visualize import show_result
 from utils.visualizing import visualize_bev
 router = APIRouter(tags=["result"])
 
@@ -25,17 +24,6 @@ router = APIRouter(tags=["result"])
 )
 async def model_inference(body: VisRequest):
     log_file_path = glob.glob(os.path.join(body.log_path, '*.csv'))[0]
-    logs = pd.read_csv(log_file_path)
-
-    # Read GSD.txt and parse the frame number
-    with open(os.path.abspath(os.path.join("test", "GSD.txt")), "r") as f:
-        gsd_txt = f.read().split()
-    frame_num = int(gsd_txt[0])  # Assuming the first value is the frame number
-
-    # Call set_gsd with the DataFrame and frame number
-    set_gsd(logs, frame_num)
-
-    set_merged_dolphin_center(body.set_merged_dolphin_center)
 
     os.makedirs(os.path.dirname(body.output_video), exist_ok=True)
     delete_files_in_folder(os.path.dirname(body.output_video))
@@ -44,7 +32,7 @@ async def model_inference(body: VisRequest):
             input_dir=body.input_dir,
             output_video=body.output_video,
             bbox_path=body.bbox_path,
-            GSD_path=os.path.abspath(os.path.join("test", "GSD.txt"))
+            GSD_path=os.path.abspath(os.path.join("test", "GSD_total.txt"))
         )
 
     # Call show_result with the created args object
@@ -138,7 +126,7 @@ def get_ship_size(user_input, frame_path, tracking_result):
     return response_data
 
 def get_gsd(frame_number, frame_file, x1, y1, x2, y2, m_distance):
-    url = "http://112.216.237.124:8001/bev_userinputframe"
+    url = "http://112.216.237.124:8001/bev1"
     headers = {"accept": "application/json", "Content-Type": "application/json"}
     data = {
         "frame_num": frame_number,

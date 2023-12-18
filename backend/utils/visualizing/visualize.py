@@ -12,11 +12,6 @@ import numpy as np
 import pandas as pd
 from PIL import Image, ImageDraw, ImageFont
 
-
-def set_merged_dolphin_center(center):
-    global merged_dolphin_center
-    merged_dolphin_center = center
-
 def read_log_file(log_path):
     # Reading the CSV file into a DataFrame
     df = pd.read_csv(log_path)
@@ -159,7 +154,7 @@ def show_result(args): #log_path, input_dir, output_video, bbox_path, frame_rate
     out = cv2.VideoWriter(args.output_video, fourcc, frame_rate, (frame_width, frame_height))
     
     with open(args.GSD_path, 'r') as file:
-        gsd_list = [tuple(map(int, line.strip().split())) for line in file]
+        gsd_list = [tuple(map(float, line.strip().split())) for line in file]
 
     frame_count = 0
     previous_centers = {}
@@ -331,7 +326,7 @@ def show_result(args): #log_path, input_dir, output_video, bbox_path, frame_rate
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--log_path', type=str, default='backend/test/sync_csv/sync_log.csv')
-    parser.add_argument('--input_dir', type=str, default='backend/test/frame_origin_save')
+    parser.add_argument('--input_dir', type=str, default='backend/test/frame_origin')
     parser.add_argument('--output_video', type=str, default='backend/test/visualize.avi')
     parser.add_argument('--bbox_path', type=str, default='backend/test/model/tracking/result.txt')
     parser.add_argument('--GSD_path', type=str, default='backend/test/GSD_total.txt')

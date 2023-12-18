@@ -113,23 +113,30 @@ def get_max_dimensions(image_paths):
             max_height = max(max_height, height)
     return max_width, max_height
 
-def make_video(image_paths, video_name, fps=30):
-    max_width, max_height = get_max_dimensions(image_paths)
+def make_video(image_paths, video_name, fps=30, max_resolution=(3840, 2160)):
+    max_width, max_height = max_resolution
     fourcc = cv2.VideoWriter_fourcc(*'MJPG')
     video = cv2.VideoWriter(video_name, fourcc, fps, (max_width, max_height))
 
     for i, path in enumerate(image_paths):
+        if i > 10:
+            break
         img = cv2.imread(path)
         h, w, _ = img.shape
-        if (w, h) != (max_width, max_height):
-            if w > h:
-                img = cv2.resize(img, (max_width, int(max_height*(w /h))))
-            else:
-                img = cv2.resize(img, (int(max_width*(h /w)), max_height))
+
+        # Resize images while preserving aspect ratio
+        scale = min(max_width / w, max_height / h)
+        new_w, new_h = int(w * scale), int(h * scale)
+        img = cv2.resize(img, (new_w, new_h))
+        if (new_w, new_h) != (max_width, max_height):
+            top, bottom = (max_height - new_h) // 2, (max_height - new_h + 1) // 2
+            left, right = (max_width - new_w) // 2, (max_width - new_w + 1) // 2
+            img = cv2.copyMakeBorder(img, top, bottom, left, right, cv2.BORDER_CONSTANT)
 
         video.write(img)
 
     video.release()
+
 
 def main(args):
     global gsd
@@ -147,7 +154,7 @@ def main(args):
     font = ImageFont.truetype('/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc', 40)
     
     with open(args.GSD_path, 'r') as file:
-        gsd_list = [tuple(map(int, line.strip().split())) for line in file]
+        gsd_list = [tuple(map(float, line.strip().split())) for line in file]
 
     
     min_distance = '-'
@@ -303,7 +310,7 @@ if __name__ == "__main__":
     parser.add_argument('--log_path', type=str, default='/home/dva4/DVA_LAB/backend/test/sync_csv/sync_log.csv')
     parser.add_argument('--bbox_path', type=str, default='/home/dva4/DVA_LAB/backend/utils/visualizing/bev_points.csv')
     parser.add_argument('--output_video', type=str, default='/home/dva4/DVA_LAB/backend/test/visualize_bev.avi')
-    parser.add_argument('--input_dir', type=str, default='/home/dva4/DVA_LAB/backend/test/frame_origin_save')
+    parser.add_argument('--input_dir', type=str, default='/home/dva4/DVA_LAB/backend/test/frame_origin')
     parser.add_argument('--output_dir', type=str, default='/home/dva4/DVA_LAB/backend/test/frame_bev_infer')
     parser.add_argument('--GSD_path', type=str, default='backend/test/GSD_total.txt')
     args = parser.parse_args()
