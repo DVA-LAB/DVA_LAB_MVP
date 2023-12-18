@@ -11,10 +11,9 @@ import axios from 'axios';
 
 const { Title } = Typography;
 
-const API_URL =  'http://0.0.0.0:8000';
-const BEV_URL = 'http://localhost:8001';
-// const API_URL='http://112.216.237.124:8000';
-// const BEV_URL= 'http://112.216.237.124:8001';
+// const API_URL =  'http://0.0.0.0:8000';
+const API_URL='http://112.216.237.124:8000';
+
 
 class App extends Component {
   constructor(props) {
@@ -491,60 +490,85 @@ loadVideo = () => {
   };
 
 
+  // toggleBEVView = async () => {
+  //   const { showBEV, frameNumber} = this.state;
+  //   // const parts = videoFileName.split('.');
+  
+  //   // Remove the last part (the extension)
+  //   // const fileNameWithoutExtension = parts.slice(0, -1).join('.');
+  //   // const frameNumberPadded = frameNumber.toString().padStart(5, '0'); // Pad frame number with leading zeros
+  //   // const framePath = `/home/dva4/dva/backend/test/frame_origin/${fileNameWithoutExtension}_${frameNumberPadded}.jpg`; 
+  //   // const csvPath = `/home/dva4/dva/backend/test/sync_csv/sync_log.csv`;
+  //   // const dstDir = "api/services/Orthophoto_Maps/Data/result"; // Destination directory
+
+  //   const formatObjectsArray = (lastEntry) => {
+  //     if (!lastEntry) return null;
+  
+  //     const { point1, point2 } = lastEntry;
+  //     return [null, null, null, point1.x, point1.y, point2.x, point2.y, null, -1, -1, -1];
+  //   };
+  
+  //   const lastEntry = this.state.pointDistances[this.state.pointDistances.length - 1];
+  //   const objects = formatObjectsArray(lastEntry); 
+  
+  //   if (!objects) {
+  //     console.error("No point distances available for BEV conversion");
+  //     this.setState({ isLoading: false });
+  //     return;
+  //   }
+  
+  //   const payload = {
+  //     frame_number: frameNumber,
+  //     point_distances:[
+  //       {
+  //         point1: {x: this.point1.x, y: this.point1.y},
+  //         point2: {x: this.point2.x, y: this.point2.y},
+  //         distance: lastEntry.distance
+  //       }
+  //     ],
+  //     // frame_path: framePath,
+  //     // csv_path: csvPath,
+  //     // objects: objects,
+  //     // realdistance: lastEntry.distance,
+  //     // dst_dir: dstDir,
+  //   }
+  //   console.log(payload);
+  
+    
+  // };
+  
   toggleBEVView = async () => {
-    const { showBEV, frameNumber, videoFileName } = this.state;
-    const parts = videoFileName.split('.');
-  
-    // Remove the last part (the extension)
-    const fileNameWithoutExtension = parts.slice(0, -1).join('.');
-    const frameNumberPadded = frameNumber.toString().padStart(5, '0'); // Pad frame number with leading zeros
-    const framePath = `/home/dva4/DVA_LAB/backend/test/frame_origin/${fileNameWithoutExtension}_${frameNumberPadded}.jpg`; 
-    const csvPath = `/home/dva4/DVA_LAB/backend/test/sync_csv/sync_log.csv`;
-    const dstDir = "api/services/Orthophoto_Maps/Data/result"; // Destination directory
-  
-    const formatObjectsArray = (lastEntry) => {
-      if (!lastEntry) return null;
-  
-      const { point1, point2 } = lastEntry;
-      return [null, null, null, point1.x, point1.y, point2.x, point2.y, null, -1, -1, -1];
-    };
-  
-    const lastEntry = this.state.pointDistances[this.state.pointDistances.length - 1];
-    const objects = formatObjectsArray(lastEntry); 
-  
-    if (!objects) {
-      console.error("No point distances available for BEV conversion");
-      this.setState({ isLoading: false });
-      return;
+    const { showBEV, frameNumber, pointDistances } = this.state;
+
+    if (pointDistances.length === 0) {
+        console.error("No point distances available for BEV conversion");
+        this.setState({ isLoading: false });
+        return;
     }
-  
+
+    const lastEntry = pointDistances[pointDistances.length - 1];
+
     const payload = {
-      frame_num: frameNumber,
-      frame_path: framePath,
-      csv_path: csvPath,
-      objects: objects,
-      realdistance: lastEntry.distance,
-      dst_dir: dstDir,
+        frame_number: frameNumber,
+        point_distances: [
+            {
+                point1: { x: lastEntry.point1.x, y: lastEntry.point1.y },
+                point2: { x: lastEntry.point2.x, y: lastEntry.point2.y },
+                distance: lastEntry.distance
+            }
+        ],
+        // Additional data can be included here if necessary
     }
     console.log(payload);
-  
     if (!showBEV && this.state.infoAdded) {
       this.setState({ isLoading: true });
   
       try {
-        const response = await axios.post(`${BEV_URL}/bev1`, payload, {
-            responseType: 'blob',  // Set response type to 'blob' for file download
-        });
+        const response = await axios.post(`${API_URL}/user_input/`, payload);
     
-        if (response.data) {
-            const blob = new Blob([response.data], { type: 'image/png' });
-            const bevImageSrc = URL.createObjectURL(blob);
-    
-            this.setState({
-                showBEV: true,
-                bevImageSrc,  // Use the created Blob URL here
-                isLoading: false,
-            });
+        if (response.status===200) {
+            console.log('BEV successful')
+            this.setState({ isLoading: false });
         } else {
             console.error("BEV conversion failed");
             this.setState({ isLoading: false });
@@ -561,9 +585,10 @@ loadVideo = () => {
         this.loadVideo();
       });
     }
-  };
-  
-  
+
+    // Your existing axios post request and other logic...
+};
+
   
   
   
@@ -580,7 +605,7 @@ loadVideo = () => {
   
 
   handleMouseDown = (event) => {
-    
+    event.preventDefault();
     event.stopPropagation();
     
     const canvas = this.canvasRef.current;
@@ -601,29 +626,23 @@ loadVideo = () => {
 
     this.drawPoint(newPoint, canvas); // Draw the point
 
-    this.setState(prevState => {
-      const newPoints = [...prevState.points, newPoint];
-      const showWriteDistanceButton = newPoints.length===2;
-      
-      console.log("Points after adding new point:", newPoints);
-      if (newPoints.length === 2) {
-        // If two points are selected, draw line and reset points
-        this.drawLine(newPoints[0], newPoints[1]);
-        // const distance = prompt("Enter the distance (m):");
-        // const distance = prompt("Enter the distance (m):");
-        // this.drawLabel(newPoints[0], newPoints[1], distance);
+    this.setState(prevState => ({
+      points: [...prevState.points, newPoint]
+  }), () => {
+      const { points } = this.state;
 
-        return { 
-          points: newPoints,
-          showWriteDistanceButton,
-          // showTextBox: true,
-          // textBoxPosition: {x:screenX,y: screenY} 
-          // pointDistances: [...prevState.pointDistances, distance],
-        }; // reset points
+      // Check if there are at least two points to draw a line
+      if (points.length >= 2 && points.length % 2 === 0) {
+        
+        // Get the last two points
+        const startPoint = points[points.length - 2];
+        const endPoint = points[points.length - 1];
+
+        // Draw line between these two points
+        this.drawLine(startPoint, endPoint);// Show distance input logic here if needed
+
       }
-      console.log(newPoints,);
-      return { points: newPoints };
-    });
+  });
   };
 
 drawPoint = (point, canvas) => {
@@ -662,7 +681,7 @@ handleDistanceInput = (event) => {
         return { 
           pointDistances: [...prevState.pointDistances, newEntry], 
           infoAdded: true,
-          points: [] // Clear points after adding distance
+          newPoint: [] // Clear points after adding distance
         };
 
       }
@@ -920,18 +939,18 @@ drawLabel = (startPoint, endPoint, text) => {
 
     const formData = {
       // 서버에 연결할때는 위에꺼 쓰기
-      // "log_path": "/home/dva4/DVA_LAB/backend/test/sync_csv",
-      // "input_dir": "/home/dva4/DVA_LAB/backend/test/frame_origin",
-      // "output_video": "/home/dva4/DVA_LAB/backend/test/result/result.mp4",
-      // "bbox_path": "/home/dva4/DVA_LAB/backend/test/model/tracking/result.txt",
-      // "set_merged_dolphin_center": false,
-      // "video_path": ""/home/dva4/DVA_LAB/backend/test/video_origin"
-      "log_path": "/Users/dongwookim/DVA_LAB/backend/test/sync_csv",
-      "input_dir": "/Users/dongwookim/DVA_LAB/backend/test/frame_origin",
-      "output_video": "/Users/dongwookim/DVA_LAB/backend/test/result/result.mp4",
-      "bbox_path": "/Users/dongwookim/DVA_LAB/backend/test/model/tracking/result.txt",
+      "log_path": "/home/dva4/dva/backend/test/sync_csv",
+      "input_dir": "/home/dva4/dva/backend/test/frame_origin",
+      "output_video": "/home/dva4/dva/backend/test/result/result.mp4",
+      "bbox_path": "/home/dva4/dva/backend/test/model/tracking/result.txt",
       "set_merged_dolphin_center": false,
-      "video_path": "/Users/dongwookim/DVA_LAB/backend/test/video_origin"
+      "video_path": "/home/dva4/dva/backend/test/video_origin",
+      // "log_path": "/Users/dongwookim/DVA_LAB/backend/test/sync_csv",
+      // "input_dir": "/Users/dongwookim/DVA_LAB/backend/test/frame_origin",
+      // "output_video": "/Users/dongwookim/DVA_LAB/backend/test/result/result.mp4",
+      // "bbox_path": "/Users/dongwookim/DVA_LAB/backend/test/model/tracking/result.txt",
+      // "set_merged_dolphin_center": false,
+      // "video_path": "/Users/dongwookim/DVA_LAB/backend/test/video_origin"
     }
     
     const response = await axios.post(`${API_URL}/visualize/`, formData);
@@ -1168,6 +1187,13 @@ drawLabel = (startPoint, endPoint, text) => {
                 </Button>
               </div>
             )}
+            {/* {!showBEV && !this.state.aiModelActive && (
+              <div>
+                <Button style={{ backgroundColor: 'red', color: 'white' }} onClick={this.runAIModel}>
+                  AI 모델 실행
+                </Button>
+              </div>
+            )} */}
             {logFile && srtFile && !showBEV && !this.state.aiModelActive && (
             <div>
               <Button 
@@ -1220,7 +1246,7 @@ drawLabel = (startPoint, endPoint, text) => {
           <div>
             {this.state.infoAdded && !videoPlaying && videoSrc &&  this.state.showControlButtons && (
             <Button type="primary" onClick={this.toggleBEVView}>
-              {showBEV ? '동영상으로 돌아가기' : 'BEV 전환하기'}
+              {showBEV ? '동영상으로 돌아가기' : '항공 사진 전환'}
             </Button>
             )}
 
@@ -1289,6 +1315,14 @@ drawLabel = (startPoint, endPoint, text) => {
         )}
           </div>
           {/* <div>
+          {/* <div>
+          {(
+          <Button type="primary" onClick={this.seeResults}>
+            결과 확인하러 가기!
+          </Button>
+        )}
+          </div> */}
+          {/* <div
             {this.state.pointDistances.map((distance, index) => (
               <p key={index}>Distance {index + 1}: {distance.meters} meters ({distance.pixels.toFixed(3)} pixels)</p>
             ))}

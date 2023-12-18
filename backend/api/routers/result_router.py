@@ -4,8 +4,8 @@ import os
 import requests
 import json
 import pandas as pd
+import Namespace
 import time
-
 import requests
 from autologging import logged
 from fastapi import (APIRouter, Depends, FastAPI, File, Form, HTTPException,
@@ -14,7 +14,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from interface.request import VisRequest, VisRequestBev
 from utils.visualizing.visualize import (set_gsd, set_merged_dolphin_center,
                                          show_result)
-
+from utils.visualizing import visualize_bev
 router = APIRouter(tags=["result"])
 
 
@@ -39,7 +39,19 @@ async def model_inference(body: VisRequest):
 
     os.makedirs(os.path.dirname(body.output_video), exist_ok=True)
     delete_files_in_folder(os.path.dirname(body.output_video))
-    show_result(log_file_path, body.input_dir, body.output_video, body.bbox_path)
+    args = Namespace(
+            log_path=log_file_path,
+            input_dir=body.input_dir,
+            output_video=body.output_video,
+            bbox_path=body.bbox_path,
+            GSD_path=os.path.abspath(os.path.join("test", "GSD.txt"))
+        )
+
+    # Call show_result with the created args object
+    show_result(args)
+
+    visualize_bev()
+
     return body.output_video
 
 
