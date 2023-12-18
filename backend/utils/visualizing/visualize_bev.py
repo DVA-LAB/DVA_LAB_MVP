@@ -139,13 +139,12 @@ def make_video(image_paths, video_name, fps=30, max_resolution=(3840, 2160)):
 
 
 def main(args):
-    global gsd
+    start_time = time.time()
     frame_rate=30
     image_paths = get_image_paths(args.input_dir)
     
     # 첫 번째 이미지를 기준으로 비디오 크기 설정
     first_image = cv2.imread(image_paths[0])
-    frame_height, frame_width, layers = first_image.shape
 
     logs = read_log_file(args.log_path)
     bbox_data = read_bbox_data(args.bbox_path, first_image.shape)
@@ -163,6 +162,10 @@ def main(args):
     max_ship_speed = 0
     
     for image_path in image_paths:
+        if frame_count != 1033 :
+            frame_count +=1 
+            continue
+
         frame = cv2.imread(image_path)
         date = logs['datetime'][frame_count]
         frame_bboxes = bbox_data.get(frame_count, [])
@@ -194,6 +197,7 @@ def main(args):
                     continue
                 else:
                     rectify_points = BEV_Points(frame.shape, bbox, boundary_rows, boundary_cols, gsd, eo, R, focal_length, pixel_size, bbox_info['bbox'])
+                print(rectify_points)
 
                 x1, y1, x2, y2 = rectify_points
 
@@ -238,7 +242,7 @@ def main(args):
 
                     # 모든 bbox 중심점들 사이에 선을 그리고 거리를 표시합니다.
                     if dolphin_present:
-                        draw_lines_and_distances(draw, centers, merged_dolphin_center, classes, gsd, font)
+                        draw_lines_and_distances(draw, centers, merged_dolphin_center, classes, font, gsd)
                         nearest_distances = calculate_nearest_distance(dolphin_present, merged_dolphin_center, centers, classes, track_ids, gsd)
                         for (track_id, cls), distance in nearest_distances.items():
                             if cls == 1:
@@ -303,7 +307,10 @@ def main(args):
         frame_count += 1
 
     make_video(get_image_paths(args.output_dir), args.output_video)
-    
+    end_time = time.time()
+    # 걸린 시간 계산
+    elapsed_time = end_time - start_time
+    print(f"코드 실행 시간: {elapsed_time} 초")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

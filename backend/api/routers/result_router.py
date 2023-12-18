@@ -99,7 +99,7 @@ async def get_all_gsd(body: VisRequestBev):
     summary="export origin video",
 )
 async def export_origin():
-    video_storage_path = "/home/dva4/DVA_LAB/backend/test/result/result.mp4"
+    video_storage_path = "/home/dva4/DVA_LAB/backend/test/visualize.avi"
     return FileResponse(video_storage_path)
 
 

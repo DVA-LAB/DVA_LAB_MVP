@@ -168,7 +168,8 @@ def show_result(args): #log_path, input_dir, output_video, bbox_path, frame_rate
         image = Image.fromarray(frame)
         draw = ImageDraw.Draw(image)
         gsd = gsd_list[frame_count][1]
-        
+        gsd /= 5 # 휴리스틱 값
+
         dolphin_bboxes = []
         track_ids=[]
         centers = []  # bbox 중심점들을 저장합니다.
@@ -223,7 +224,7 @@ def show_result(args): #log_path, input_dir, output_video, bbox_path, frame_rate
                     # 중심점 업데이트
                     previous_centers[track_id] = (center_x, center_y)
                 
-                points = [frame_count, track_id, class_id, 1, 1, center_x, center_y, conf_score,-1,-1,-1 ]
+                points = [frame_count, track_id, class_id, center_x+1, center_y+1, center_x, center_y, conf_score,-1,-1,-1 ]
             else : # 돌고래인 경우
                 dolphin_bboxes.append(bbox_info)
             
@@ -321,7 +322,7 @@ def show_result(args): #log_path, input_dir, output_video, bbox_path, frame_rate
     end_time = time.time()
     # 걸린 시간 계산
     elapsed_time = end_time - start_time
-    # print(f"코드 실행 시간: {elapsed_time} 초")
+    print(f"코드 실행 시간: {elapsed_time} 초")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
