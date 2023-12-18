@@ -155,6 +155,8 @@ def main(args):
     max_ship_speed = 0
     
     for image_path in image_paths:
+        if frame_count == 3:
+            break
         set_gsd(logs, frame_count)
         frame = cv2.imread(image_path)
         date = logs['datetime'][frame_count]
@@ -292,11 +294,11 @@ def main(args):
         # 나머지 코드
         img = np.array(image)
         # 결과 이미지 저장
-        output_frame_path = os.path.join(args.output_dir, f'frame_{frame_count}.png')
+        output_frame_path = os.path.join(args.output_dir, f'frame_{str(frame_count).zfill(6)}.png')
         cv2.imwrite(output_frame_path, img)
         frame_count += 1
 
-    make_video(args.output_dir, args.output_video)
+    make_video(get_image_paths(args.output_dir), args.output_video)
     
 
 if __name__ == "__main__":
