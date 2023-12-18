@@ -29,6 +29,11 @@ def rectify_plane_parallel_with_point(boundary, boundary_rows, boundary_cols, gs
     a = np.zeros(shape=(boundary_rows, boundary_cols), dtype=np.uint8)
 
     rectify_points = [0,0,0,0]
+
+    margin = 1
+    def in_range(n, start, end = 0):
+        return start <= n <= end if end >= start else end <= n <= start
+    
     for row in prange(boundary_rows):
         for col in range(boundary_cols):
             # 1. projection
@@ -64,12 +69,19 @@ def rectify_plane_parallel_with_point(boundary, boundary_rows, boundary_cols, gs
                 r[row, col] = image[coord_ICS_row, coord_ICS_col][2]
                 a[row, col] = 255
 
-                if coord_ICS_col == obj_points[0] and coord_ICS_row == obj_points[1] : 
+                if in_range(coord_ICS_col, obj_points[0] - margin, obj_points[0] + margin) and in_range(coord_ICS_row, obj_points[1] - margin, obj_points[1] + margin) :
                     rectify_points[0] = col
                     rectify_points[1] = row
-                if coord_ICS_col == obj_points[2] and coord_ICS_row == obj_points[3] : 
+                if in_range(coord_ICS_col, obj_points[2] - margin, obj_points[2] + margin) and in_range(coord_ICS_row, obj_points[3] - margin, obj_points[3] + margin) :
                     rectify_points[2] = col
                     rectify_points[3] = row
+
+                # if coord_ICS_col == obj_points[0] and coord_ICS_row == obj_points[1] : 
+                #     rectify_points[0] = col
+                #     rectify_points[1] = row
+                # if coord_ICS_col == obj_points[2] and coord_ICS_row == obj_points[3] : 
+                #     rectify_points[2] = col
+                #     rectify_points[3] = row
 
     return b, g, r, a, rectify_points
 
