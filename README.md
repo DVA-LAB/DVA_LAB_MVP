@@ -15,7 +15,7 @@ DVA_LAB
 │ └── SAM
 ├── dataset
 ├── docs
-├── my-react-app
+├── frontend
 └── README.md
 ```
 
