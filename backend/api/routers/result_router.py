@@ -55,7 +55,7 @@ async def get_all_gsd(body: VisRequestBev):
         initial_frame, initial_gsd = f.read().split(' ')
 
     # TODO@jh: user_input이 올바르게 저장되어 있지 않아서 임의로 가장 가까운 5의 배수로 수정함
-    gsds[initial_frame] = initial_gsd
+    gsds[int(initial_frame)] = float(initial_gsd)
 
     with open(body.user_input, 'r') as f:
         distance = float(f.read().split(' ')[-1])
@@ -68,7 +68,7 @@ async def get_all_gsd(body: VisRequestBev):
     g_s_time = time.time()
     for ship_size in ships_size:  # [frame_no, point[0][0], point[0][1], point[1][0], point[1][0]]
         try:
-            frame = ship_size[0]
+            frame = int(ship_size[0])
             x1, y1, x2, y2 = ship_size[1:]
             frame_file = [x for x in glob.glob(os.path.join(body.frame_path, '*.jpg')) if int(x.split('_')[-1].split('.')[0])==int(frame)][0]
             gsd = get_gsd(frame, frame_file, x1, y1, x2, y2, distance)
