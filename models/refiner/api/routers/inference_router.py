@@ -41,8 +41,8 @@ async def inference(request_body: ShipRequest):
     # TODO@jh: user가 여러대의 선박에 대한 입력을 저장할 경우 처리 필요
     user_frame_no, mean_x, mean_y = check_user_input(request_body.user_input)
 
-    # TODO@jh: user_input이 올바르게 저장되어 있지 않아서 임의로 가장 가까운 5의 배수로 수정함
-    user_frame_no = round(user_frame_no / 5) * 5
+    # TODO@jh: user_input이 올바르게 저장되어 있지 않아서 임의로 가장 가까운 5의 배수로 수정함 -> 주석처리함
+    # user_frame_no = round(user_frame_no / 5) * 5
 
     frames = glob.glob(os.path.join(request_body.frame_path, "*.jpg"))
     tracking_result = request_body.tracking_result
