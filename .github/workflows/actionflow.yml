@@ -28,7 +28,8 @@ jobs:
       run: |
         source ~/anaconda3/etc/profile.d/conda.sh
         conda activate backend
-        nohup python /home/dva4/DVA_LAB/backend/app.py > backend.out
+        cd /home/dva4/DVA_LAB/backend/
+        nohup python app.py > backend.out
 
   run-bev-app:
     runs-on: self-hosted
@@ -55,7 +56,8 @@ jobs:
       run: |
         source ~/anaconda3/etc/profile.d/conda.sh
         conda activate orthophoto
-        nohup python /home/dva4/DVA_LAB/models/BEV/app.py > BEV.out
+        cd /home/dva4/DVA_LAB/models/BEV/
+        nohup python app.py > BEV.out
 
   run-bytetrack-app:
     runs-on: self-hosted
@@ -82,7 +84,8 @@ jobs:
       run: |
         source ~/anaconda3/etc/profile.d/conda.sh
         conda activate bytetrack
-        nohup python /home/dva4/DVA_LAB/models/bytetrack/app.py > bytetrack.out
+        cd /home/dva4/DVA_LAB/models/bytetrack/
+        nohup python app.py > bytetrack.out
 
   run-detection-app:
     runs-on: self-hosted
@@ -109,7 +112,8 @@ jobs:
       run: |
         source ~/anaconda3/etc/profile.d/conda.sh
         conda activate detection
-        nohup python /home/dva4/DVA_LAB/models/sahi_detection/app.py > detection.out
+        cd /home/dva4/DVA_LAB/models/sahi_detection/
+        nohup python app.py > detection.out
 
   run-refinement-app:
     runs-on: self-hosted
@@ -136,4 +140,5 @@ jobs:
       run: |
         source ~/anaconda3/etc/profile.d/conda.sh
         conda activate refinement
-        nohup python /home/dva4/DVA_LAB/models/refiner/app.py > refiner.out
+        cd /home/dva4/DVA_LAB/models/refiner/
+        nohup python app.py > refiner.out
