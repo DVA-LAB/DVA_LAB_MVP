@@ -190,11 +190,7 @@ def main(args):
                     rectify_points = BEV_Points(frame.shape, bbox, boundary_rows, boundary_cols, GSD, eo, R, focal_length, pixel_size, bbox_info['bbox'])
 
                 x1, y1, x2, y2 = rectify_points
-                if x2<x1:
-                    x2=x1
-                if y2<y1:
-                    y2=y1
-                
+
                 if class_id == 1:
                     center_x, center_y = x2, y2
                 else:

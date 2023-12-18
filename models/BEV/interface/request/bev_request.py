@@ -1,11 +1,11 @@
 from autologging import logged
 from pydantic import BaseModel, Field
 
-__all__ = ["BEV1", "BEV2"]
+__all__ = ["BEV_UserInputFrame", "BEV2"]
 
 
 @logged
-class BEV1(BaseModel):
+class BEV_UserInputFrame(BaseModel):
     frame_num: int = Field(..., description="Frame number")
     frame_path: str = Field(..., description="Path to the frame image")
     csv_path: str = Field(..., description="Path to the CSV file")

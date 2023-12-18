@@ -181,7 +181,7 @@ async def save_input(request: UserInput):
 
 
 def get_gsd(frame_number, frame_file, x1, y1, x2, y2, m_distance):
-    url = "http://112.216.237.124:8001/bev1"
+    url = "http://112.216.237.124:8001/bev_userinputframe"
     headers = {"accept": "application/json", "Content-Type": "application/json"}
     data = {
         "frame_num": frame_number,

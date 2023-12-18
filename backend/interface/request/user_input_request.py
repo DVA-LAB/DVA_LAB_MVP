@@ -1,5 +1,6 @@
 from autologging import logged
 from pydantic import BaseModel, Field
+from typing import List
 
 __all__ = ["UserInput"]
 
@@ -18,18 +19,24 @@ class PointDistance(BaseModel):
 @logged
 class UserInput(BaseModel):
     frame_number: int = Field(description="Frame number associated with the point distances")
-    point_distances: list[PointDistance] = Field(description="List of point pairs with their distances")
+    point_distances: List[PointDistance] = Field(description="List of point pairs with their distances")
 
     class Config:
         schema_extra = {
             "example": {
-                "frame_number": 1038,
+                "frame_number": 950,
                 "point_distances": [
                     {
-                        "point1": {"x": 860, "y": 682},
-                        "point2": {"x": 860, "y": 1034},
-                        "distance": 8.9
+                    "point1": {
+                        "x": 840,
+                        "y": 831
                     },
+                    "point2": {
+                        "x": 855,
+                        "y": 1208
+                    },
+                    "distance": 8.9
+                    }
                 ]
             }
         }

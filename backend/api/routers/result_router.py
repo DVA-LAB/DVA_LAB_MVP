@@ -4,7 +4,7 @@ import os
 import requests
 import json
 import pandas as pd
-import Namespace
+from argparse import Namespace
 import time
 import requests
 from autologging import logged
@@ -138,7 +138,7 @@ def get_ship_size(user_input, frame_path, tracking_result):
     return response_data
 
 def get_gsd(frame_number, frame_file, x1, y1, x2, y2, m_distance):
-    url = "http://112.216.237.124:8001/bev1"
+    url = "http://112.216.237.124:8001/bev_userinputframe"
     headers = {"accept": "application/json", "Content-Type": "application/json"}
     data = {
         "frame_num": frame_number,
