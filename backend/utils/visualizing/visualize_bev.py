@@ -155,8 +155,6 @@ def main(args):
     max_ship_speed = 0
     
     for image_path in image_paths:
-        if frame_count == 3:
-            break
         set_gsd(logs, frame_count)
         frame = cv2.imread(image_path)
         date = logs['datetime'][frame_count]
