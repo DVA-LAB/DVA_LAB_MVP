@@ -59,7 +59,7 @@ def BEV_UserInputFrame(frame_num, frame_path, csv_path, objects, realdistance, d
     csv_path : str, csv file path
     drone_model : int, 
     objects : list [frame_id, track_id, label, bbox, score, -1, -1, -1 ]
-            : BEV_UserInputFrame : dummy, dummy, dummy, pt1, pt2, dummy, -1, -1, -1
+            : BEV1 : dummy, dummy, dummy, pt1, pt2, dummy, -1, -1, -1
     realdistance : float, Meter
 
     * return 
@@ -262,7 +262,7 @@ def BEV_Points(image_shape, boundary, boundary_rows, boundary_cols, gsd, eo, R, 
     return rectify_points
 
 
-def BEV_FullFrame(frame_num, frame_path, csv_path, dst_dir, gsd, DEV = False):
+def BEV_FullFrame(frame_num, frame_path, csv_path, gsd, dst_dir='./', DEV = False):
     """
     * Parameters 
     frame_num : int 
@@ -288,7 +288,7 @@ def BEV_FullFrame(frame_num, frame_path, csv_path, dst_dir, gsd, DEV = False):
     sensor_width = DRONE_SENSOR_INFO[drone_model][0]  # unit: mm 
     sensor_height = DRONE_SENSOR_INFO[drone_model][1]  # unit: mm 
     fov_degrees = DRONE_SENSOR_INFO[drone_model][2]
-    gsd = gsd # From BEV_UserInputFrame
+    gsd = gsd # From BEV1
 
     # Save Path
     if 1 : 

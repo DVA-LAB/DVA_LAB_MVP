@@ -10,17 +10,6 @@ import numpy as np
 import pandas as pd
 from PIL import Image, ImageDraw, ImageFont
 
-# Hypothetical sensor width and image width for Mavic 2
-sensor_width_mm = 6.3  # mm
-sensor_height_mm = 4.7  # mm
-image_width_pixels = 3840  # pixels
-image_height_pixels =2160
-
-def set_gsd(logs, frame_num):
-    global GSD
-    flight_height = logs['adjusted height'][frame_num] # m
-    focal_length = logs['focal_length'][frame_num] / 100 # mm
-    GSD = (sensor_height_mm / image_height_pixels) * (flight_height / focal_length)
 
 def read_log_file(log_path):
     # Reading the CSV file into a DataFrame
@@ -29,7 +18,8 @@ def read_log_file(log_path):
     # Displaying the first few rows of the DataFrame
     return df
 
-def calculate_nearest_distance(dolphin_present, merged_dolphin_center, centers, classes, track_ids, GSD):
+
+def calculate_nearest_distance(dolphin_present, merged_dolphin_center, centers, classes, track_ids, gsd):
     distances = {}
     if not dolphin_present:
         return distances
@@ -38,19 +28,20 @@ def calculate_nearest_distance(dolphin_present, merged_dolphin_center, centers, 
         if classes[i] == 1:  # 선박인 경우
             # 병합된 돌고래 바운딩 박스 중심과의 거리 계산
             distance = math.sqrt((merged_dolphin_center[0] - centers[i][0]) ** 2 + (merged_dolphin_center[1] - centers[i][1]) ** 2)
-            real_distance = distance * GSD
+            real_distance = distance * gsd
             distances[(track_ids[i],classes[i])] = real_distance
     
     return distances
 
-def calculate_speed(center1, center2, frame_rate, GSD):
+
+def calculate_speed(center1, center2, frame_rate, gsd):
     """
     두 중심점과 프레임 속도를 기반으로 선박의 속도를 계산합니다.
     """
     # 픽셀 단위의 거리
     pixel_distance = math.sqrt((center2[0] - center1[0]) ** 2 + (center2[1] - center1[1]) ** 2)
     # 실제 거리 (미터 단위)
-    real_distance = pixel_distance * GSD
+    real_distance = pixel_distance * gsd
     # 시간 간격 (초 단위)
     time_interval = 1 / frame_rate
     # 속도 (미터/초)
@@ -58,6 +49,7 @@ def calculate_speed(center1, center2, frame_rate, GSD):
     # 속도를 km/h 단위로 변환
     speed_kmh = round(speed * 3.6, 2)
     return speed_kmh
+
 
 def read_bbox_data(file_path, img_shape):
     # bbox.txt 파일을 읽고 프레임별 bounding box 데이터를 저장합니다.
@@ -76,7 +68,8 @@ def read_bbox_data(file_path, img_shape):
             data[frame_id].append({'track_id': int(track_id), 'bbox': (a, b, c, d), 'class': class_id, 'conf': conf})
     return data
 
-def draw_lines_and_distances(draw, centers, merged_dolphin_center, classes, font, line_color=(0, 0, 255)):
+
+def draw_lines_and_distances(draw, centers, merged_dolphin_center, classes, font, gsd, line_color=(0, 0, 255)):
     for i in range(len(centers)):
         if classes[i] == 1:  # 선박인 경우
             # 병합된 돌고래 바운딩 박스 중심과 선박 중심점 사이에 선을 그립니다.
@@ -87,9 +80,10 @@ def draw_lines_and_distances(draw, centers, merged_dolphin_center, classes, font
             distance = math.sqrt((end[0] - start[0]) ** 2 + (end[1] - start[1]) ** 2)
             mid_point = ((start[0] + end[0]) / 2, (start[1] + end[1]) / 2)
             
-            draw.text(mid_point, f"{round(distance*GSD, 2)}m", font=font, fill=line_color)
+            draw.text(mid_point, f"{round(distance*gsd, 2)}m", font=font, fill=line_color)
 
-def draw_radius_circles(draw, center, radii_info, font):
+
+def draw_radius_circles(draw, center, radii_info, font, gsd):
     """
     주어진 중심점에서 지정된 반지름으로 원을 그리고 반지름 값을 표시합니다.
     radii_info는 (반지름, 색상) 튜플의 리스트입니다.
@@ -98,7 +92,7 @@ def draw_radius_circles(draw, center, radii_info, font):
         # 원을 그립니다.
         draw.ellipse([center[0] - radius, center[1] - radius, center[0] + radius, center[1] + radius], outline=color, width=15)
         # 원의 선 위에 텍스트를 표시합니다.
-        draw.text((center[0] + radius + 10, center[1] - 10), f"{round(radius*GSD,2)}m", font=font, fill=color)
+        draw.text((center[0] + radius + 10, center[1] - 10), f"{round(radius*gsd,2)}m", font=font, fill=color)
 
 def get_image_paths(directory: str) -> list:
     image_paths = []
@@ -124,17 +118,21 @@ def make_video(image_paths, video_name, fps=30):
     fourcc = cv2.VideoWriter_fourcc(*'MJPG')
     video = cv2.VideoWriter(video_name, fourcc, fps, (max_width, max_height))
 
-    for path in image_paths:
+    for i, path in enumerate(image_paths):
         img = cv2.imread(path)
         h, w, _ = img.shape
         if (w, h) != (max_width, max_height):
-            img = cv2.resize(img, (max_width, max_height))
+            if w > h:
+                img = cv2.resize(img, (max_width, int(max_height*(w /h))))
+            else:
+                img = cv2.resize(img, (int(max_width*(h /w)), max_height))
+
         video.write(img)
 
     video.release()
 
 def main(args):
-    global GSD
+    global gsd
     frame_rate=30
     image_paths = get_image_paths(args.input_dir)
     
@@ -147,6 +145,9 @@ def main(args):
 
     # font = ImageFont.truetype('AppleGothic.ttf', 40)
     font = ImageFont.truetype('/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc', 40)
+    
+    with open(args.GSD_path, 'r') as file:
+        gsd_list = [tuple(map(int, line.strip().split())) for line in file]
 
     
     min_distance = '-'
@@ -155,11 +156,10 @@ def main(args):
     max_ship_speed = 0
     
     for image_path in image_paths:
-        set_gsd(logs, frame_count)
         frame = cv2.imread(image_path)
         date = logs['datetime'][frame_count]
         frame_bboxes = bbox_data.get(frame_count, [])
-
+        gsd = gsd_list[frame_count][1]
         
         dolphin_bboxes = []
         track_ids=[]
@@ -171,11 +171,10 @@ def main(args):
         center_x, center_y = None, None
         dolphin_present = False
 
-        rst, transformed_img, bbox, boundary_rows, boundary_cols, gsd, eo, R, focal_length, pixel_size = BEV_FullFrame(frame_count, image_path, args.log_path, args.output_dir, GSD, DEV = False)
+        rst, transformed_img, bbox, boundary_rows, boundary_cols, gsd, eo, R, focal_length, pixel_size = BEV_FullFrame(frame_count, image_path, args.log_path, gsd, args.output_dir, DEV = False)
         if rst:
             continue
         else:
-            GSD = gsd
             image = Image.fromarray(transformed_img)
             draw = ImageDraw.Draw(image)
 
@@ -187,7 +186,7 @@ def main(args):
                 if rst:
                     continue
                 else:
-                    rectify_points = BEV_Points(frame.shape, bbox, boundary_rows, boundary_cols, GSD, eo, R, focal_length, pixel_size, bbox_info['bbox'])
+                    rectify_points = BEV_Points(frame.shape, bbox, boundary_rows, boundary_cols, gsd, eo, R, focal_length, pixel_size, bbox_info['bbox'])
 
                 x1, y1, x2, y2 = rectify_points
 
@@ -215,7 +214,7 @@ def main(args):
                         previous_centers[track_id] = (center_x, center_y)
                     else:
                         # 속도 계산
-                        speed_kmh = calculate_speed(previous_centers[track_id], (center_x, center_y), frame_rate, GSD)
+                        speed_kmh = calculate_speed(previous_centers[track_id], (center_x, center_y), frame_rate, gsd)
                         ship_speeds[track_id] = speed_kmh
                         max_ship_speed = max(max_ship_speed, speed_kmh)
                         # 중심점 업데이트
@@ -227,13 +226,13 @@ def main(args):
                 
                 if not (center_x == None and center_y == None):
                     if class_id == 0:
-                        draw_radius_circles(draw, merged_dolphin_center, [(50/GSD, "black"), (300/GSD, "yellow")], font)
+                        draw_radius_circles(draw, merged_dolphin_center, [(50/gsd, "black"), (300/gsd, "yellow")], font, gsd)
                         draw.rectangle(xy=(x1, y1, x2, y2), width=5, outline=(0, 0, 255))
 
                     # 모든 bbox 중심점들 사이에 선을 그리고 거리를 표시합니다.
                     if dolphin_present:
-                        draw_lines_and_distances(draw, centers, merged_dolphin_center, classes, font)
-                        nearest_distances = calculate_nearest_distance(dolphin_present, merged_dolphin_center, centers, classes, track_ids, GSD)
+                        draw_lines_and_distances(draw, centers, merged_dolphin_center, classes, gsd, font)
+                        nearest_distances = calculate_nearest_distance(dolphin_present, merged_dolphin_center, centers, classes, track_ids, gsd)
                         for (track_id, cls), distance in nearest_distances.items():
                             if cls == 1:
                                 if distance <= 300:
@@ -276,7 +275,7 @@ def main(args):
         texts = [
             f"일시: {date}",
             f"프레임 숫자: {frame_count}",
-            f"픽셀 사이즈: {round(GSD,5)}m/px",
+            f"픽셀 사이즈: {round(gsd,5)}m/px",
             f"선박과 가장 가까운 거리: {min_distance}m",
             f"50m 이내의 선박 수: {len(ships_within_50m)}",
             f"300m 이내의 선박 수: {len(ships_within_300m)}"
@@ -304,7 +303,8 @@ if __name__ == "__main__":
     parser.add_argument('--log_path', type=str, default='/home/dva4/DVA_LAB/backend/test/sync_csv/sync_log.csv')
     parser.add_argument('--bbox_path', type=str, default='/home/dva4/DVA_LAB/backend/utils/visualizing/bev_points.csv')
     parser.add_argument('--output_video', type=str, default='/home/dva4/DVA_LAB/backend/test/visualize_bev.avi')
-    parser.add_argument('--input_dir', type=str, default='/home/dva4/DVA_LAB/backend/test/frame_origin')
+    parser.add_argument('--input_dir', type=str, default='/home/dva4/DVA_LAB/backend/test/frame_origin_save')
     parser.add_argument('--output_dir', type=str, default='/home/dva4/DVA_LAB/backend/test/frame_bev_infer')
+    parser.add_argument('--GSD_path', type=str, default='backend/test/GSD_total.txt')
     args = parser.parse_args()
     main(args)
