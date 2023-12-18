@@ -67,7 +67,7 @@ async def get_all_gsd(body: VisRequestBev):
         initial_frame, initial_gsd = f.read().split(' ')
 
     # TODO@jh: user_input이 올바르게 저장되어 있지 않아서 임의로 가장 가까운 5의 배수로 수정함
-    gsds[round(int(initial_frame) / 5) * 5] = initial_gsd
+    gsds[initial_frame] = initial_gsd
 
     with open(body.user_input, 'r') as f:
         distance = float(f.read().split(' ')[-1])

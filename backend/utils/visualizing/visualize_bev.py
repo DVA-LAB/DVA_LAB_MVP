@@ -121,7 +121,7 @@ def get_max_dimensions(image_paths):
 
 def make_video(image_paths, video_name, fps=30):
     max_width, max_height = get_max_dimensions(image_paths)
-    fourcc = cv2.VideoWriter_fourcc(*'MP4V')
+    fourcc = cv2.VideoWriter_fourcc(*'MJPG')
     video = cv2.VideoWriter(video_name, fourcc, fps, (max_width, max_height))
 
     for path in image_paths:
@@ -300,7 +300,7 @@ def main(args):
         cv2.imwrite(output_frame_path, img)
         frame_count += 1
 
-    make_video(image_paths, args.output_video)
+    make_video(args.output_dir, args.output_video)
     
 
 if __name__ == "__main__":

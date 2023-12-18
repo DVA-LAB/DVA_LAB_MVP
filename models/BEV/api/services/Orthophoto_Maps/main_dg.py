@@ -251,6 +251,14 @@ def BEV_Points(image_shape, boundary, boundary_rows, boundary_cols, gsd, eo, R, 
                 if in_range(coord_ICS_col, obj_points[2] - margin, obj_points[2] + margin) and in_range(coord_ICS_row, obj_points[3] - margin, obj_points[3] + margin) :
                     rectify_points[2] = col
                     rectify_points[3] = row
+    
+    cols = [rectify_points[0], rectify_points[2]]
+    rows = [rectify_points[1], rectify_points[3]]
+    rectify_points[0] = min(cols)
+    rectify_points[1] = min(rows)
+    rectify_points[2] = max(cols)
+    rectify_points[3] = max(rows)
+
     return rectify_points
 
 
