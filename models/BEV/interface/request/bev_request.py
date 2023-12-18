@@ -1,11 +1,11 @@
 from autologging import logged
 from pydantic import BaseModel, Field
 
-__all__ = ["BEV_UserInputFrame", "BEV2"]
+__all__ = ["BEV1", "BEV2"]
 
 
 @logged
-class BEV_UserInputFrame(BaseModel):
+class BEV1(BaseModel):
     frame_num: int = Field(..., description="Frame number")
     frame_path: str = Field(..., description="Path to the frame image")
     csv_path: str = Field(..., description="Path to the CSV file")
@@ -38,7 +38,7 @@ class BEV2(BaseModel):
         schema_extra = {
             "example": {
                 "frame_num": 200,
-                "frame_path": "api/services/Orthophoto_Maps/Data/frame_img/DJI_0119_200.png",
+                "frame_path": "api/services/Orthophoto_Maps/Data/frame_origin/DJI_0119_200.png",
                 "csv_path": "api/services//Orthophoto_Maps/Data/DJI_0119.csv",
                 "objects": [None, None, None, 528.60, 537.70, 134.01, 258.51, None, -1, -1, -1],
                 "dst_dir": "api/services/Orthophoto_Maps/Data/result",
