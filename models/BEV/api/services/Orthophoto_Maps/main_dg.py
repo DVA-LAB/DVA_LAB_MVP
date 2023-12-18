@@ -1,5 +1,6 @@
 import os
 import numpy as np
+from numba import jit, prange
 import time
 from .module.ExifData import *
 from .module.EoData import *
@@ -172,7 +173,88 @@ def BEV_UserInputFrame(frame_num, frame_path, csv_path, objects, realdistance, d
     return rst, img_dst, objects, pixel_size, gsd
 
 
-def BEV_FullFrame(frame_num, frame_path, csv_path, objects, dst_dir, gsd, DEV = False):
+@jit(nopython=True, parallel=True)
+def BEV_Points(image_shape, boundary, boundary_rows, boundary_cols, gsd, eo, R, focal_length, pixel_size, obj_points):
+    # def BEV_Points(image_shape, R, pixel_size, boundary, boundary_cols, boundary_rows, height, focal_length, obj_points, gsd): #, image.shape[1], coord_CCS_px_x, coord_CCS_px_y, dst_dir, gsd, DEV = False):
+    """
+    * Parameters 
+    frame_num : int 
+    frame_path : str, png file path
+    csv_path : str, csv file path
+    drone_model : int, 
+    objects : list [frame_id, track_id, label, bbox, score, -1, -1, -1 ]
+    
+    * return 
+    rst : result flag // 0 : Success, 1 : rectify fail, 2 : gsd calc Fail
+    img_dst : string 
+    objects : list object
+    """
+
+     # 1. projection
+    proj_coords_x = 0.
+    proj_coords_y = 0.
+    proj_coords_z = 0.
+
+    # 2. back-projection
+    coord_CCS_m_x = 0.
+    coord_CCS_m_y = 0.
+    coord_CCS_m_z = 0.
+    plane_coord_CCS_x = 0.
+    plane_coord_CCS_y = 0.
+    coord_CCS_px_x = 0.
+    coord_CCS_px_y = 0.
+
+    # 3. resample
+    coord_ICS_col = 0
+    coord_ICS_row = 0
+
+    obj_points = [int(x) for x in obj_points]
+    rectify_points = [0,0,0,0]
+
+    margin = 1
+    def in_range(n, start, end = 0):
+        return start <= n <= end if end >= start else end <= n <= start
+
+    for row in prange(boundary_rows):
+        for col in range(boundary_cols):
+            # 1. projection
+            proj_coords_x = boundary[0, 0] + col * gsd - eo[0]
+            proj_coords_y = boundary[3, 0] - row * gsd - eo[1]
+            proj_coords_z = 0 - eo[2]
+
+            # 2. back-projection - unit: m
+            coord_CCS_m_x = R[0, 0] * proj_coords_x + R[0, 1] * proj_coords_y + R[0, 2] * proj_coords_z
+            coord_CCS_m_y = R[1, 0] * proj_coords_x + R[1, 1] * proj_coords_y + R[1, 2] * proj_coords_z
+            coord_CCS_m_z = R[2, 0] * proj_coords_x + R[2, 1] * proj_coords_y + R[2, 2] * proj_coords_z
+
+            scale = (coord_CCS_m_z) / (-focal_length)  # scalar
+            plane_coord_CCS_x = coord_CCS_m_x / scale
+            plane_coord_CCS_y = coord_CCS_m_y / scale
+
+            # Convert CCS to Pixel Coordinate System - unit: px
+            coord_CCS_px_x = plane_coord_CCS_x / pixel_size
+            coord_CCS_px_y = -plane_coord_CCS_y / pixel_size
+
+            # 3. resample
+            # Nearest Neighbor
+            coord_ICS_col = int(image_shape[1] / 2 + coord_CCS_px_x)  # column
+            coord_ICS_row = int(image_shape[0] / 2 + coord_CCS_px_y)  # row
+
+            if coord_ICS_col < 0 or coord_ICS_col >= image_shape[1]:      # column
+                continue
+            elif coord_ICS_row < 0 or coord_ICS_row >= image_shape[0]:    # row
+                continue
+            else:
+                if in_range(coord_ICS_col, obj_points[0] - margin, obj_points[0] + margin) and in_range(coord_ICS_row, obj_points[1] - margin, obj_points[1] + margin) :
+                    rectify_points[0] = col
+                    rectify_points[1] = row
+                if in_range(coord_ICS_col, obj_points[2] - margin, obj_points[2] + margin) and in_range(coord_ICS_row, obj_points[3] - margin, obj_points[3] + margin) :
+                    rectify_points[2] = col
+                    rectify_points[3] = row
+    return rectify_points
+
+
+def BEV_FullFrame(frame_num, frame_path, csv_path, dst_dir, gsd, DEV = False):
     """
     * Parameters 
     frame_num : int 
@@ -200,22 +282,23 @@ def BEV_FullFrame(frame_num, frame_path, csv_path, objects, dst_dir, gsd, DEV = 
     fov_degrees = DRONE_SENSOR_INFO[drone_model][2]
     gsd = gsd # From BEV1
 
-    # Objects Point : Col1, Row1, Col2, Row2
-    object_points = [int(x) for x in objects]
-    
     # Save Path
-    filename = os.path.basename(frame_path).split(".")[0]
-    dst_file_name = "Transformed_{}".format(filename)
-    img_dst = dst_dir + '/' + dst_file_name # os.path.join(dst_dir, dst_file_name)
+    if 1 : 
+        filename = os.path.basename(frame_path).split(".")[0]
+        dst_file_name = "Transformed_{}".format(filename)
+        img_dst = dst_dir + '/' + dst_file_name # os.path.join(dst_dir, dst_file_name)
+        # Imread
+        image = cv2.imread(frame_path, -1)
+    else :  # Local DEV
+        img_dst = os.path.join(dst_dir, str(frame_num))
+        image = frame_path # cv2.imread(frame_path, -1)
 
-    # Imread
-    image = cv2.imread(frame_path, -1)
+
     if DEV : 
         ## Visualize Original Image
         origin_img = image.copy()
-        cv2.line(origin_img, (object_points[0], object_points[1]), (object_points[2], object_points[3]), color=(255, 0, 0), thickness = 10)
+        # cv2.line(origin_img, (object_points[0], object_points[1]), (object_points[2], object_points[3]), color=(255, 0, 0), thickness = 10)
         cv2.imwrite(img_dst + '_Origin' + '.png', origin_img, [int(cv2.IMWRITE_PNG_COMPRESSION), 3])   # from 0 to 9, default: 
-
 
     # Step 1. Extract metadata from a df and advance information
     # focal_length, orientation, eo, maker = get_metadata(file_path)  # unit: m, _, ndarray
@@ -254,27 +337,20 @@ def BEV_FullFrame(frame_num, frame_path, csv_path, objects, dst_dir, gsd, DEV = 
     # Boundary size
     boundary_cols = int((bbox[1, 0] - bbox[0, 0]) / gsd)
     boundary_rows = int((bbox[3, 0] - bbox[2, 0]) / gsd)
-
+    
     try :
-        b, g, r, a, rectified_poinst = rectify_plane_parallel_with_point(bbox, boundary_rows, boundary_cols, gsd, eo, ground_height, R, focal_length, pixel_size, image, object_points)
-        objects = rectified_poinst
-        
-        cols = [objects[0], objects[2]]
-        rows = [objects[1], objects[3]]
-        objects[0] = min(cols)
-        objects[1] = min(rows)
-        objects[2] = max(cols)
-        objects[3] = max(rows)
-
+        b, g, r, a = rectify_plane_parallel(bbox, boundary_rows, boundary_cols, gsd, eo, ground_height, R, focal_length, pixel_size, image)
         # if DEV : 
-        #     create_pnga_optical_with_obj_for_dev(b, g, r, a, bbox, gsd, 5186, img_dst, rectified_poinst)  
+            # create_pnga_optical_with_obj_for_dev(b, g, r, a, bbox, gsd, 5186, img_dst, rectified_poinst)  
         # else : 
-        #     create_pnga_optical(b, g, r, a, bbox, gsd, 5186, img_dst)  
+        transformed_img = cv2.merge((b, g, r))
+        if 0 :
+            create_pnga_optical(b, g, r, a, bbox, gsd, 5186, img_dst)  
     except : 
         rst = 1
-        return rst, None, None, None
-    png_image = cv2.merge((b, g, r, a))
-    return rst, png_image, objects, gsd
+        return rst, None, None, None, None, None, None, None, None, None
+
+    return rst, transformed_img, bbox, boundary_rows, boundary_cols, gsd, eo, R, focal_length, pixel_size
 
 if __name__ == "__main__":
     ### Test Data ###

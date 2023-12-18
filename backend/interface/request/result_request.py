@@ -15,10 +15,10 @@ class VisRequest(BaseModel):
     class Config:
         schema_extra = {
             "example": {
-                "log_path": "/home/dva4/dva/backend/test/sync_csv",
-                "input_dir": "/home/dva4/dva/backend/test/frame_origin",
-                "output_video": "/home/dva4/dva/backend/test/result/result.mp4",
-                "bbox_path": "/home/dva4/dva/backend/test/model/tracking/result.txt",
+                "log_path": "/home/dva4/DVA_LAB/backend/test/sync_csv",
+                "input_dir": "/home/dva4/DVA_LAB/backend/test/frame_origin",
+                "output_video": "/home/dva4/DVA_LAB/backend/test/result/result.mp4",
+                "bbox_path": "/home/dva4/DVA_LAB/backend/test/model/tracking/result.txt",
                 "set_merged_dolphin_center": False
             }
         }
@@ -29,13 +29,15 @@ class VisRequestBev(BaseModel):
     frame_path: str = Field(..., description="img_frame_save_path (folder)")
     tracking_result: str = Field(..., description="detection_result file")
     GSD_path: str = Field(..., description="original GSD file")
+    GSD_save_path: str = Field(..., description="saved GSD file")
 
     class Config:
         schema_extra = {
             "example": {
-                "user_input": "/home/dva4/dva/backend/test/input/user_input.txt",
-                "frame_path": "/home/dva4/dva/backend/test/frame_origin",
-                "tracking_result": "/home/dva4/dva/backend/test/model/tracking/result.txt",
-                "GSD_path": "/home/dva4/dva/backend/test/GSD.txt",
+                "user_input": "/home/dva4/DVA_LAB/backend/test/input/user_input.txt",
+                "frame_path": "/home/dva4/DVA_LAB/backend/test/frame_origin",
+                "tracking_result": "/home/dva4/DVA_LAB/backend/test/model/tracking/result.txt",
+                "GSD_path": "/home/dva4/DVA_LAB/backend/test/GSD.txt",
+                "GSD_save_path": "/home/dva4/DVA_LAB/backend/test/GSD_total.txt",
             }
         }

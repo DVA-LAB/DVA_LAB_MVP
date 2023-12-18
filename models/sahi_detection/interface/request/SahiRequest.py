@@ -14,9 +14,9 @@ class SahiRequest(BaseModel):
     class Config:
         schema_extra = {
             "example": {
-                "img_path": "/home/dva4/dva/backend/test/frame_origin",
-                "csv_path": "/home/dva4/dva/backend/test/model/detection/result.csv",
-                "sliced_path": "/home/dva4/dva/backend/test/model/sliced",
+                "img_path": "/home/dva4/DVA_LAB/backend/test/frame_origin",
+                "csv_path": "/home/dva4/DVA_LAB/backend/test/model/detection/result.csv",
+                "sliced_path": "/home/dva4/DVA_LAB/backend/test/model/sliced",
             }
         }
 

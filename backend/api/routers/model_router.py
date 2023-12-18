@@ -67,9 +67,9 @@ async def model_inference(body: ModelRequest):
 그리고 inference과정에서 생성한 이미지 패치를 저장할 경로(`sliced_path`)를 입력 받습니다.
 
 ### 예시
-- `img_path`: /home/dva4/dva/backend/test/frame_origin
-- `csv_path`: /home/dva4/dva/backend/test/model/detection/result.csv
-- `sliced_path`: /home/dva4/dva/backend/test/model/sliced
+- `img_path`: /home/dva4/DVA_LAB/backend/test/frame_origin
+- `csv_path`: /home/dva4/DVA_LAB/backend/test/model/detection/result.csv
+- `sliced_path`: /home/dva4/DVA_LAB/backend/test/model/sliced
 """,
 )
 async def inference_detection(img_path, csv_path, sliced_path):
@@ -100,9 +100,9 @@ async def inference_detection(img_path, csv_path, sliced_path):
 그리고 결과를 저장할 경로(`output_path`)를 입력 받습니다.
 
 ### 예시
-- `frame_path`: /home/dva4/dva/backend/test/frame_origin/DJI_0119_30_00000.jpg
-- `slices_path`: /home/dva4/dva/backend/test/model/sliced
-- `output_path`: /home/dva4/dva/backend/test/model/segment/DJI_0119_30_00000.jpg
+- `frame_path`: /home/dva4/DVA_LAB/backend/test/frame_origin/DJI_0119_30_00000.jpg
+- `slices_path`: /home/dva4/DVA_LAB/backend/test/model/sliced
+- `output_path`: /home/dva4/DVA_LAB/backend/test/model/segment/DJI_0119_30_00000.jpg
 """,
 )
 async def inference_segmentation(frame_path, slices_path, output_path):
@@ -136,9 +136,9 @@ async def inference_segmentation(frame_path, slices_path, output_path):
 그리고 병합한 결과를 저장할 (`output_merge_path`)를 입력 받습니다..
 
 ### 예시
-- `output_merge_path`: /home/dva4/dva/backend/test/model/merged
-- `csv_path`: /home/dva4/dva/backend/test/model/detection/result.csv
-- `anomaly_detection_output`: /home/dva4/dva/backend/test/model/detection/result.csv -> 임시로 detection csv를 받게 함
+- `output_merge_path`: /home/dva4/DVA_LAB/backend/test/model/merged
+- `csv_path`: /home/dva4/DVA_LAB/backend/test/model/detection/result.csv
+- `anomaly_detection_output`: /home/dva4/DVA_LAB/backend/test/model/detection/result.csv -> 임시로 detection csv를 받게 함
 """,
 )
 async def inference_merge(
@@ -170,8 +170,8 @@ async def inference_merge(
 사용자가 제공한 detection 결과(`det_result_path`)를 입력받아서 결과를 `result_path`에 저장합니다.
 
 ### 예시
-- `det_result_path`: /home/dva4/dva/backend/test/model/merged/result.txt
-- `result_path`: /home/dva4/dva/backend/test/model/tracking/result.txt
+- `det_result_path`: /home/dva4/DVA_LAB/backend/test/model/merged/result.txt
+- `result_path`: /home/dva4/DVA_LAB/backend/test/model/tracking/result.txt
 """,
 )
 async def inference_tracking(detection_path, save_path):

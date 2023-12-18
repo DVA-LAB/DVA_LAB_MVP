@@ -61,11 +61,11 @@ async def bev_2(body: BEV2):
 #     summary="second dev for all frames",
 # )
 # async def bev_vid(objects):
-#     frame_path = "/home/dva4/dva/backend/test/frame_origin"
-#     csv_path = "/home/dva4/dva/backend/test/csv"
-#     dst_dir = "/home/dva4/dva/backend/test/result/bev"
+#     frame_path = "/home/dva4/DVA_LAB/backend/test/frame_origin"
+#     csv_path = "/home/dva4/DVA_LAB/backend/test/csv"
+#     dst_dir = "/home/dva4/DVA_LAB/backend/test/result/bev"
 #     frame_list = glob.glob(os.path.join(frame_path, "*.jpg"))
-#     gsd_path = "/home/dva4/dva/backend/test/GSD.txt"
+#     gsd_path = "/home/dva4/DVA_LAB/backend/test/GSD.txt"
 #
 #     try:
 #         # Read GSD value from file
@@ -84,10 +84,10 @@ async def bev_2(body: BEV2):
 #             # Check if BEV_2 was successful and extract necessary data
 #             if result.rst == 0:
 #                 # You may need to define or calculate the following paths
-#                 log_path = "/home/dva4/dva/backend/test/sync_csv/sync_log.csv"
-#                 video_path = glob.glob("/home/dva4/dva/backend/test/video_origin/*")
-#                 output_video = "/home/dva4/dva/backend/test/result"
-#                 bbox_path = "/home/dva4/dva/backend/test/model/tracking/result.txt"
+#                 log_path = "/home/dva4/DVA_LAB/backend/test/sync_csv/sync_log.csv"
+#                 video_path = glob.glob("/home/dva4/DVA_LAB/backend/test/video_origin/*")
+#                 output_video = "/home/dva4/DVA_LAB/backend/test/result"
+#                 bbox_path = "/home/dva4/DVA_LAB/backend/test/model/tracking/result.txt"
 #
 #                 # Prepare the request object for visualize
 #

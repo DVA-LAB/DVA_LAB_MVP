@@ -500,7 +500,7 @@ loadVideo = () => {
   //   // const framePath = `/home/dva4/dva/backend/test/frame_origin/${fileNameWithoutExtension}_${frameNumberPadded}.jpg`; 
   //   // const csvPath = `/home/dva4/dva/backend/test/sync_csv/sync_log.csv`;
   //   // const dstDir = "api/services/Orthophoto_Maps/Data/result"; // Destination directory
-  
+
   //   const formatObjectsArray = (lastEntry) => {
   //     if (!lastEntry) return null;
   
@@ -810,10 +810,10 @@ drawLabel = (startPoint, endPoint, text) => {
 
     // Prepare the payload for the API request
     const payload = {
-        frame_path: "/home/dva4/dva/backend/test/frame_origin"/* path to the frame images */,
-        detection_save_path:"/home/dva4/dva/backend/test/model/detection/result" /* path where detection results should be saved */,
-        sliced_path: "/home/dva4/dva/backend/test/model/sliced"/* path for sliced images, if applicable */,
-        output_merge_path: "/home/dva4/dva/backend/test/model/merged"/* path for merged output */,
+        frame_path: "/home/dva4/DVA_LAB/backend/test/frame_origin"/* path to the frame images */,
+        detection_save_path:"/home/dva4/DVA_LAB/backend/test/model/detection/result" /* path where detection results should be saved */,
+        sliced_path: "/home/dva4/DVA_LAB/backend/test/model/sliced"/* path for sliced images, if applicable */,
+        output_merge_path: "/home/dva4/DVA_LAB/backend/test/model/merged"/* path for merged output */,
         // ... include other necessary fields based on your API's requirements
     };
 
