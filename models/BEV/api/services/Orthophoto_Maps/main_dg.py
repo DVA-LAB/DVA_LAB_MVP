@@ -377,12 +377,12 @@ if __name__ == "__main__":
     rst, img_dst, objects, pixel_size, gsd = BEV_UserInputFrame(frame_num, frame_path, csv_path, objects, realdistance, dst_dir, DEV)
     print(gsd)
 
-    print("GSD1 Done")
-    col1, row1  = 528.60, 537.70
-    col2, row2  = 134.01, 258.51
+    # print("GSD1 Done")
+    # col1, row1  = 528.60, 537.70
+    # col2, row2  = 134.01, 258.51
 
-    objects = [None, None, None, col1, row1, col2, row2, None, -1, -1, -1]
-    rst, img_dst, objects, gsd = BEV_FullFrame(frame_num, frame_path, csv_path, objects, dst_dir, gsd, DEV)
-    print("GSD2 Done")
+    # objects = [None, None, None, col1, row1, col2, row2, None, -1, -1, -1]
+    # rst, img_dst, objects, gsd = BEV_FullFrame(frame_num, frame_path, csv_path, objects, dst_dir, gsd, DEV)
+    # print("GSD2 Done")
 
     
