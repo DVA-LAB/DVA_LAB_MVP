@@ -52,10 +52,10 @@ async def get_all_gsd(body: VisRequestBev):
     s_time = time.time()
     gsds = dict()
     with open(body.GSD_path, 'r') as f:
-        initial_frame, initial_gsd = f.read().split(' ')
+        initial_frame, initial_gsd, initial_p_size = f.read().split(' ')
 
     # TODO@jh: user_input이 올바르게 저장되어 있지 않아서 임의로 가장 가까운 5의 배수로 수정함
-    gsds[int(initial_frame)] = float(initial_gsd)
+    gsds[int(initial_frame)] = [float(initial_gsd), float(initial_p_size)]
 
     with open(body.user_input, 'r') as f:
         distance = float(f.read().split(' ')[-1])
@@ -71,8 +71,8 @@ async def get_all_gsd(body: VisRequestBev):
             frame = int(ship_size[0])
             x1, y1, x2, y2 = ship_size[1:]
             frame_file = [x for x in glob.glob(os.path.join(body.frame_path, '*.jpg')) if int(x.split('_')[-1].split('.')[0])==int(frame)][0]
-            gsd = get_gsd(frame, frame_file, x1, y1, x2, y2, distance)
-            gsds[frame] = gsd
+            gsd, pixelsize = get_gsd(frame, frame_file, x1, y1, x2, y2, distance)
+            gsds[frame] = [gsd, pixelsize]
         except Exception as e:
             print(e)
     g_f_time = time.time()
@@ -81,9 +81,9 @@ async def get_all_gsd(body: VisRequestBev):
         result = []
         for frame_no in sorted(frame_nos):
             try:
-                result.append(f'{frame_no} {gsds[frame_no]}')
+                result.append(f'{frame_no} {gsds[frame_no][0]} {gsds[frame_no][1]}')
             except:
-                result.append(f'{frame_no} {0}')
+                result.append(f'{frame_no} {0} {0}')
         file.write('\n'.join(result))
 
     return (f'새로 계산한 GSD: {body.GSD_save_path}',
@@ -151,6 +151,6 @@ def get_gsd(frame_number, frame_file, x1, y1, x2, y2, m_distance):
     response = requests.post(url, headers=headers, data=json.dumps(data))
     result = response.json()
     if result[0] == 0:
-        return result[-1]
+        return result[-1], result[-2]
     else:
-        return 0
+        return 0, 0
