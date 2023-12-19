@@ -115,12 +115,10 @@ def get_max_dimensions(image_paths):
 
 def make_video(image_paths, video_name, fps=30, max_resolution=(3840, 2160)):
     max_width, max_height = max_resolution
-    fourcc = cv2.VideoWriter_fourcc(*'MJPG')
+    fourcc = cv2.VideoWriter_fourcc(*'h264')
     video = cv2.VideoWriter(video_name, fourcc, fps, (max_width, max_height))
 
     for i, path in enumerate(image_paths):
-        if i > 10:
-            break
         img = cv2.imread(path)
         h, w, _ = img.shape
 
@@ -136,7 +134,6 @@ def make_video(image_paths, video_name, fps=30, max_resolution=(3840, 2160)):
         video.write(img)
 
     video.release()
-
 
 def main(args):
     start_time = time.time()
@@ -162,15 +159,12 @@ def main(args):
     max_ship_speed = 0
     
     for image_path in image_paths:
-        if frame_count != 1033 :
-            frame_count +=1 
-            continue
-
         frame = cv2.imread(image_path)
         date = logs['datetime'][frame_count]
         frame_bboxes = bbox_data.get(frame_count, [])
         gsd = gsd_list[frame_count][1]
-        
+        # pixel_size = gsd_list[frame_count][2]
+
         dolphin_bboxes = []
         track_ids=[]
         centers = []  # bbox 중심점들을 저장합니다.
@@ -181,13 +175,13 @@ def main(args):
         center_x, center_y = None, None
         dolphin_present = False
 
-        rst, transformed_img, bbox, boundary_rows, boundary_cols, gsd, eo, R, focal_length, pixel_size = BEV_FullFrame(frame_count, image_path, args.log_path, gsd, args.output_dir, DEV = False)
+        rst, transformed_img, bbox, boundary_rows, boundary_cols, gsd_bev, eo, R, focal_length, pixel_size = BEV_FullFrame(frame_count, image_path, args.log_path, gsd, args.output_dir, DEV = False)
         if rst:
             continue
         else:
             image = Image.fromarray(transformed_img)
             draw = ImageDraw.Draw(image)
-
+            gsd = gsd_bev
         if len(frame_bboxes) > 0 :
             for bbox_info in frame_bboxes:
                 track_id = bbox_info['track_id']
@@ -197,14 +191,11 @@ def main(args):
                     continue
                 else:
                     rectify_points = BEV_Points(frame.shape, bbox, boundary_rows, boundary_cols, gsd, eo, R, focal_length, pixel_size, bbox_info['bbox'])
-                print(rectify_points)
-
                 x1, y1, x2, y2 = rectify_points
 
                 if class_id == 1:
                     center_x, center_y = x2, y2
                 else:
-                    # bbox의 중심점을 계산합니다.
                     center_x, center_y = (x1 + x2) / 2, (y1 + y2) / 2
                 
                 centers.append((center_x, center_y))
@@ -302,7 +293,7 @@ def main(args):
         # 나머지 코드
         img = np.array(image)
         # 결과 이미지 저장
-        output_frame_path = os.path.join(args.output_dir, f'frame_{str(frame_count).zfill(6)}.png')
+        output_frame_path = os.path.join(args.output_dir, f'frame_{str(frame_count).zfill(6)}.jpg')
         cv2.imwrite(output_frame_path, img)
         frame_count += 1
 
