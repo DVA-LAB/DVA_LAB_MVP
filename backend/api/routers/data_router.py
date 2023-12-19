@@ -164,15 +164,18 @@ async def save_input(request: UserInput):
     ][0]
     try:
         gsds = []
+        pixelsizes = []
         inputs = []
         for pd in point_distances:
             inputs.append(f'{frame_number} {pd.point1.x} {pd.point1.y} {pd.point2.x} {pd.point2.y} {pd.distance}')
-            gsd = get_gsd(frame_number, frame_file, pd.point1.x, pd.point1.y, pd.point2.x, pd.point2.y, pd.distance)
+            gsd, pixelsize = get_gsd(frame_number, frame_file, pd.point1.x, pd.point1.y, pd.point2.x, pd.point2.y, pd.distance)
             if gsd != 0:
                 gsds.append(gsd)
+                pixelsizes.append(pixelsize)
         gsd_mean = sum(gsds) / len(gsds)
+        pixelsize_mean = sum(pixelsizes) / len(pixelsizes)
         with open(os.path.join("test", "GSD.txt"), "w") as f:
-            f.write(f'{frame_number} {gsd_mean}')
+            f.write(f'{frame_number} {gsd_mean} {pixelsize_mean}')
         with open(os.path.join(input_path, 'user_input.txt'), 'w') as f:
             f.write('\n'.join(inputs))
         return f'초기 gsd값이 {os.path.abspath(os.path.join("test", "GSD.txt"))}에 저장되었습니다.'
@@ -206,9 +209,9 @@ def get_gsd(frame_number, frame_file, x1, y1, x2, y2, m_distance):
     response = requests.post(url, headers=headers, data=json.dumps(data))
     result = response.json()
     if result[0] == 0:
-        return result[-1]
+        return result[-1], result[-2]
     else:
-        return 0
+        return 0, 0
 
 def calculate_pixel_distance(point1, point2):
     return ((point2.x - point1.x) ** 2 + (point2.y - point1.y) ** 2) ** 0.5
