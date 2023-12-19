@@ -17,17 +17,24 @@ from utils.visualizing import visualize_bev
 router = APIRouter(tags=["result"])
 
 
+from fastapi import HTTPException
+
 @router.post(
     "/visualize",
     status_code=status.HTTP_200_OK,
     summary="visualizing result",
 )
 async def model_inference(body: VisRequest):
-    log_file_path = glob.glob(os.path.join(body.log_path, '*.csv'))[0]
+    try:
+        log_file_path = glob.glob(os.path.join(body.log_path, '*.csv'))[0]
+    except IndexError:
+        raise HTTPException(status_code=400, detail="No CSV file found in the provided log path")
 
-    os.makedirs(os.path.dirname(body.output_video), exist_ok=True)
-    delete_files_in_folder(os.path.dirname(body.output_video))
-    args = Namespace(
+    try:
+        os.makedirs(os.path.dirname(body.output_video), exist_ok=True)
+        # delete_files_in_folder(os.path.dirname(body.output_video))
+
+        args = Namespace(
             log_path=log_file_path,
             input_dir=body.input_dir,
             output_video=body.output_video,
@@ -35,12 +42,24 @@ async def model_inference(body: VisRequest):
             GSD_path=os.path.abspath(os.path.join("test", "GSD_total.txt"))
         )
 
-    # Call show_result with the created args object
-    show_result(args)
+        # Call show_result with the created args object
+        show_result(args)
 
-    visualize_bev()
+        args_bev = Namespace(
+            log_path=log_file_path,
+            input_dir=body.input_dir,
+            output_video=body.output_video,
+            output_dir= '/home/dva4/DVA_LAB/backend/test/frame_bev_infer',
+            bbox_path=body.bbox_path,
+            GSD_path=os.path.abspath(os.path.join("test", "GSD_total.txt"))
+        )
+        visualize_bev(args_bev)
 
-    return body.output_video
+    except Exception as e:
+        # You can log the exception here if needed
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 
 
 @router.post(
@@ -99,9 +118,12 @@ async def get_all_gsd(body: VisRequestBev):
     summary="export origin video",
 )
 async def export_origin():
-    video_storage_path = "/home/dva4/DVA_LAB/backend/test/visualize.avi"
-    return FileResponse(video_storage_path)
-
+    print("exporting..")
+    video_storage_path = "/home/dva4/DVA_LAB/backend/test/visualize.mp4"
+    try:
+        return FileResponse(video_storage_path, media_type = "video/mp4")
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=f"Error serving video:{str(e)}")
 
 # TODO@jh: 공통 유틸로 빼기
 def delete_files_in_folder(folder_path):
