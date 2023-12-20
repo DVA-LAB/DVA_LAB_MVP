@@ -5,6 +5,7 @@ import os
 import cv2
 import math
 import argparse
+from tqdm import tqdm
 from models.BEV.api.services.Orthophoto_Maps.main_dg import *
 import numpy as np
 import pandas as pd
@@ -115,8 +116,9 @@ def get_max_dimensions(image_paths):
 
 def make_video(image_paths, video_name, fps=30, max_resolution=(3840, 2160)):
     max_width, max_height = max_resolution
-    fourcc = cv2.VideoWriter_fourcc(*'h264')
-    video = cv2.VideoWriter(video_name, fourcc, fps, (max_width, max_height))
+    fourcc = cv2.VideoWriter_fourcc(*'XVID')
+    video_name_temp = video_name.split('.')[0]+"_temp.mp4"
+    video = cv2.VideoWriter(video_name_temp, fourcc, fps, (max_width, max_height))
 
     for i, path in enumerate(image_paths):
         img = cv2.imread(path)
@@ -134,6 +136,8 @@ def make_video(image_paths, video_name, fps=30, max_resolution=(3840, 2160)):
         video.write(img)
 
     video.release()
+    os.system(f"ffmpeg -y -i {video_name.split('.')[0]}_temp.mp4 -vcodec h264 -movflags +faststart {video_name}")
+    os.system(f"rm {video_name.split('.')[0]}_temp.mp4")
 
 def main(args):
     start_time = time.time()
@@ -158,7 +162,7 @@ def main(args):
     previous_centers = {}
     max_ship_speed = 0
     
-    for image_path in image_paths:
+    for image_path in tqdm(image_paths):
         frame = cv2.imread(image_path)
         date = logs['datetime'][frame_count]
         frame_bboxes = bbox_data.get(frame_count, [])
@@ -182,6 +186,7 @@ def main(args):
             image = Image.fromarray(transformed_img)
             draw = ImageDraw.Draw(image)
             gsd = gsd_bev
+
         if len(frame_bboxes) > 0 :
             for bbox_info in frame_bboxes:
                 track_id = bbox_info['track_id']
@@ -192,7 +197,9 @@ def main(args):
                 else:
                     rectify_points = BEV_Points(frame.shape, bbox, boundary_rows, boundary_cols, gsd, eo, R, focal_length, pixel_size, bbox_info['bbox'])
                 x1, y1, x2, y2 = rectify_points
-
+                
+                gsd /= 2
+                
                 if class_id == 1:
                     center_x, center_y = x2, y2
                 else:
@@ -307,7 +314,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--log_path', type=str, default='/home/dva4/DVA_LAB/backend/test/sync_csv/sync_log.csv')
     parser.add_argument('--bbox_path', type=str, default='/home/dva4/DVA_LAB/backend/utils/visualizing/bev_points.csv')
-    parser.add_argument('--output_video', type=str, default='/home/dva4/DVA_LAB/backend/test/visualize_bev.avi')
+    parser.add_argument('--output_video', type=str, default='/home/dva4/DVA_LAB/backend/test/visualize_bev.mp4')
     parser.add_argument('--input_dir', type=str, default='/home/dva4/DVA_LAB/backend/test/frame_origin')
     parser.add_argument('--output_dir', type=str, default='/home/dva4/DVA_LAB/backend/test/frame_bev_infer')
     parser.add_argument('--GSD_path', type=str, default='backend/test/GSD_total.txt')

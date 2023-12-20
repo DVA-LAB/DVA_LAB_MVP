@@ -152,7 +152,8 @@ def show_result(args): #log_path, input_dir, output_video, bbox_path, frame_rate
     # font = ImageFont.truetype('AppleGothic.ttf', 40)
     font = ImageFont.truetype('/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc', 40)
     fourcc = cv2.VideoWriter_fourcc(*'XVID')
-    out = cv2.VideoWriter(args.output_video, fourcc, frame_rate, (frame_width, frame_height))
+    temp = args.output_video.split('.')[0]+"_temp.mp4"
+    out = cv2.VideoWriter(temp, fourcc, frame_rate, (frame_width, frame_height))
     
     with open(args.GSD_path, 'r') as file:
         gsd_list = [tuple(map(float, line.strip().split())) for line in file]
@@ -187,7 +188,7 @@ def show_result(args): #log_path, input_dir, output_video, bbox_path, frame_rate
                     print(f"Frame {frame_count} is skipped by BEV_FullFrame")
                     continue
                 else:
-                    gsd = gsd_bev / 2
+                    gsd = gsd_bev / 3
                 # if (gsd == 0 and pixel_size == 0):
                 #     # BEV_FullFrame 함수 호출
                 #     rst, _, _, _, _, gsd, _, _, _, pixel_size = BEV_FullFrame(frame_count, image_path, args.log_path, gsd, DEV = False)
@@ -334,6 +335,8 @@ def show_result(args): #log_path, input_dir, output_video, bbox_path, frame_rate
     writer.writerows(data)
     f.close()
     out.release()
+    os.system(f"ffmpeg -y -i {args.output_video.split('.')[0]}_temp.mp4 -vcodec h264 -movflags +faststart {args.output_video}")
+    os.system(f"rm {args.output_video.split('.')[0]}_temp.mp4")
     end_time = time.time()
     # 걸린 시간 계산
     elapsed_time = end_time - start_time
