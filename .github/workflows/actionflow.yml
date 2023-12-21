@@ -86,6 +86,34 @@ jobs:
         conda activate bytetrack
         cd /home/dva4/DVA_LAB/models/bytetrack/
         nohup python app.py > bytetrack.out
+        
+  run-anomaly-app:
+    runs-on: self-hosted
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
+
+    - name: Set up Anaconda environment
+      run: |
+        source ~/anaconda3/etc/profile.d/conda.sh
+        conda activate dva_seg
+
+    - name: Check if port 8003 is in use
+      run: |
+        PID=$(lsof -t -i:8003 -sTCP:LISTEN) || true
+        if [ -z "$PID" ]; then
+          echo "No process found on port 8003. Proceeding to start the app."
+        else
+          echo "Killing process on port 8003 with PID $PID"
+          kill $PID
+        fi
+    
+    - name: Run app.py in EfficientAD environment
+      run: |
+        source ~/anaconda3/etc/profile.d/conda.sh
+        conda activate dva_seg
+        cd /home/dva4/DVA_LAB/models/efficientAD/
+        nohup python app.py > anomaly.out
 
   run-detection-app:
     runs-on: self-hosted
