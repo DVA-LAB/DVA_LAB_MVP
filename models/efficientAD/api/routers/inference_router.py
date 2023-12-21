@@ -36,7 +36,7 @@ router = APIRouter(tags=["anomaly"])
     summary="anomaly segmentation",
 )
 async def anomaly_inference(request_body: SegRequest):
-    output_img, output_mask, output_list = ad_slice_inference(request_body.frame_path, slices_path, output_path) # 설정 필요
+    output_img, output_mask, output_list = ad_slice_inference(request_body.frame_path, request_body.slices_path, request_body.output_path) # 설정 필요
     return output_img, output_mask, output_list
 
 def ad_slice_inference(frame_path, slices_path, output_path):
