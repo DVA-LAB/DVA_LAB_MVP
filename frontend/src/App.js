@@ -953,17 +953,45 @@ drawLabel = (startPoint, endPoint, text) => {
       // "video_path": "/Users/dongwookim/DVA_LAB/backend/test/video_origin"
     }
     
-    const response = await axios.post(`${API_URL}/visualize/`, formData);
+    // const response = await axios.post(`${API_URL}/visualize/`, formData);
 
     
-    this.setState({ 
+    // this.setState({ 
+    //   showResults: true,
+    //   videoSrc: `${API_URL}/export/origin`,
+    //  },()=>{
+    //   this.loadVideo();
+    //  });
+    //  console.log(this.state.videoSrc)
+
+    this.setState({
+      isLoading: true,
       showResults: true,
-      videoSrc: `${API_URL}/video/`,
-     },()=>{
-      this.loadVideo();
-     });
-     console.log(this.state.videoSrc)
+  });
+     try {
+      const response = await axios.get(`${API_URL}/export/origin`, { responseType: 'blob' });
+      if (response.data) {
+          const videoBlob = response.data;
+          const videoUrl = URL.createObjectURL(videoBlob); // Create a URL for the video Blob
+          this.setState({
+              videoSrc: videoUrl,
+              // uploadStatus: 'saved',
+              isLoading: false,
+              
+          }, () => {
+              this.loadVideo();
+          });
+      }
+  } catch (error) {
+      console.error('Error fetching video:', error);
+      this.setState({
+        uploadStatus: '',
+        isLoading: false,
+      });
+  }
   };
+
+    
 
   toggleDisplayMode =()=> {
     this.setState(prevState => ({
@@ -998,6 +1026,7 @@ drawLabel = (startPoint, endPoint, text) => {
     if (showResults) {
       return (
         <div className="App" style={{ height: screenHeight + 'px', position: 'relative' }}>
+           <Space direction="vertical">
           <Button
             type="text"
             onClick={this.handleReset}
@@ -1015,45 +1044,58 @@ drawLabel = (startPoint, endPoint, text) => {
             Drone Video Analysis for MARC
           </Button>
 
-          <Space direction="vertical">
+         
 
           
-          {/* Toggle Button */}
+          {/* Toggle Button
           <Button onClick={this.toggleDisplayMode}>
             {this.state.displayMode === 'video' ? 'Show Image' : 'Show Video'}
-          </Button>
+          </Button> */}
     
           {/* Conditional Rendering Based on Display Mode */}
+          {this.state.isLoading && (
+              <div style={{
+                position: 'absolute', 
+                top: '20%', 
+                left: '50%', 
+                transform: 'translate(-50%, -50%)', 
+                textAlign: 'center'
+              }}>
+                <div className="loader" style={{ margin: '0 auto' }}></div>
+                {this.state.uploadStatus === 'saving' && <div style={{ marginTop: '20px' }}>영상을 저장하고 프레임을 파싱 중입니다.<br/>시간이 오래 걸릴 수 있습니다.</div>}
+                {this.state.uploadStatus === 'loading' && <div style={{ marginTop: '20px' }}>Loading video...</div>}
+              </div>
+            )}
           {this.state.displayMode === 'video' ? (
             <div>
-            <video
-              ref={this.videoRef}
-              onError={(e)=> console.error("Error Loading video:", e)}
-              crossOrigin='anonymous'
+              
+              <video
+                ref={this.videoRef}
+                onError={(e)=> console.error("Error Loading video:", e)}
+                crossOrigin='anonymous'
+                src={this.state.videoSrc}
+                style={{
+                  width: '100%',
+                  height: '80%',
+                  position: 'relative',
+                  zIndex: 0,
+                  
+                }}
 
-              style={{
-                width: '100%',
-                height: '80%',
-                position: 'relative',
-                zIndex: 0,
-                
-              }}
-
-              onTimeUpdate={this.updateFrameNumber}
-              // other video properties
-            >
-               <source src={this.state.videoSrc} type="video/mp4"/>
-            </video>
+                onTimeUpdate={this.updateFrameNumber}
+                // other video properties
+              />
+             
              
             <Space direction="vertical" style={{ alignItems: 'center' }}>
             <div style={{ fontSize: '30px' }}>
               {videoSrc && <p>Frame: {frameNumber}</p>}
             </div>
-            <Space>
+            {!isLoading&&(<Space>
               <Button onClick={this.skipBackward} icon={<FastBackwardOutlined />} />
               <Button onClick={this.togglePlayPause} icon={videoPlaying ? <PauseCircleOutlined /> : <PlayCircleOutlined />} />
               <Button onClick={this.skipForward} icon={<FastForwardOutlined />} />
-            </Space>
+            </Space>)}
           </Space> 
           </div>
           ) : (
@@ -1272,7 +1314,7 @@ drawLabel = (startPoint, endPoint, text) => {
                 />
                 )} */}
           </div>
-          {!aiModelActive && (<Space direction="vertical">
+          {!showResults && !aiModelActive && (<Space direction="vertical">
             <Space>
               {/* Conditional rendering of status messages */}
               
@@ -1307,14 +1349,6 @@ drawLabel = (startPoint, endPoint, text) => {
             
             
           </Space>)}
-          <div>
-          {aiModelActive && (
-          <Button type="primary" onClick={this.seeResults}>
-            결과 확인하러 가기!
-          </Button>
-        )}
-          </div>
-          {/* <div>
           {/* <div>
           {(
           <Button type="primary" onClick={this.seeResults}>
@@ -1322,6 +1356,14 @@ drawLabel = (startPoint, endPoint, text) => {
           </Button>
         )}
           </div> */}
+          {/* /* <div> */}
+          <div>
+          {aiModelActive && (
+          <Button type="primary" onClick={this.seeResults}>
+            결과 확인하러 가기!
+          </Button>
+        )}
+          </div>
           {/* <div
             {this.state.pointDistances.map((distance, index) => (
               <p key={index}>Distance {index + 1}: {distance.meters} meters ({distance.pixels.toFixed(3)} pixels)</p>
