@@ -5,8 +5,8 @@ import os
 import requests
 from autologging import logged
 from fastapi import APIRouter, Depends, HTTPException, status
-from interface.request import ModelRequest
-from utils.merge_bboxes import (match_and_ensemble, plot_detections,
+from backend.interface.request import ModelRequest
+from backend.utils.merge_bboxes import (match_and_ensemble, plot_detections,
                                 read_csv_file, read_file)
 
 router = APIRouter(tags=["model"])
@@ -17,7 +17,23 @@ router = APIRouter(tags=["model"])
     status_code=status.HTTP_200_OK,
     summary="AI model run",
 )
-async def model_inference(body: ModelRequest):
+async def model_inference(body: ModelRequest): #TODO
+    """
+        AI 모델을 구동한 결과 파일 경로를 반환합니다.
+
+        Args:
+            - body
+                - body.frame_path (str): 원본 프레임이 저장된 경로
+                - body.detection_save_path (str): 객체탐지 결과가 저장된 경로
+                - body.sliced_path (str): 원본 프레임이 슬라이싱 된 경로
+
+        Raise:
+            - HTTPException: 모델 구동 중 에러가 발생할 경우 서버 에러 (500)를 발생시킵니다.
+        
+        Return:
+            - result_path (str): 모델 구동 결과가 담긴 파일 경로입니다.
+    """
+
     try:
         # # Detection
         # img_path, csv_path, sliced_path = inference_detection(
@@ -73,6 +89,25 @@ async def model_inference(body: ModelRequest):
 """,
 )
 async def inference_detection(img_path, csv_path, sliced_path):
+    """
+        Pretrained YOLO 모델과 SAHI를 이용해 객체탐지를 수행한 인퍼런스 결과를 요청합니다.
+
+        요청 URL: http://localhost:8002/sahi/inference
+
+        Args:
+            - img_path (str): 원본 프레임 경로
+            - csv_path (str): 객체인식 결과파일 저장경로
+            - sliced_path (str): 원본 프레임이 슬라이싱된 경로
+
+        Raise:
+            - HTTPException: 서버의 객체 탐지 결과가 200 OK가 아닌 경우 HTTP 예외를 발생시킵니다.
+
+        Return:
+            - img_path (str): 원본 프레임 경로
+            - csv_path (str): 객체인식 결과파일 저장경로
+            - sliced_path (str): 원본 프레임이 슬라이싱된 경로
+
+    """
     url = "http://localhost:8002/sahi/inference"
     headers = {
         "accept": "application/json",
@@ -106,6 +141,26 @@ async def inference_detection(img_path, csv_path, sliced_path):
 """,
 )
 async def inference_segmentation(frame_path, slices_path, output_path):
+    """
+        Pretrained Anomaly Detection 모델을 사용해 이상탐지 인퍼런스 결과를 요청합니다.
+
+        요청 URL: http://localhost:8003/anomaly/inference
+
+        Args:
+            - frame_path (str): 원본 프레임 경로
+            - slices_path (str): 이미지 패치 경로
+            - output_path (str): 결과 저장 경로
+
+        Raise:
+            - HTTPException: 서버의 이상 탐지 결과가 200 OK가 아닌 경우 HTTP 예외를 발생시킵니다.
+            
+        Return:
+            - JSON(
+                - output_img (numpy.ndarray): 결과 이미지,
+                - output_mask (?): 결과 마스크
+                - output_list (list): N x [frame_number, class_id, x1, y1, w1, h1, anomaly_score],
+            )
+    """
     url = "http://localhost:8003/anomaly/inference"
     headers = {
         "accept": "application/json",
@@ -141,9 +196,24 @@ async def inference_segmentation(frame_path, slices_path, output_path):
 - `anomaly_detection_output`: /home/dva4/DVA_LAB/backend/test/model/detection/result.csv -> 임시로 detection csv를 받게 함
 """,
 )
-async def inference_merge(
-    output_merge_path, csv_path, anomaly_detection_output, use_anomaly: bool = True
-):
+async def inference_merge(output_merge_path, csv_path, anomaly_detection_output, use_anomaly: bool = True):
+    """
+        객체 탐지 결과와 이상 탐지 결과를 병합한 파일을 생성합니다. 
+
+        병합된 파일은 os.path.join(output_merge_path, "result.txt")의 경로에 생성됩니다.
+    
+        Args:
+            - output_merge_path (str):
+            - csv_path (str):
+            - anomaly_detection_output (?): 
+            - use_anomaly (bool): 
+
+        Raise:
+            Exception: 예외가 발생할 경우 예외 에러 메시지를 출력합니다.
+
+        Return:
+            - 파일이 특정 경로에 저장되었다는 단순 스트링을 반환합니다.
+    """
     try:
         os.makedirs(output_merge_path, exist_ok=True)
         # delete_files_in_folder(output_merge_path)
@@ -175,6 +245,21 @@ async def inference_merge(
 """,
 )
 async def inference_tracking(detection_path, save_path):
+    """
+        ByteTrack을 활용하여 객체추적 인퍼런스 결과를 요청합니다.
+
+        요청 URL: http://localhost:8004/bytetrack/track
+
+        Args:
+            - detection_path (str): 객체탐지 결과경로
+            - save_path (str): 객체추적 결과파일 저장경로
+
+        Raise:
+            - HTTPException (str):
+
+        Return:
+            - 객체추적 인퍼런스 결과 파일이 저장되었다는 메시지 스트링을 반환합니다.
+    """
     url = "http://localhost:8004/bytetrack/track"
     headers = {
         "accept": "application/json",
@@ -192,6 +277,12 @@ async def inference_tracking(detection_path, save_path):
 
 
 def delete_files_in_folder(folder_path):
+    """
+        특정 폴더에 담긴 파일을 전부 삭제합니다.
+
+        Args:
+            - folder_path (str): 폴더 경로
+    """
     files = glob.glob(os.path.join(folder_path, "*"))
     for file in files:
         if os.path.isfile(file):

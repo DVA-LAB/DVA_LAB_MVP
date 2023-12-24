@@ -13,6 +13,16 @@ khoa_coord = {'DT_0023': [33.214, 126.251], 'DT_0004': [33.527, 126.543],
 # get geoid height from KNGeoid18 data
 # input target point must be two column list type of [latitude, longitude]
 def get_geoid_hgt(target_pt):
+    """
+        국토지리정보원에서 제공하는 KNGeoid18 데이터로부터 geoid의 높이를 구합니다.
+
+        Args:
+            - target_pt (list): [latitude, longitude]의 두 컬럼으로 구성된 입력 포인트입니다.
+
+        Return:
+            - hgt_geoid (list): geoid의 높이가 담긴 리스트를 반환합니다.
+    """
+
     with open('utils/log_sync/KNGeoid18.dat') as geoid_dir:
         geoid_file = geoid_dir.read()
     geoid = [file.split('\t') for file in geoid_file.split('\n')]
@@ -29,6 +39,16 @@ def get_geoid_hgt(target_pt):
 # get adjacent khoa observation point
 # input target point must be two column list type of [latitude, longitude]
 def get_obs(target_pt):
+    """
+        국립해양조사원(khoa)의 관측점과 인접한 점(?)을 구합니다.
+
+        Args
+            - target_pt (?): ?
+
+        Return:
+            - (?): ?
+    """
+
     dist_obs = {}
     for obs, coord in khoa_coord.items():
         dist_obs[obs] = haversine(coord, target_pt)
@@ -39,6 +59,17 @@ def get_obs(target_pt):
 # get tide level from khoa openapi
 # date format : %Y%m%d%H%M%S & string
 def get_level(date, obs_code='DT_0023'):
+    """
+        국립해양조사원(khao)의 OpenAPI를 활용하여 조위를 구합니다.
+
+        Args:
+            - date (str): 날짜
+            - obs_code (str): 관측코드
+
+        Return:
+            - 특정 시간에서의 조위 값을 반환합니다. (int)
+    """
+
     khoa_url = "http://www.khoa.go.kr/api/oceangrid/tideObs/search.do?" + \
                "ServiceKey=JXRQtwmuwRIKOblp9dTWww==" + \
                "&ObsCode=" + obs_code + "&Date=" + date[:8] + "&ResultType=xml"
@@ -60,6 +91,14 @@ def get_level(date, obs_code='DT_0023'):
 # execute main function
 # ========== main function ==========
 def get_offset(osd_info, date):
+    """
+        Args:
+            - osd_info (tuple): (?)
+            - date (str): 날짜
+
+        Return:
+            - ?
+    """
     osd_lat, osd_lon, home_lat, home_lon = osd_info
     # osd_lat, osd_lon, home_lat, home_lon =  33.2629, 126.1815, 33.2632, 126.1814
     # date = '20231015171233'

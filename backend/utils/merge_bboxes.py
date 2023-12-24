@@ -4,9 +4,15 @@ import csv
 
 def plot_detections(anomaly_detections, yolo_detections, output_detections, image_size=(4000, 3000)):
     """
-    Plots detections from anomaly detection, YOLO, and final detections on a black background image.
-    Anomaly detections, YOLO detections, and final detections are plotted in red, blue, and green, respectively.
-    Detections format: [frame, x, y, x+w, y+h, ...]
+        Plots detections from anomaly detection, YOLO, and final detections on a black background image.
+        Anomaly detections, YOLO detections, and final detections are plotted in red, blue, and green, respectively.
+        Detections format: [frame, x, y, x+w, y+h, ...]
+
+        Args:
+            - anomaly_detections (list): 이상 탐지 결과 
+            - yolo_detections (list): 객체 탐지 결과
+            - output_detections (list): 
+            - image_size (tuple): 이미지 가로, 세로 크기
     """
     # Convert lists into dictionaries grouped by frame
     grouped_anomaly_outputs = {}
@@ -57,7 +63,14 @@ def plot_detections(anomaly_detections, yolo_detections, output_detections, imag
 
 def calculate_distance(box1, box2):
     """
-    Calculate the Euclidean distance between the centers of two boxes.
+        두 box의 중심점 간의 유클리드 거리를 계산합니다.
+
+        Args:
+            - box1 (list): 첫 번째 box (x, y, w, h)
+            - box2 (list): 두 번째 box (x, y, w, h)
+
+        Return:
+            - distance (float)
     """
     center1_x, center1_y = (box1[0] + box1[2]) / 2, (box1[1] + box1[3]) / 2
     center2_x, center2_y = (box2[0] + box2[2]) / 2, (box2[1] + box2[3]) / 2
@@ -66,6 +79,18 @@ def calculate_distance(box1, box2):
 
 # Modified function to save output to a file
 def match_and_ensemble(anomaly_outputs, detection_outputs, use_anomaly, output_file):
+    """
+        이상 탐지의 결과와 객체 탐지의 결과를 앙상블 합니다.
+    
+        Args:
+            - anomaly_outputs (list): 이상 탐지 결과 리스트
+            - detection_outputs (list): 객체 탐지 결과 리스트
+            - use_anomaly (bool): anomaly 적용 여부
+            - output_file (str): 이상 탐지 & 객체 탐지 앙상블 결과 파일 저장경로
+
+        Return:
+            - output (list):
+    """
     output = []
     confidence_threshold = 0.7
     grouped_anomaly_outputs = {}
@@ -108,8 +133,14 @@ def match_and_ensemble(anomaly_outputs, detection_outputs, use_anomaly, output_f
 
 def read_file(file_path):
     """
-    Reads a detection file and returns a list of detections.
-    Each line in the file should contain comma-separated values.
+        탐지 결과 파일을 라인 별로 읽고 라인 별로 리스트를 만든 2차원 리스트를 반환합니다.
+    
+        Args:
+            - file_path (str): 
+
+        Return:
+            - detections (list): 라인 별 탐지 결과가 담긴 2차원 리스트
+
     """
     with open(file_path, 'r') as file:
         lines = file.readlines()
@@ -118,6 +149,16 @@ def read_file(file_path):
 
 
 def read_csv_file(file_path):
+    """
+        csv 파일을 행단위로 읽어 리스트를 만든 2차원 리스트를 반환합니다.
+
+        Args:
+            - file_path (str): csv 파일 경로
+
+        Return:
+            - detections (list): csv 파일 행단위 별 리스트가 담긴 2차원 리스트
+
+    """
     detections = []
     with open(file_path, 'r') as file:
         csv_reader = csv.reader(file)

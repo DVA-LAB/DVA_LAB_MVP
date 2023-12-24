@@ -1,7 +1,7 @@
 from datetime import timedelta
 import os
 import cv2
-from utils.extract_meta import parsing_srt_file
+# from utils.extract_meta import parsing_srt_file
 
 class VideoSegment:
     def __init__(self, index, start_time, end_time, text, frame):
@@ -11,8 +11,18 @@ class VideoSegment:
         self.text = text
         self.frame = frame
 
-# SRT 시간 문자열을 datetime 객체로 변환하는 함수
+
 def parse_srt_time(time_str):
+    """
+        SRT 시간 문자열을 datetime 객체로 변환합니다.
+
+        Args:
+            - time_str (str): 시간 문자열
+
+        Return:
+            - datetime.timedelta(seconds=total_seconds)
+
+    """
     time_str = time_str.replace(",", ".")
     time_parts = time_str.split(':')
     hours, minutes, seconds = map(float, time_parts)
@@ -20,8 +30,18 @@ def parse_srt_time(time_str):
     total_seconds = hours * 3600 + minutes * 60 + seconds
     return timedelta(seconds=total_seconds)
 
-# SRT 파일을 파싱하여 VideoSegment 목록을 생성하는 함수
+
 def make_video_segment(video_filename, srt_filename):
+    """
+        SRT 파일을 파싱하여 VideoSegment 목록을 생성합니다.
+
+        Args:
+            - video_filename (str): 비디오 파일이름
+            - srt_filename (str): srt 파일이름
+
+        Returns:
+            - video_segments (list): VideoSegment 객체 목록
+    """
     cap = cv2.VideoCapture(video_filename)
     subtitles = parsing_srt_file(srt_filename)
 
