@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, status, Request
 
 import argparse
 import time
+import csv
 import os
 
 from loguru import logger
@@ -28,10 +29,31 @@ def make_parser():
     parser.add_argument("--mot20", dest="mot20", default=False, action="store_true", help="test mot20.")
     return parser
 
+def merge_bboxes(track_results):
+    """
+    여러 경계 상자들을 포함하는 하나의 큰 경계 상자를 계산합니다.
+    """
+    global merged_dolphin_center
+    if not track_results:
+        merged_dolphin_center = None
+        return None
+
+    # 각 경계 상자의 최소 x, y 및 최대 x, y 좌표를 계산합니다.
+    min_x = min(track_result.tlwh[0] for track_result in track_results)
+    min_y = min(track_result.tlwh[1] for track_result in track_results)
+    max_x = max(track_result.tlwh[0] + track_result.tlwh[2] for track_result in track_results)
+    max_y = max(track_result.tlwh[1] + track_result.tlwh[3] for track_result in track_results)
+
+    merged_dolphin_center = (min_x + (max_x - min_x) / 2, min_y + (max_y - min_y) / 2)
+    return (min_x, min_y, max_x, max_y)
+
 def track(det_results, img_w, img_h, result_path, args):
-    tracker = BYTETracker(args, frame_rate=args.fps)
     timer = Timer()
+    tracker = BYTETracker(args, frame_rate=args.fps)
     results = []
+    ############### for bev viz ###############
+    data = []
+    ###############            ###############
     timer.tic()
     for frame_id, det_result in enumerate(det_results, 1):
         if det_result is not None and np.array(det_result).size > 0:
@@ -40,6 +62,10 @@ def track(det_results, img_w, img_h, result_path, args):
             online_ids = []
             online_scores = []
             online_labels = []
+            ############### for bev viz ###############
+            points = []
+            dolphin_bboxes = []
+            ###############            ###############
             for t in online_targets:
                 tlwh = t.tlwh
                 tid = t.track_id
@@ -50,14 +76,49 @@ def track(det_results, img_w, img_h, result_path, args):
                     online_ids.append(tid)
                     online_scores.append(t.score)
                     online_labels.append(label)
+                    
+                    if label == 1 and t.score < 0.8:
+                        continue
+                    
                     # save results
                     results.append(f"{frame_id},{tid},{label},{tlwh[0]:.2f},{tlwh[1]:.2f},{tlwh[2]:.2f},{tlwh[3]:.2f},{t.score:.2f},-1,-1,-1\n")
+                    
+                    ############### for bev viz ###############
+                    # bbox의 중심점을 계산합니다.
+                    center_x, center_y = (tlwh[0] + tlwh[2]) / 2, (tlwh[1] + tlwh[3]) / 2
+
+                    if label == 1: # 선박인 경우
+                        points = [frame_id, tid, label, center_x+1, center_y+1, center_x, center_y, t.score, -1,-1,-1]
+                    else : # 돌고래인 경우
+                        dolphin_bboxes.append(t)
+                    
+                    # csv data add
+                    if len(points)>0:
+                        data.append(points)
+                        points = []
+            
+            # 모든 돌고래 bbox를 하나로 합칩니다.
+            merged_dolphin_bbox = merge_bboxes(dolphin_bboxes)
+            if merged_dolphin_bbox is not None:
+                center_x, center_y = (merged_dolphin_bbox[0]+merged_dolphin_bbox[2])/2,  (merged_dolphin_bbox[1]+merged_dolphin_bbox[3])/2 
+                if label == 0 :
+                    points = [frame_id, 999999, label, merged_dolphin_bbox[0],merged_dolphin_bbox[1],merged_dolphin_bbox[2], merged_dolphin_bbox[3],t.score,-1,-1,-1]
+                
+            # csv data add
+            if len(points)>0:
+                data.append(points)
+
         timer.toc()
         if frame_id % 20 == 0:
             logger.info('Processing frame {}: avg {:.4f} seconds per frame'.format(frame_id, timer.average_time))
 
+
     with open(result_path, 'w') as f:
         f.writelines(results)
+    g = open("/home/dva4/DVA_LAB/backend/test/bev_points.csv", "w")
+    writer = csv.writer(g)
+    writer.writerows(data)
+    g.close()
     logger.info(f"save results to {result_path}")
 
 
@@ -90,7 +151,6 @@ def main(det_result_path, result_path):
 
     # 추후 인풋 형식 맞출 때 반영 필요: img w, h 절보 추가
     img_w, img_h = 3840, 1260
-    
     track(det_results, img_w, img_h, result_path, args)
 
 
