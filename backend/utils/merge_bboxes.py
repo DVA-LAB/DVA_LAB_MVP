@@ -127,9 +127,7 @@ def match_and_ensemble(anomaly_outputs, detection_outputs, use_anomaly, output_f
     with open(output_file, 'w') as file:
         for detection in output:
             file.write(','.join(map(str, detection)) + '\n')
-    
-    return output
-
+    file.close()
 
 def read_file(file_path):
     """

@@ -66,8 +66,8 @@ def ad_slice_inference(frame_path, slices_path, output_path):
     )
 
     frame = frame_path
-
     frame_img = cv2.imread(frame)
+    
     h, w = frame_img.shape[:2]
     patch_size = 1024   # 최종적으로는 SAHI에서 적용된 값을 그대로 받아오도록 수정
     overlap = 0.25      # 
