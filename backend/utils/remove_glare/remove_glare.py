@@ -30,8 +30,13 @@ class RGLARE:
 
     def get_weight(self) -> np.ndarray:
         '''
-        frame weight 생성하는 함수이며,
-        1을 기준으로 frame개수 만큼 -0.1해서 첫 프레임이 가중치가 제일 높음
+            frame weight를 생성하는 기능을 수행하며 1을 기준으로 frame 개수만큼 0.1씩 감소시킵니다. 
+            
+            첫 프레임이 가중치가 제일 높습니다.
+
+            Return:
+                - weight (np.ndarray): ?
+        
         '''
         weight=[1]
         for _ in range(self.queue_len-1):
@@ -46,9 +51,10 @@ class RGLARE:
 
     def video_save(self, save_path) -> None:
         '''
-        Video 저장을 위한 함수이며,
-        Input으로 받은 Video의 코덱의 정수표현, FPS,사이즈들을 가지고 Writer 정의
-        저장 경로는 result.mp4로 static
+            비디오를 저장합니다. 
+
+            Args:
+                - save_path (str): 비디오가 저장될 경로입니다.
         '''
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         fps = self.cap.get(cv2.CAP_PROP_FPS)
@@ -57,9 +63,14 @@ class RGLARE:
 
     def gamma_correction(self, frame:np.ndarray, alpha:float=0.8) -> np.ndarray:
         '''
-        frame 영상의 밝기 변화를 위한 함수이며,
-        인풋으로 받은 frame에 대해서 alpha 값을 통해 감마 보정됨
-        보정된 이미지 return
+            프레임에서 영상의 밝기 변화를 주기 위해 입력으로 받은 프레임에 alpha 값을 적용해 감마 보정이 적용된 이미지를 반환합니다.
+            
+            Args:
+                - frame (np.ndarray): 감마 보정을 적용할 프레임입니다.
+                - alpha (float): Alpha 값입니다.
+
+            Return:
+                - gamma_corrected (np.ndarray): 감마 보정이 적용된 이미지입니다.
         '''
         gamma_corrected = np.power(frame[:,:,2],alpha)
         return gamma_corrected
@@ -69,6 +80,9 @@ class RGLARE:
         return gamma_corrected
 
     def video_gpu(self):
+        """
+            GPU를 사용해 빛반사가 제거된 비디오를 생성합니다.
+        """
         with tqdm.tqdm(total=self.total_frame, desc="GPU Remove Light") as pbar:
             while self.frame_count < self.total_frame+self.queue_len:
                 ret, frame = self.cap.read()
@@ -122,6 +136,12 @@ class RGLARE:
         self.out.release()
 
     def frame_gpu(self) -> Union[np.ndarray]:
+        """ 
+            GPU를 사용해 빛반사가 제거된 프레임을 생성합니다.
+        
+            Return:
+                output_frame (np.ndarray): 빛반사가 제거된 프레임입니다.
+        """
         if self.queue_full:
             ret, frame = self.cap.read()
             if ret is None:
@@ -162,9 +182,7 @@ class RGLARE:
             return self.frame_gpu()
 
     def video_cpu(self):
-        '''
-        영상 전체를 반복하며 전처리된 Video를 저장하는 함수
-        '''
+        ''' CPU를 사용해 빛반사가 제거된 비디오를 생성합니다. '''
         with tqdm.tqdm(total=self.total_frame, desc="Remove Light") as pbar:
             while self.frame_count < self.total_frame+self.queue_len:
                 ret, frame = self.cap.read()
@@ -203,11 +221,18 @@ class RGLARE:
         self.cap.release()
         self.out.release()
 
-    def frame_cpu(self) ->Union[np.ndarray]:
+    def frame_cpu(self) -> Union[np.ndarray]:
         '''
-        초기 함수 호출시 Frame queue에 선언된 Queue len만큼 이미지를 삽입하고,
-        전처리 진행 후 첫 Frame부터 순차적으로 반환
-        영상 모두 반환했다면 None값 반환
+            CPU를 사용해 빛반사가 제거된 프레임을 생성합니다.
+
+            초기 함수 호출시 frame queue에 선언된 queue 길이만큼 이미지를 삽입 후, 
+            
+            전처리 진행한 다음 첫 frame부터 순차적으로 반환합니다. 
+            
+            영상 모두 반환했다면 None을 반환합니다.
+
+            Return:
+                out_frame (np.ndarray): 빛반사가 적용된 프레임입니다.
         '''
         if self.queue_full:
             ret, frame = self.cap.read()

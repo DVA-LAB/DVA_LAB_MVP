@@ -7,13 +7,13 @@ from typing import List
 
 import requests
 import torch
-from api.services.data_service import parse_videos_multithreaded
+from backend.api.services.data_service import parse_videos_multithreaded
 from fastapi import (APIRouter, Depends, FastAPI, File, Form, HTTPException,
                      UploadFile, status)
 from fastapi.responses import FileResponse, JSONResponse
-from interface.request.user_input_request import UserInput
-from utils.log_sync.adjust_log import do_sync
-from utils.remove_glare import remove_glare
+from backend.interface.request.user_input_request import UserInput
+from backend.utils.log_sync.adjust_log import do_sync
+from backend.utils.remove_glare import remove_glare
 
 router = APIRouter(tags=["data"])
 
@@ -28,6 +28,17 @@ input_path = os.path.abspath(os.path.join("test", "input"))
 
 @router.post("/video/")
 async def upload_video(file: UploadFile = File(...), preprocess: bool = Form(...)):
+    """
+        사용자가 업로드한 비디오를 저장합니다.
+    
+        Args
+            - file: 사용자로부터 업로드되는 파일입니다.
+            - preprocess: 빛반사 제거와 같은 전처리 기능 사용 여부를 나타냅니다.
+        Raise
+            - 비디오 전처리 또는 저장과정에서 에러가 발생할 경우 서버 에러를 발생시킵니다.
+        Return
+            - 파일 업로드 성공 메시지를 json 형식으로 반환합니다.
+    """
     s_time = time.time()
     os.makedirs(video_path, exist_ok=True)
     os.makedirs(frame_path, exist_ok=True)
@@ -72,6 +83,15 @@ async def upload_video(file: UploadFile = File(...), preprocess: bool = Form(...
 
 @router.get("/video/")
 async def get_video():
+    """
+        서버에 저장된 비디오 파일을 가져와 클라이언트에게 반환합니다.
+    
+        Raise:
+            - HTTPException: 비디오 파일이 저장된 곳에서 비디오 목록 읽기에 실패할 경우 서버 에러(500)를 발생시킵니다.
+        Return:
+            - FileResponse: 비디오 파일을 읽어 사용자에게 반환합니다.
+            - JSONResponse: 비디오 파일이 없거나 여러 개의 파일이 있을 경우 사용자에게 json 형태의 에러 메시지와 404 에러를 반환합니다.
+    """
     video_storage_path = video_path
     try:
         videos = [
@@ -94,6 +114,16 @@ async def get_video():
 
 @router.get("/frame/{frame_number}")
 async def get_frame(frame_number: int):
+    """
+        사용자로부터 입력받은 프레임 번호에 해당하는 이미지를 반환합니다.
+
+        Args:
+            - frame_number (int): 프레임 번호
+        Raise:
+            - HTTPException: 프레임 번호에 해당하는 이미지를 찾지 못하는 경우 서버 에러(500)을 발생시킵니다.
+        Return:
+            - FileResponse: 프레임 번호에 해당하는 이미지를 반환합니다.
+    """
     try:
         frames = glob.glob(os.path.join(frame_path, "*.jpg"))
         image_path = [
@@ -108,6 +138,16 @@ async def get_frame(frame_number: int):
 
 @router.post("/csv/")
 async def upload_csv(file: UploadFile = File(...)):
+    """
+        사용자가 업로드한 csv 파일을 저장합니다.
+
+        Args:
+            - file (UploadFile = File(...)): 사용자로부터 입력받는 csv 파일입니다.
+        Raise:
+            - HTTPException: 파일을 저장하는 과정에서 에러가 발생할 경우 서버 에러(500)를 발생시킵니다.
+        Return:
+            - 사용자가 업로드한 csv 파일이 정상적으로 저장되었다는 메시지와 파일이름을 json 형태로 반환합니다.
+    """
     csv_storage_path = csv_path
     os.makedirs(csv_storage_path, exist_ok=True)
     # delete_files_in_folder(csv_storage_path)
@@ -124,6 +164,16 @@ async def upload_csv(file: UploadFile = File(...)):
 
 @router.post("/srt/")
 async def upload_srt(file: UploadFile = File(...)):
+    """
+        사용자가 업로드한 srt 파일을 저장합니다.
+
+        Args:
+            - file (UploadFile = File(...)): 사용자로부터 입력받는 srt 파일입니다.
+        Raise:
+            - HTTPException: 파일을 저장하는 과정에서 에러가 발생할 경우 서버 에러(500)를 발생시킵니다.
+        Return:
+            - 사용자가 업로드한 csv 파일이 정상적으로 저장되었다는 메시지와 파일이름을 json 형태로 반환합니다.
+    """
     srt_storage_path = srt_path
     os.makedirs(srt_storage_path, exist_ok=True)
     # delete_files_in_folder(srt_storage_path)
@@ -140,6 +190,14 @@ async def upload_srt(file: UploadFile = File(...)):
 
 @router.post("/sync/")
 async def sync_log():
+    """
+        사용자가 업로드한 csv 파일과 srt 파일을 간의 동기화를 수행합니다.
+
+        Raise:
+            - csv, srt 파일 간 동기화에 실패할 경우 서버 에러(500)를 발생시킵니다.
+        Return:
+            - csv, srt 파일 간 동기화에 성공한 경우 해당 메시지를 json 형태로 반환합니다.
+    """
     os.makedirs(sync_path, exist_ok=True)
     # delete_files_in_folder(sync_path)
     try:
@@ -153,6 +211,20 @@ async def sync_log():
 
 @router.post("/user_input/")
 async def save_input(request: UserInput):
+    """
+        사용자로부터 받은 입력을 통해 픽셀 사이즈와 GSD 값을 계산한 다음 파일로 저장합니다.
+
+            - user_input.txt: frame_number point1.x point1.y point2.x point2.y distance
+            - GSD.txt:        frame_number gsd_mean pixelsize_mean
+        Args:
+            - request
+                - request.frame_number (int): 사용자 입력이 이뤄진 프레임 번호입니다.
+                - request.points_distances (float): 해당 프레임에서 찍은 두 점의 (x, y) 좌표 리스트와 두 점간 거리입니다.
+        Raise:
+            - HTTPException: 픽셀 사이즈, GSD를 계산하는 과정에서 에러가 발생할 경우 서버 에러(500)를 발생시킵니다.
+        Return:
+            - GSD 값이 저장된 파일의 절대경로를 포함한 단순 메시지 스트링을 반환합니다.
+    """
     os.makedirs(input_path, exist_ok=True)
     # delete_files_in_folder(input_path)
     frame_number = request.frame_number
@@ -184,6 +256,20 @@ async def save_input(request: UserInput):
 
 
 def get_gsd(frame_number, frame_file, x1, y1, x2, y2, m_distance):
+    """
+        사용자 입력을 http://[IP].[PORT]/bev1로 POST를 날린 뒤 GSD 값과 픽셀거리 값을 가져옵니다.
+
+        Args:
+            - frame_number (int): 프레임 번호
+            - frame_file (str): 프레임 경로
+            - x1 (float): point1의 x좌표
+            - y1 (float): point1의 y좌표
+            - x2 (float): point2의 x좌표
+            - y2 (float): point2의 y좌표
+            - m_distance (float): point1과 point2 간 거리
+        Return:
+            - gsd, pixel_size
+    """
     url = "http://112.216.237.124:8001/bev1"
     headers = {"accept": "application/json", "Content-Type": "application/json"}
     data = {
@@ -214,14 +300,46 @@ def get_gsd(frame_number, frame_file, x1, y1, x2, y2, m_distance):
         return 0, 0
 
 def calculate_pixel_distance(point1, point2):
+    """
+        두 픽셀 좌표 간의 거리를 계산합니다.
+
+        두 점의 (x, y) 좌표는 다음과 같이 가져옵니다.
+
+            - point1.x, point1.y
+            - point2.x, point2.y
+
+        Args:
+            - point1: 이미지의 픽셀 상의 한 점
+            - point2: 이미지의 픽셀 상의 한 점
+            
+        Return: 
+            - 두 픽셀 좌표 간 유클리드 거리
+    
+    """
     return ((point2.x - point1.x) ** 2 + (point2.y - point1.y) ** 2) ** 0.5
 
 
 def calculate_average_distance(distances):
+    """
+        거리의 평균을 계산합니다.
+
+        Args:
+            - distances (list): 거리 배열
+
+        Return:
+            - sum(distances) / len(distances)
+    """
+    
     return sum(distances) / len(distances)
 
 
 def delete_files_in_folder(folder_path):
+    """
+        인자로 들어온 폴더 내의 모든 파일을 제거합니다.
+
+        Args:
+            - folder_path (str): 폴더 경로
+    """
     files = glob.glob(os.path.join(folder_path, "*"))
     for file in files:
         if os.path.isfile(file):
@@ -229,6 +347,15 @@ def delete_files_in_folder(folder_path):
 
 
 def lowercase_extensions(file_name):
+    """
+        파일명의 확장자를 소문자로 변경합니다.
+
+        Args:
+            - file_name (str): 파일명
+
+        Return:
+            - new_file_name (str): 확장자를 소문자로 변경한 파일명
+    """
     name, extension = os.path.splitext(file_name)
     new_file_name = name + extension.lower()
     return new_file_name

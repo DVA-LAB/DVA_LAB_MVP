@@ -13,6 +13,16 @@ from PIL import Image, ImageDraw, ImageFont
 
 
 def read_log_file(log_path):
+    """
+        로그 파일을 pandas 데이터 프레임으로 읽어 반환합니다.
+
+        Args:
+            log_path (str): 로그 파일 경로입니다.
+
+        Return:
+            df (pd.DataFrame): pandas DataFrame 형식의 로그 파일입니다.
+    """
+
     # Reading the CSV file into a DataFrame
     df = pd.read_csv(log_path)
 
@@ -21,6 +31,20 @@ def read_log_file(log_path):
 
 
 def calculate_nearest_distance(dolphin_present, merged_dolphin_center, centers, classes, track_ids, gsd):
+    """
+        선박과 돌고래 간의 최단거리를 계산합니다.
+    
+        Args:
+            - dolphin_present (bool): 탐지된 돌고래의 존재 여부를 의미합니다.
+            - merged_dolphin_center (list): 병합된 돌고래의 중심점이 담긴 배열입니다.
+            - centers (list): 선박의 중심점이 담긴 배열입니다.
+            - classes (list): 클래스 정보가 담긴 배열입니다.
+            - track_ids (list): track_id가 담긴 배열입니다.
+            - gsd:
+
+        Return:
+            - distances (list): 병합된 돌고래 바운딩 박스 중심과 선박간의 실제 거리가 담긴 배열
+    """
     distances = {}
     if not dolphin_present:
         return distances
@@ -37,7 +61,16 @@ def calculate_nearest_distance(dolphin_present, merged_dolphin_center, centers, 
 
 def calculate_speed(center1, center2, frame_rate, gsd):
     """
-    두 중심점과 프레임 속도를 기반으로 선박의 속도를 계산합니다.
+        두 중심점과 프레임 속도를 기반으로 선박의 속도를 계산합니다.
+
+        Args:
+            - center1 (list): 첫 번째 중심점이며 [x, y]로 구성됩니다.
+            - center2 (list): 두 번째 중심점이며 [x, y]로 구성됩니다.
+            - frame_rate (float): 프레임 레이트입니다.
+            - gsd (float): GSD 값입니다.
+
+        Return:
+            - speed_kmh (float): 선박의 km/h 속도입니다.
     """
     # 픽셀 단위의 거리
     pixel_distance = math.sqrt((center2[0] - center1[0]) ** 2 + (center2[1] - center1[1]) ** 2)
@@ -53,7 +86,19 @@ def calculate_speed(center1, center2, frame_rate, gsd):
 
 
 def read_bbox_data(file_path, img_shape):
-    # bbox.txt 파일을 읽고 프레임별 bounding box 데이터를 저장합니다.
+    """
+        bbox.txt 파일을 읽고 프레임별 bounding box 데이터를 저장합니다.
+    
+        Args:
+            - file_path (str): bbox.txt 파일이 위치하는 경로입니다.
+            - img_shape (list): 이미지의 가로 세로 정보입니다.
+
+        Return:
+            - data (dict): 프레임 번호 당 track_id, bbox, class, conf가 담긴 데이터입니다.
+            
+            ex) data[frame_id].append({'track_id': int(track_id), 'bbox': (a, b, c, d), 'class': class_id, 'conf': conf})
+    """
+
     max_row = img_shape[0]
     max_col = img_shape[1]
     data = {}
@@ -71,6 +116,19 @@ def read_bbox_data(file_path, img_shape):
 
 
 def draw_lines_and_distances(draw, centers, merged_dolphin_center, classes, font, gsd, line_color=(0, 0, 255)):
+    """
+        이미지에 선박과 돌고래 사이의 선을 그리고 거리 정보를 시각화합니다.    
+    
+        Args:
+            - draw (PIL.ImageDraw.Draw()): 드로잉 객체
+            - centers (list): 중심점 리스트
+            - merged_dolphin_center: 돌고래들의 bbox가 결합된 bbox의 중심점
+            - classes (list): 객체 클래스 리스트
+            - font (PIL.ImageFont.truetype): 폰트 정보
+            - gsd (float): GSD 값
+            - line_color (tuple): 선 색
+        
+    """
     for i in range(len(centers)):
         if classes[i] == 1:  # 선박인 경우
             # 병합된 돌고래 바운딩 박스 중심과 선박 중심점 사이에 선을 그립니다.
@@ -86,8 +144,14 @@ def draw_lines_and_distances(draw, centers, merged_dolphin_center, classes, font
 
 def draw_radius_circles(draw, center, radii_info, font, gsd):
     """
-    주어진 중심점에서 지정된 반지름으로 원을 그리고 반지름 값을 표시합니다.
-    radii_info는 (반지름, 색상) 튜플의 리스트입니다.
+        주어진 중심점에서 지정된 반지름으로 원을 그리고 반지름 값을 표시합니다.
+
+        Args:
+            draw (PIL.ImageDraw.Draw()): 드로잉 객체
+            center (list): 중심점 리스트 [x, y]
+            radii_info (list(tuple)): (반지름, 색상) 튜플로 구성된 리스트
+            font (PIL.ImageFont.truetype): 폰트 정보
+            gsd (float): GSD 값
     """
     for radius, color in radii_info:
         # 원을 그립니다.
@@ -96,6 +160,15 @@ def draw_radius_circles(draw, center, radii_info, font, gsd):
         draw.text((center[0] + radius + 10, center[1] - 10), f"{round(radius*gsd,2)}m", font=font, fill=color)
 
 def get_image_paths(directory: str) -> list:
+    """
+        디렉터리 내의 모든 이미지 파일 경로를 가져옵니다.
+
+        Args:
+            directory (str): 디렉터리 경로
+
+        Return:
+            image_paths (list): 이미지 파일 경로 리스트
+    """
     image_paths = []
     for root, _, files in os.walk(directory):
         for file in sorted(files):  # Sort files before appending
@@ -105,6 +178,16 @@ def get_image_paths(directory: str) -> list:
     return image_paths
 
 def get_max_dimensions(image_paths):
+    """
+        이미지 파일 리스트 중 width, height의 최대값을 계산합니다.
+    
+        Args:
+            - image_paths (str): 
+
+        Return:
+            - max_width (int): 최대 가로 길이
+            - max_height (int): 최대 세로 길이
+    """
     max_width = 0
     max_height = 0
     for path in image_paths:
@@ -115,6 +198,15 @@ def get_max_dimensions(image_paths):
     return max_width, max_height
 
 def make_video(image_paths, video_name, fps=30, max_resolution=(3840, 2160)):
+    """
+        BEV 시각화된 비디오를 생성합니다.
+
+        Args:
+            - image_paths (list): 이미지 파일 경로 리스트
+            - video_name (str): 저장될 파일 이름
+            - fps (int): Frame Per Second
+            - max_resolution (tuple): 최대 해상도
+    """
     max_width, max_height = max_resolution
     fourcc = cv2.VideoWriter_fourcc(*'XVID')
     video_name_temp = video_name.split('.')[0]+"_temp.mp4"

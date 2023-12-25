@@ -10,9 +10,9 @@ from autologging import logged
 from fastapi import (APIRouter, Depends, FastAPI, File, Form, HTTPException,
                      UploadFile, status)
 from fastapi.responses import FileResponse, JSONResponse
-from interface.request import VisRequest, VisRequestBev
-from utils.visualizing import visualize_bev
-from utils.visualizing.visualize import show_result
+from backend.interface.request import VisRequest, VisRequestBev
+from backend.utils.visualizing import visualize_bev
+from backend.utils.visualizing.visualize import show_result
 
 router = APIRouter(tags=["result"])
 
@@ -23,6 +23,19 @@ router = APIRouter(tags=["result"])
     summary="visualizing result",
 )
 async def model_inference(body: VisRequest):
+    """
+        시각화 결과를 저장합니다. 
+    
+        Args:
+            - body
+                - body.input_dir (str): 시각화를 적용할 원본 프레임이 위치한 경로
+                - body.output_video (str): 결과 영상으로 저장할 파일 경로
+                - body.log_path (str): 동기화 된 로그 파일 경로
+                - body.bbox_path (str): 결과 bounding box 파일이 위치한 경로
+        Return:
+            - body.output_video (str): 결과 영상이 저장된 경로를 반환합니다.
+    
+    """
     log_file_path = glob.glob(os.path.join(body.log_path, "*.csv"))[0]
 
     os.makedirs(os.path.dirname(body.output_video), exist_ok=True)
@@ -49,6 +62,18 @@ async def model_inference(body: VisRequest):
     summary="구할 수 있는 모든 gsd를 구합니다.",
 )
 async def get_all_gsd(body: VisRequestBev):
+    """
+        Args:
+            - body
+                - body.user_input (str): 사용자 입력이 담긴 파일 경로
+                - body.frame_path (str): 원본 프레임이 담긴 경로
+                - tracking_result (str): 객체추적 결과 파일이 담긴 경로
+                - GSD_path (str): GSD 파일 경로
+                - GSD_save_path (str): 모든 GSD가 담긴 파일 경로
+
+        Return:
+            - 결과 메시지 스트링을 반환합니다.
+    """
     s_time = time.time()
     gsds = dict()
     with open(body.GSD_path, "r") as f:
@@ -110,12 +135,24 @@ async def get_all_gsd(body: VisRequestBev):
     summary="export origin video",
 )
 async def export_origin():
+    """
+        Return:
+            - FileResponse: 시각화가 적용된 영상을 반환합니다.
+    """
+
     video_storage_path = "/home/dva4/DVA_LAB/backend/test/visualize.mp4"
-    return FileResponse(video_storage_path, media_type="video/mp4")
+    return FileResponse(video_storage_path)
 
 
 # TODO@jh: 공통 유틸로 빼기
 def delete_files_in_folder(folder_path):
+    """
+        입력받은 폴더 경로에 존재하는 모든 파일을 삭제합니다.
+    
+        Args:
+            - folder_path (str): 폴더 경로
+
+    """
     files = glob.glob(os.path.join(folder_path, "*"))
     for file in files:
         if os.path.isfile(file):
@@ -123,6 +160,20 @@ def delete_files_in_folder(folder_path):
 
 
 def get_ship_size(user_input, frame_path, tracking_result):
+    """
+        선박의 크기(길이)를 구합니다.
+
+        요청 URL: http://112.216.237.124:8005/ship_size
+
+        Args:
+            - user_input (str): 사용자 입력이 담긴 파일 경로
+            - frame_path (str): 선박이 담긴 프레임의 경로
+            - tracking_result (str): 객체 추적 결과 파일 경로
+
+        Return:
+            - 선박 정보를 담은 list 파일을 JSON 형식으로 반환합니다. ex) point[0][0], point[0][1], point[1][0], point[1][1]
+    """
+
     url = "http://112.216.237.124:8005/ship_size"
     headers = {"accept": "application/json", "Content-Type": "application/json"}
     data = {
@@ -136,6 +187,24 @@ def get_ship_size(user_input, frame_path, tracking_result):
 
 
 def get_gsd(frame_number, frame_file, x1, y1, x2, y2, m_distance):
+    """
+        특정 프레임에서의 GSD 값을 계산 후 반환합니다.
+
+        요청 URL: http://112.216.237.124:8001/bev1
+
+        Args:
+            - frame_number (int): GSD 값을 계산할 프레임 번호
+            - frame_file (?): frame_number번째 프레임이 위치하는 경로
+            - x1 (float): 첫 번째 점의 x값
+            - y1 (float): 첫 번째 점의 y값
+            - x2 (float): 두 번째 점의 x값
+            - y2 (float): 두 번째 점의 y값
+            - m_distance (float): 실제 거리
+
+        Return:
+            - Tuple(int, int)
+    
+    """
     url = "http://112.216.237.124:8001/bev1"
     headers = {"accept": "application/json", "Content-Type": "application/json"}
     data = {

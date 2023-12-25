@@ -12,11 +12,11 @@ import numpy as np
     
 class IPM(object):
     """
-    Inverse perspective mapping to a bird-eye view. Assume pin-hole camera model.
-    There are detailed explanation of every step in the comments, and variable names in the code follow these conventions:
-    `_c` for camera coordinates
-    `_w` for world coordinates
-    `uv` for perspective transformed uv 2d coordinates (the input image)
+        Inverse perspective mapping to a bird-eye view. Assume pin-hole camera model.
+        There are detailed explanation of every step in the comments, and variable names in the code follow these conventions:
+        `_c` for camera coordinates
+        `_w` for world coordinates
+        `uv` for perspective transformed uv 2d coordinates (the input image)
     """
     def __init__(self, camera_info, ipm_info):
         self.camera_info = camera_info
@@ -132,6 +132,15 @@ class _DictObjHolder(object):
         return self.dct[name]
 
 def get_file_path(directory: str) -> list:
+    """
+        특정 디렉터리 하위에 존재하는 jpg 파일 경로 목록을 추출합니다.
+
+        Args:
+            - directory (str): 디렉터리 경로
+
+        Return:
+            - filepaths (list): jpg 파일 경로 목록
+    """
     filepaths = []
     for root, dirs, files in os.walk(directory):
         for file in files:
@@ -142,6 +151,15 @@ def get_file_path(directory: str) -> list:
     return filepaths
 
 def extract_exif(filepath: str) -> dict:
+    """
+        jpg 파일에서 EXIF 정보를 추출합니다.
+
+        Args:
+            - filepath (str): jpg 파일 경로입니다.
+
+        Return:
+            - exif_table (dict): EXIF 정보가 매핑된 정보입니다.
+    """
     image       = Image.open(filepath)
     info        = image._getexif()
     exif_table  = {}
@@ -155,6 +173,23 @@ def extract_exif(filepath: str) -> dict:
     return exif_table
 
 def extract_xmp(filepath: str) -> Tuple[Tuple, Tuple, Tuple]:
+    """
+        jpg 파일에서 XMP 정보를 추출합니다.
+
+        Args:
+            - filepath (str): jpg 파일 경로입니다.
+
+        Return:
+            - xmp (tuple): xmp에서 추출한 드론 절대고도, 상대고도 비행 요 각도, 피치각도 롤각도, 짐벌의 요각도, 피치각도 롤각도
+                - altitude_absolute (float): 드론 절대고도
+                - altitude_relative (float): 드론 상대고도
+                - flight_yaw (float): 드론이 yaw 축으로 회전한 각도
+                - flight_pitch (float): 드론이 pitch 축으로 회전한 각도
+                - flight_roll (float): 드론이 roll 축으로 회전한 각도
+                - gimbal_yaw (float): 드론 짐벌 카메라가 yaw 축으로 회전한 각도
+                - gimbal_pitch (float): 드론 짐벌 카메라가 pitch 축으로 회전한 각도
+                - gimbal_roll (float): 드론 짐벌 카메라가 roll 축으로 회전한 각도
+    """
     with open(filepath, mode="rb") as f:
         data        = f.read()
         xmp_start   = data.find(b'<x:xmpmeta')
@@ -192,14 +227,15 @@ def extract_xmp(filepath: str) -> Tuple[Tuple, Tuple, Tuple]:
 
 def estimate_focal_length(image_width: int, fov_degrees: float) -> float:
     """
-    Estimate the focal length given the FOV and the image width.
+        이미지 가로 길이와 FOV 가 주어졌을 때 focal length를 추정합니다.
+
+        Args:
+            - image_width (float): 픽셀상의 이미지 가로 길이
+            - fov_degrees (?): field of view in degree
     
-    Parameters:
-    - image_width: width of the image in pixels
-    - fov_degrees: field of view in degrees
     
-    Returns:
-    - Estimated focal length in pixels.
+        Return:
+            - 추정 된 픽셀 상의 focal length
     """
 
     sensor_width_mm = 6.16  # for 1/2.3" sensor, usually around 6.3mm
