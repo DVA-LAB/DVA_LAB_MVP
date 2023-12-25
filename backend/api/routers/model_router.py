@@ -150,7 +150,7 @@ async def inference_merge(
         anomaly_detection_output = read_csv_file(csv_path)
         detection_output = read_csv_file(csv_path)
         detection_save_path = os.path.join(output_merge_path, "result.txt")
-        output = match_and_ensemble(
+        match_and_ensemble(
             anomaly_detection_output,
             detection_output,
             use_anomaly=use_anomaly,

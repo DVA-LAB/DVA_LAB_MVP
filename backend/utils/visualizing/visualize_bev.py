@@ -162,10 +162,18 @@ def main(args):
     previous_centers = {}
     max_ship_speed = 0
     
+    # frame_count = 162
+
     for image_path in tqdm(image_paths):
+        ### DEV ### 
+        if frame_count != 1604 :
+            frame_count += 1
+            continue
+
         frame = cv2.imread(image_path)
         date = logs['datetime'][frame_count]
         frame_bboxes = bbox_data.get(frame_count, [])
+        print(frame_bboxes)
         gsd = gsd_list[frame_count][1]
         # pixel_size = gsd_list[frame_count][2]
 
@@ -179,7 +187,9 @@ def main(args):
         center_x, center_y = None, None
         dolphin_present = False
 
+
         rst, transformed_img, bbox, boundary_rows, boundary_cols, gsd_bev, eo, R, focal_length, pixel_size = BEV_FullFrame(frame_count, image_path, args.log_path, gsd, args.output_dir, DEV = False)
+
         if rst:
             continue
         else:
@@ -196,6 +206,9 @@ def main(args):
                     continue
                 else:
                     rectify_points = BEV_Points(frame.shape, bbox, boundary_rows, boundary_cols, gsd, eo, R, focal_length, pixel_size, bbox_info['bbox'])
+
+                print(bbox_info['bbox'])
+                print(rectify_points)
                 x1, y1, x2, y2 = rectify_points
                 
                 gsd /= 2
@@ -304,11 +317,17 @@ def main(args):
         cv2.imwrite(output_frame_path, img)
         frame_count += 1
 
-    make_video(get_image_paths(args.output_dir), args.output_video)
-    end_time = time.time()
-    # 걸린 시간 계산
-    elapsed_time = end_time - start_time
-    print(f"코드 실행 시간: {elapsed_time} 초")
+        ### 1223 DEV ###
+        break 
+
+    
+    ### 1223 DEV ###
+    if 0 : 
+        make_video(get_image_paths(args.output_dir), args.output_video)
+        end_time = time.time()
+        # 걸린 시간 계산
+        elapsed_time = end_time - start_time
+        print(f"코드 실행 시간: {elapsed_time} 초")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -316,7 +335,7 @@ if __name__ == "__main__":
     parser.add_argument('--bbox_path', type=str, default='/home/dva4/DVA_LAB/backend/utils/visualizing/bev_points.csv')
     parser.add_argument('--output_video', type=str, default='/home/dva4/DVA_LAB/backend/test/visualize_bev.mp4')
     parser.add_argument('--input_dir', type=str, default='/home/dva4/DVA_LAB/backend/test/frame_origin')
-    parser.add_argument('--output_dir', type=str, default='/home/dva4/DVA_LAB/backend/test/frame_bev_infer')
-    parser.add_argument('--GSD_path', type=str, default='backend/test/GSD_total.txt')
+    parser.add_argument('--output_dir', type=str, default='/home/dva4/DVA_LAB/backend/test_saved/frame_bev_infer')
+    parser.add_argument('--GSD_path', type=str, default='backend/test_saved/GSD_total.txt')
     args = parser.parse_args()
     main(args)

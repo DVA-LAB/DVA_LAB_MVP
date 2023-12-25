@@ -110,8 +110,8 @@ async def get_all_gsd(body: VisRequestBev):
     summary="export origin video",
 )
 async def export_origin():
-    video_storage_path = "/home/dva4/DVA_LAB/backend/test/visualize.avi"
-    return FileResponse(video_storage_path)
+    video_storage_path = "/home/dva4/DVA_LAB/backend/test/visualize.mp4"
+    return FileResponse(video_storage_path, media_type="video/mp4")
 
 
 # TODO@jh: 공통 유틸로 빼기

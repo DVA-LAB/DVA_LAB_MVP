@@ -13,6 +13,9 @@ import numpy as np
 import pandas as pd
 from PIL import Image, ImageDraw, ImageFont
 
+# Global variable declaration
+merged_dolphin_center = None
+
 def read_log_file(log_path):
     # Reading the CSV file into a DataFrame
     df = pd.read_csv(log_path)
@@ -122,12 +125,10 @@ def get_image_paths(directory: str) -> list:
     return image_paths
 
 
-
-
 def show_result(args): #log_path, input_dir, output_video, bbox_path, frame_rate=30):
     start_time = time.time()
     frame_rate=30
-
+    global merged_dolphin_center
     # parser = argparse.ArgumentParser()
     # parser.add_argument('--log_path', type=str, default='in/DJI_0119_30.csv')
     # parser.add_argument('--input_dir', type=str, default='/home/dva4/DVA_LAB/backend/test/frame_origin')
@@ -141,7 +142,6 @@ def show_result(args): #log_path, input_dir, output_video, bbox_path, frame_rate
     # args.bbox_path = bbox_path
 
     image_paths = get_image_paths(args.input_dir)
-    
     # 첫 번째 이미지를 기준으로 비디오 크기 설정
     first_image = cv2.imread(image_paths[0])
     frame_height, frame_width, _ = first_image.shape
@@ -161,7 +161,6 @@ def show_result(args): #log_path, input_dir, output_video, bbox_path, frame_rate
     frame_count = 0
     previous_centers = {}
     max_ship_speed = 0
-    data = []
     try:
         for image_path in tqdm(image_paths):
             frame = cv2.imread(image_path)
@@ -170,35 +169,26 @@ def show_result(args): #log_path, input_dir, output_video, bbox_path, frame_rate
             image = Image.fromarray(frame)
             draw = ImageDraw.Draw(image)
             gsd = gsd_list[frame_count][1]
-            # pixel_size = gsd_list[frame_count][2]
+            pixel_size = gsd_list[frame_count][2]
 
-            dolphin_bboxes = []
             track_ids=[]
             centers = []  # bbox 중심점들을 저장합니다.
             classes = []  # bbox의 클래스 정보를 저장합니다.
-            points = []
             ships_within_50m = set()
             ships_within_300m = set()
             ship_speeds = {}
 
             try:
-                # BEV_FullFrame 함수 호출
-                rst, _, _, _, _, gsd_bev, _, _, _, _ = BEV_FullFrame(frame_count, image_path, args.log_path, gsd, DEV = False)
-                if rst:
-                    print(f"Frame {frame_count} is skipped by BEV_FullFrame")
-                    continue
+                if pixel_size == 0:
+                    # BEV_FullFrame 함수 호출
+                    rst, _, _, _, _, gsd, _, _, _, pixel_size = BEV_FullFrame(frame_count, image_path, args.log_path, gsd, DEV = False)
+                    if rst:
+                        print(f"Frame {frame_count} is skipped by BEV_FullFrame")
+                        continue
+                    else:
+                        gsd = pixel_size
                 else:
-                    gsd = gsd_bev / 3
-                # if (gsd == 0 and pixel_size == 0):
-                #     # BEV_FullFrame 함수 호출
-                #     rst, _, _, _, _, gsd, _, _, _, pixel_size = BEV_FullFrame(frame_count, image_path, args.log_path, gsd, DEV = False)
-                #     if rst:
-                #         print(f"Frame {frame_count} is skipped by BEV_FullFrame")
-                #         continue
-                #     else:
-                #         gsd = pixel_size
-                # else:
-                #     gsd = pixel_size
+                    gsd = pixel_size
             except Exception as e:
                 print(f"Error in BEV_FullFrame at frame {frame_count}: {e}")
 
@@ -209,8 +199,6 @@ def show_result(args): #log_path, input_dir, output_video, bbox_path, frame_rate
                 class_id = int(bbox_info['class'])
                 conf_score = round(bbox_info['conf'], 2)
                 
-                if class_id == 0 and conf_score < 0.5:
-                    continue
                 if class_id == 1 and conf_score < 0.8:
                     continue
                 
@@ -235,28 +223,13 @@ def show_result(args): #log_path, input_dir, output_video, bbox_path, frame_rate
                         ship_speeds[track_id] = speed_kmh
                         max_ship_speed = max(max_ship_speed, speed_kmh)
                         # 중심점 업데이트
-                        previous_centers[track_id] = (center_x, center_y)
-                    
-                    points = [frame_count, track_id, class_id, center_x+1, center_y+1, center_x, center_y, conf_score,-1,-1,-1 ]
-                else : # 돌고래인 경우
-                    dolphin_bboxes.append(bbox_info)
-                
-                # csv data add
-                if len(points)>0:
-                    data.append(points)
-                    points = []
-
-            # 모든 돌고래 bbox를 하나로 합칩니다.
-            merged_dolphin_bbox = merge_bboxes(dolphin_bboxes)
-            if merged_dolphin_bbox is not None:
-                center_x, center_y = (merged_dolphin_bbox[0]+merged_dolphin_bbox[2])/2,  (merged_dolphin_bbox[1]+merged_dolphin_bbox[3])/2
-                draw_radius_circles(draw, (center_x, center_y), [(50/gsd, "black"), (300/gsd, "yellow")], font, gsd)
-                # 그리고 해당 bbox를 그립니다.
-                draw.rectangle(xy=merged_dolphin_bbox, width=5, outline=(0, 0, 255))
-                
-                if class_id == 0:
-                    points = [frame_count, 999999, class_id, merged_dolphin_bbox[0],merged_dolphin_bbox[1],merged_dolphin_bbox[2], merged_dolphin_bbox[3],conf_score,-1,-1,-1]
-                
+                        previous_centers[track_id] = (center_x, center_y)           
+                else : # 돌고래인 경우, class_id = 999999, 합쳐진 돌고래
+                    merged_dolphin_center = (center_x, center_y)
+                    draw_radius_circles(draw, (center_x, center_y), [(50/gsd, "black"), (300/gsd, "yellow")], font, gsd)
+                    # 그리고 해당 bbox를 그립니다.
+                    draw.rectangle(xy=bbox_info['bbox'], width=5, outline=(0, 0, 255))
+            
             # 모든 bbox 중심점들 사이에 선을 그리고 거리를 표시합니다.
             draw_lines_and_distances(draw, centers, classes, font, gsd)
 
@@ -296,10 +269,6 @@ def show_result(args): #log_path, input_dir, output_video, bbox_path, frame_rate
                 min_distance = "-"  # Or any other placeholder you prefer
             font_color = (0, 0, 0) # if violation else (0, 255, 0)
 
-            # csv data add
-            if len(points)>0:
-                data.append(points)
-
             # 텍스트를 흰색 배경 사각형 위에 그립니다.
             text_positions = [(30, 30), (30, 80), (30, 130), (30, 180), (30, 230), (30, 280)]
             texts = [
@@ -330,10 +299,6 @@ def show_result(args): #log_path, input_dir, output_video, bbox_path, frame_rate
     except Exception as e:
         print(f"Error during processing frame {frame_count}: {e}")
 
-    f = open("backend/utils/visualizing/bev_points.csv", "w")
-    writer = csv.writer(f)
-    writer.writerows(data)
-    f.close()
     out.release()
     os.system(f"ffmpeg -y -i {args.output_video.split('.')[0]}_temp.mp4 -vcodec h264 -movflags +faststart {args.output_video}")
     os.system(f"rm {args.output_video.split('.')[0]}_temp.mp4")
@@ -348,7 +313,7 @@ if __name__ == "__main__":
     parser.add_argument('--log_path', type=str, default='backend/test/sync_csv/sync_log.csv')
     parser.add_argument('--input_dir', type=str, default='backend/test/frame_origin')
     parser.add_argument('--output_video', type=str, default='backend/test/visualize.mp4')
-    parser.add_argument('--bbox_path', type=str, default='backend/test/model/tracking/result.txt')
-    parser.add_argument('--GSD_path', type=str, default='backend/test/GSD_total.txt')
+    parser.add_argument('--bbox_path', type=str, default='backend/test/bev_points.csv')
+    parser.add_argument('--GSD_path', type=str, default='backend/test_saved/GSD_total.txt')
     args = parser.parse_args()
     show_result(args)
