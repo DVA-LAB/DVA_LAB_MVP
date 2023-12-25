@@ -97,24 +97,6 @@ def draw_radius_circles(draw, center, radii_info, font, gsd):
         draw.text((center[0] + radius + 10, center[1] - 10), f"{round(radius*gsd,2)}m", font=font, fill=color)
 
 
-def merge_bboxes(bboxes):
-    """
-    여러 경계 상자들을 포함하는 하나의 큰 경계 상자를 계산합니다.
-    """
-    global merged_dolphin_center
-    if not bboxes:
-        merged_dolphin_center = None
-        return None
-
-    # 각 경계 상자의 최소 x, y 및 최대 x, y 좌표를 계산합니다.
-    min_x = min(bbox['bbox'][0] for bbox in bboxes)
-    min_y = min(bbox['bbox'][1] for bbox in bboxes)
-    max_x = max(bbox['bbox'][0] + bbox['bbox'][2] for bbox in bboxes)
-    max_y = max(bbox['bbox'][1] + bbox['bbox'][3] for bbox in bboxes)
-
-    merged_dolphin_center = (min_x + (max_x - min_x) / 2, min_y + (max_y - min_y) / 2)
-    return (min_x, min_y, max_x, max_y)
-
 def get_image_paths(directory: str) -> list:
     image_paths = []
     for root, _, files in os.walk(directory):
@@ -195,7 +177,7 @@ def show_result(args): #log_path, input_dir, output_video, bbox_path, frame_rate
 
             for bbox_info in frame_bboxes:
                 track_id = bbox_info['track_id']
-                x, y, w, h = bbox_info['bbox']
+                x1, y1, x2, y2 = bbox_info['bbox']
                 class_id = int(bbox_info['class'])
                 conf_score = round(bbox_info['conf'], 2)
                 
@@ -203,7 +185,10 @@ def show_result(args): #log_path, input_dir, output_video, bbox_path, frame_rate
                     continue
                 
                 # bbox의 중심점을 계산합니다.
-                center_x, center_y = x + w / 2, y + h / 2
+                if class_id == 1:
+                    center_x, center_y = x2, y2
+                else:
+                    center_x, center_y = (x1+x2)/2, (y1+y2)/2
 
                 centers.append((center_x, center_y))
                 classes.append(class_id)

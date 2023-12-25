@@ -47,8 +47,9 @@ def merge_bboxes(track_results):
     merged_dolphin_center = (min_x + (max_x - min_x) / 2, min_y + (max_y - min_y) / 2)
     return (min_x, min_y, max_x, max_y)
 
-def track(tracker, det_results, img_w, img_h, result_path, args):
+def track(det_results, img_w, img_h, result_path, args):
     timer = Timer()
+    tracker = BYTETracker(args, frame_rate=args.fps)
     results = []
     ############### for bev viz ###############
     data = []
@@ -75,6 +76,10 @@ def track(tracker, det_results, img_w, img_h, result_path, args):
                     online_ids.append(tid)
                     online_scores.append(t.score)
                     online_labels.append(label)
+                    
+                    if label == 1 and t.score < 0.8:
+                        continue
+                    
                     # save results
                     results.append(f"{frame_id},{tid},{label},{tlwh[0]:.2f},{tlwh[1]:.2f},{tlwh[2]:.2f},{tlwh[3]:.2f},{t.score:.2f},-1,-1,-1\n")
                     
@@ -146,8 +151,7 @@ def main(det_result_path, result_path):
 
     # 추후 인풋 형식 맞출 때 반영 필요: img w, h 절보 추가
     img_w, img_h = 3840, 1260
-    tracker = BYTETracker(args, frame_rate=args.fps)
-    track(tracker, det_results, img_w, img_h, result_path, args)
+    track(det_results, img_w, img_h, result_path, args)
 
 
 router = APIRouter(tags=["bytetrack"])
