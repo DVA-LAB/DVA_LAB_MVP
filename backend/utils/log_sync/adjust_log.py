@@ -16,7 +16,6 @@ use_cols = ['OSD.latitude', 'OSD.longitude', 'OSD.height [ft]', 'OSD.altitude [f
 drone_type = {'Mavic 2':'mavic2zoom', 'Mavic Pro':'mavicpro', 'Mavic 3':'mavic2procine', 'Mavic Mini':'mavicmini'}
 
 
-# log csv --> dataframe
 def get_log(csv_path):
     """
         log csv 파일을 데이터 프레임 형식으로 변환합니다.
@@ -25,9 +24,8 @@ def get_log(csv_path):
             - csv_path (str): 데이터 프레임으로 변환할 csv 파일 경로입니다.
 
         Return:
-            - pd_use_log (list): ?
-            - base_time (?): ?
-    
+            - pd_use_log (pd.DataFrame): csv 파일을 pandas 데이터 프레임 형식으로 만든 데이터입니다.
+            - base_time (datetime): csv 파일명에서 추출한 시간 정보를 반환합니다.
     """
     pd_log = pd.read_csv(csv_path, encoding='utf-8', low_memory=False).reset_index(drop=False)
     pd_log.columns = list(pd_log.iloc[0])
@@ -46,14 +44,13 @@ def get_log(csv_path):
     return pd_use_log, base_time.strftime('%Y%m%d%H%M%S')
 
 
-# log srt --> dataframe
 def get_srt(srt_path, osd_typ='mavic2zoom'):
     """
         srt 로그를 데이터 pandas 데이터 프레임 형식으로 변환합니다.
 
         Args:
             - srt_path (str): srt 파일이 저장된 경로입니다.
-            - osd_type (str): ?
+            - osd_type (str): 드론 기종을 나타내는 정보입니다.
             
         Return:
             - pd_srt (pd.DataFrame): pandas 데이터 프레임 형식으로 변환된 srt 데이터 입니다.
@@ -94,16 +91,15 @@ def get_srt(srt_path, osd_typ='mavic2zoom'):
     return pd_srt
 
 
-# search SRT index candidates in csv
 def get_mov_idx(pd_log):
     """
         csv 파일에서 SRT index 후보를 탐색합니다.    
     
         Args:
-            - pd_log: pandas 데이터 프레임 형식으로 변환된 log입니다.
+            - pd_log(pd.DataFrame): pandas 데이터 프레임 형식으로 변환된 log입니다.
 
         Return:
-            - pd_idx (pd_DataFrame): 시작 인덱스와 종료 인덱스가 담긴 데이터 프레임입니다.
+            - pd_idx (pd.DataFrame): 시작 인덱스와 종료 인덱스가 담긴 데이터 프레임입니다.
 
             ex) pd.DataFrame({'idx_start': start_idx, 'idx_end': end_idx})
     """
@@ -131,17 +127,16 @@ def get_mov_idx(pd_log):
     return pd_idx
 
 
-# calculate absolute difference of timestamp
 def get_time_diff(time1, time2):
     """
-        타임스탬프 간의 차이를 계산합니다.
+        두 타임스탬프 간의 차이를 계산하여 초 단위로 반환합니다.
 
         Args:
-            - time1 (?): ?
-            - time2 (?): ?
+            - time1 (?): 첫 번째 타임스탬프입니다.
+            - time2 (?): 두 번째 타임스탬프입니다.
 
         Return:
-            - ?
+            - 두 타임스탬프 간의 차이를 초 단위로 나타낸 값입니다.
     
     """
     if time1 > time2:
@@ -152,7 +147,6 @@ def get_time_diff(time1, time2):
         return 0
 
 
-# get frame number
 def get_num_frame(mov_path):
     """
         비디오 파일의 프레임 개수를 반환합니다.
@@ -170,10 +164,9 @@ def get_num_frame(mov_path):
 
 
 
-# match SRT and log file
 def match_srt(pd_log, pd_srt, pd_idx):
     """
-        log 파일과 srt 파일을 매칭시킵니다.
+        log 파일과 srt 파일 간 매칭을 수행합니다.
         
         Args:
             - pd_log (pd.DataFrame): pandas 데이터 프레임 형식으로 변환된 log입니다.
@@ -181,7 +174,7 @@ def match_srt(pd_log, pd_srt, pd_idx):
             - pd_idx (pd.DataFrame): ?
 
         Return:
-            - pd_log(pd.DataFrame): ?
+            - pd_log (pd.DataFrame): ?
             - start_idx (?): ?
             - end_idx (?): ?
     """
@@ -310,10 +303,12 @@ def adjust_csv_wo_srt(pd_log, cnt_frame):
     return pd_log_final
 
 
-# execute main function
-# ========== main function ==========
 def main(argv):
-    # get argument
+    """
+        ?
+
+        argv (?): ?
+    """
     args = argv
     if len(args) != 1:
         print("[ERROR] Insufficient argument")

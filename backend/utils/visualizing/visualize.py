@@ -42,7 +42,6 @@ def calculate_nearest_distance(centers, classes, track_ids, GSD):
         Return:
             - dolphin_present (bool): 돌고래 존재 여부를 의미합니다.
             - distances (list): 병합된 돌고래 바운딩 박스 중심과 선박간의 실제 거리가 담긴 배열입니다.
-    
     """
 
     global merged_dolphin_center
@@ -74,6 +73,7 @@ def calculate_speed(center1, center2, frame_rate, GSD):
         Return:
             - speed_kmh (float): 선박의 km/h 속도입니다.
     """
+    
     # 픽셀 단위의 거리
     pixel_distance = math.sqrt((center2[0] - center1[0]) ** 2 + (center2[1] - center1[1]) ** 2)
     # 실제 거리 (미터 단위)
@@ -150,6 +150,7 @@ def draw_radius_circles(draw, center, radii_info, font, gsd):
             font (PIL.ImageFont.truetype): 폰트 정보
             gsd (float): GSD 값
     """
+
     for radius, color in radii_info:
         # 원을 그립니다.
         draw.ellipse([center[0] - radius, center[1] - radius, center[0] + radius, center[1] + radius], outline=color, width=15)

@@ -6,13 +6,28 @@ import os
 
 from loguru import logger
 
-from api.services import BYTETracker
-from api.services import Timer
-from interface.request import TrackingRequest
+from models.bytetrack.api.services import BYTETracker
+from models.bytetrack.api.services import Timer
+from models.bytetrack.interface.request import TrackingRequest
 
 import numpy as np
 
 def make_parser():
+    """
+        객체추적에 사용할 사용자 옵션을 반환합니다.
+
+        Attributes:
+            - fps (int): 초당 프레임 수입니다.
+            - track_thresh (float): 추적 신뢰도 역치입니다. (tracking confidence treshold)
+            - track_buffer (int): 추적이 끊긴 프레임을 보존할 버퍼의 크기입니다.
+            - match_thresh (float): 추적의 매칭 역치입니다. (matching threshold for tracking)
+            - min_box_area (float): 최소 bbox 넓이 입니다. 
+            - mot20 (bool): 데이터셋이 mot20 여부입니다. 
+
+        Return:
+            parser (argparse.ArgumentParser()): 사용자 옵션이 설정된 값입니다.
+    """
+
     parser = argparse.ArgumentParser("ByteTrack")
 
     parser.add_argument("--fps", default=30, type=int, help="frame rate (fps)")
@@ -28,7 +43,18 @@ def make_parser():
     parser.add_argument("--mot20", dest="mot20", default=False, action="store_true", help="test mot20.")
     return parser
 
+
 def track(det_results, img_w, img_h, result_path, args):
+    """
+        객체추적을 수행하고 그 결과를 파일로 생성합니다.
+
+        Args:
+            - det_results (list): 객체탐지 & 이상탐지 결과가 병합된 파일이 ByteTrack의 입력이 될 수 있도록 변환된 결과입니다.
+            - img_w (int): 이미지의 가로 크기입니다.
+            - img_h (int): 이미지의 세로 크기입니다.
+            - result_path (str): 객체추적 결과가 저장될 파일 경로입니다.
+            - args (argparse.ArgumentParser()): 객체추적에 사용할 사용자 옵션입니다.
+    """
     tracker = BYTETracker(args, frame_rate=args.fps)
     timer = Timer()
     results = []
@@ -62,6 +88,14 @@ def track(det_results, img_w, img_h, result_path, args):
 
 
 def main(det_result_path, result_path):
+    """
+        객체추적 모델에 인퍼런스를 수행하는 메인 함수입니다.
+
+        Args:
+            - det_result_path (str): 객체탐지와 이상탐지의 결과가 병합된 bbox 정보가 담긴 파일 경로입니다.
+            - reult_path (str): 객체추적 결과가 저장될 파일 경로입니다.
+    """
+
     args = make_parser().parse_args()
 
     # 시작 시간 로그
@@ -88,7 +122,7 @@ def main(det_result_path, result_path):
         grouped_data[key].append(values)
     det_results = [grouped_data[key] for key in sorted(grouped_data.keys())]
 
-    # 추후 인풋 형식 맞출 때 반영 필요: img w, h 절보 추가
+    # 추후 인풋 형식 맞출 때 반영 필요: img w, h 정보 추가
     img_w, img_h = 3840, 1260
     
     track(det_results, img_w, img_h, result_path, args)
@@ -102,6 +136,18 @@ router = APIRouter(tags=["bytetrack"])
     summary="bytetrack",
 )
 async def inference(body: TrackingRequest):
+    """
+        객체추적 모델에 인퍼런스를 수행합니다.
+
+        Args:
+            - body
+                - det_result_path (str): 객체탐지와 이상탐지의 결과가 병합된 bbox 정보가 담긴 파일 경로입니다.
+                - result_path (str): 객체추적 결과가 저장될 파일 경로입니다.
+
+        Return:
+            - result_path (str): 객체추적 결과가 저장된 파일 경로입니다.
+    """
+
     det_result_path = body.det_result_path
     result_path = body.result_path
     os.makedirs(os.path.dirname(result_path), exist_ok=True)

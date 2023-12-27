@@ -20,14 +20,14 @@ DRONE_SENSOR_INFO = {"MAVIC PRO" : [6.3, 4.7, 78.8], "MAVIC 2" : [6.3, 4.7, 78.8
 
 def estimate_focal_length(image_width: int, sensor_width_mm: float, fov_degrees: float) -> float:
     """
-    Estimate the focal length given the FOV and the image width.
+        FOV와 이미지 가로 길이가 주어졌을 때 focal length를 추정합니다.
+
+        Args:
+            - image_width (int): 이미지 가로 크기
+            - fov_degrees (float): field of view in degrees
     
-    Parameters:
-    - image_width: width of the image in pixels
-    - fov_degrees: field of view in degrees
-    
-    Returns:
-    - Estimated focal length in pixels.
+        Return:
+            - focal_lelngth_mm (float): 추정된 focal length 길이
     """
 
     focal_length_mm = (sensor_width_mm / 2) / math.tan(np.radians(fov_degrees / 2))
@@ -36,6 +36,18 @@ def estimate_focal_length(image_width: int, sensor_width_mm: float, fov_degrees:
 
 
 def get_params_from_csv(csv_file, idx = None):
+    """
+        csv 파일에서 파라미터를 추출합니다.
+
+        Args:
+            - csv_file (str): csv 파일의 경로입니다.
+            - idx (int): 프레임 번호입니다.
+            
+        Return:
+            - df (pd.DataFrame): 프레임 번호에 해당하는 행을 반환하며, 프레임 번호가 없을 경우 전체를 반환합니다.
+    """
+
+
     df = pd.read_csv(csv_file, encoding_errors='ignore')
     df.loc[:,"R"] = df["GIMBAL.roll"] # +  df["OSD.roll"]
     df.loc[:,"P"] = df["GIMBAL.pitch"] # + df["OSD.pitch"]
@@ -53,23 +65,24 @@ def get_params_from_csv(csv_file, idx = None):
 
 def BEV_UserInputFrame(frame_num, frame_path, csv_path, objects, realdistance, dst_dir, DEV = False):
     """
-    * Parameters 
-    frame_num : int 
-    frame_path : str, png file path
-    csv_path : str, csv file path
-    drone_model : int, 
-    objects : list [frame_id, track_id, label, bbox, score, -1, -1, -1 ]
-            : BEV1 : dummy, dummy, dummy, pt1, pt2, dummy, -1, -1, -1
-    realdistance : float, Meter
+        프레임에 BirdEyeView (BEV)를 적용합니다.
 
-    * return 
-    rst : result flag // 0 : Success, 1 : rectify fail, 2 : gsd calc Fail
-    img_dst : string 
-    objects : list object
-    pixel_size : float. Unit : m/pixel
-    gsd : floag. Unit : m/pixel
+        Args:
+            - frame_num (int): BEV를 적용할 프레임 번호
+            - frame_path (str): BEV를 적용할 프레임 경로
+            - csv_path (str): csv 파일 경로
+            - objects (list): [frame_id, track_id, label, bbox, score, -1, -1, -1]
+            - realdistance (float): 실제 거리 (Meter)
+            - dst_dir (str): BEV가 적용된 프레임이 저장될 디렉터리 경로
     
+        Return:
+            - rst (bool): 0: Success, 1: rectify fail, 2: fail to calculate gsd
+            - img_dst (str): BEV가 적용된 프레임이 저장될 파일 경로
+            - objects (list): [frame_id, track_id, label, bbox, score, -1, -1, -1]
+            - pixel_size (float): Unit: m/pixel
+            - gsd (float): Unit: m/pixel
     """
+
     # Step 0 : Meta Info.
     rst = 0 # Success
     info_row = get_params_from_csv(csv_path, frame_num) # R, P, Y, V, Drone
@@ -177,17 +190,22 @@ def BEV_UserInputFrame(frame_num, frame_path, csv_path, objects, realdistance, d
 def BEV_Points(image_shape, boundary, boundary_rows, boundary_cols, gsd, eo, R, focal_length, pixel_size, obj_points):
     # def BEV_Points(image_shape, R, pixel_size, boundary, boundary_cols, boundary_rows, height, focal_length, obj_points, gsd): #, image.shape[1], coord_CCS_px_x, coord_CCS_px_y, dst_dir, gsd, DEV = False):
     """
-    * Parameters 
-    frame_num : int 
-    frame_path : str, png file path
-    csv_path : str, csv file path
-    drone_model : int, 
-    objects : list [frame_id, track_id, label, bbox, score, -1, -1, -1 ]
-    
-    * return 
-    rst : result flag // 0 : Success, 1 : rectify fail, 2 : gsd calc Fail
-    img_dst : string 
-    objects : list object
+        BEV 상에서의 bbox로 변환된 bbox 정보를 반환합니다.
+
+        Args:
+            - image_shape (tuple): 이미지의 가로 세로입니다.
+            - boundary (?): ? 
+            - boundary_rows (?): ?
+            - boundary_cols (?): ? 
+            - gsd (?): GSD 값입니다.
+            - eo (?): ?
+            - R (?): BEV 변환에 활용되는 회전행렬 입니다.
+            - focal_length (float): ?
+            - pixel_size (float): unit: m/px
+            - obj_points (list): ?
+
+        Return:
+            - rectify_points (list): BEV 상의 bbox로 변환된 bbox
     """
 
      # 1. projection
@@ -264,18 +282,29 @@ def BEV_Points(image_shape, boundary, boundary_rows, boundary_cols, gsd, eo, R, 
 
 def BEV_FullFrame(frame_num, frame_path, csv_path, gsd, dst_dir='./', DEV = False):
     """
-    * Parameters 
-    frame_num : int 
-    frame_path : str, png file path
-    csv_path : str, csv file path
-    drone_model : int, 
-    objects : list [frame_id, track_id, label, bbox, score, -1, -1, -1 ]
+        프레임에 BirdEyeView (BEV)를 적용합니다.
+        
+        Args:
+            - frame_num (int): BEV를 적용할 프레임 번호입니다.
+            - frame_path (str): BEV를 적용할 프레임 경로입니다.
+            - csv_path (str): csv 파일 경로입니다.
+            - gsd (float): gsd 값입니다.
+            - dst_dir (str): BEV가 적용된 프레임이 저장될 디렉터리 경로입니다.
+            - DEV (bool): 
     
-    * return 
-    rst : result flag // 0 : Success, 1 : rectify fail, 2 : gsd calc Fail
-    img_dst : string 
-    objects : list object
+        Return:
+            - rst (int): 0: Success, 1: rectify fail, 2: fail to calculate gsd
+            - transformed_img (np.ndarray): BEV가 변환된 이미지입니다.
+            - bbox ():
+            - boundary_rows (?):
+            - boundary_cols (?):
+            - gsd (float): gsd 값입니다.
+            - eo (?):
+            - R (?): BEV 변환에 활용되는 회전행렬 입니다.
+            - focal_length (float):
+            - pixel_size ():
     """
+
     # Step 0 : Meta Info.
     rst = 0 # Success
     info_row = get_params_from_csv(csv_path, frame_num) # R, P, Y, V, Drone

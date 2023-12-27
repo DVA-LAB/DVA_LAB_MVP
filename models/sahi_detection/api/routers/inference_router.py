@@ -1,96 +1,72 @@
 from fastapi import APIRouter, Depends, status, Request
-
 import argparse
 import os
 import os.path as osp
-import time
 import cv2
+import csv
+import time
 import torch
+import numpy as np
 
 from loguru import logger
-
-from api.services import preproc
-from api.services import get_exp
-from api.services import fuse_model, get_model_info, postprocess
-from api.services import plot_tracking
-from api.services import Timer
-
-from api.services import YoloxDetectionModel
-from api.services import get_sliced_prediction
-from api.services import AutoDetectionModel
-
-from api.services import config as cfg
-
-from interface.request import SahiRequest
-
-import numpy as np
-import csv
-
+from models.sahi_detection.interface.request import SahiRequest
 from typing import List
 
+from models.sahi_detection.api.services import preproc
+from models.sahi_detection.api.services import get_exp
+from models.sahi_detection.api.services import fuse_model, get_model_info, postprocess
+from models.sahi_detection.api.services import plot_tracking
+from models.sahi_detection.api.services import Timer
+from models.sahi_detection.api.services import YoloxDetectionModel
+from models.sahi_detection.api.services import get_sliced_prediction
+from models.sahi_detection.api.services import AutoDetectionModel
+from models.sahi_detection.api.services import config as cfg
 
 IMAGE_EXT = [".jpg", ".jpeg", ".webp", ".bmp", ".png"]
 
 
 def make_parser():
+    """
+        객체추적에 사용할 사용자 옵션을 반환합니다.
+
+        Return:
+            - parser (argparse.ArgumentParser)
+    """
+
     parser = argparse.ArgumentParser("ByteTrack")
-    parser.add_argument(
-        "--demo", default="image", help="demo type, eg. image, video and webcam"
-    )
-    parser.add_argument(
-        "--model", default="yolov8", help="Model name | yolov5, yolox, yolov8"
-    )
+    parser.add_argument("--demo", default="image", help="demo type, eg. image, video and webcam")
+    parser.add_argument("--model", default="yolov8", help="Model name | yolov5, yolox, yolov8")
     parser.add_argument("-expn", "--experiment-name", type=str, default=None)
     parser.add_argument("-n", "--name", type=str, default=None, help="model name")
-
-    parser.add_argument(
-        "--path", default="/home/dva3/workspace/output/test/test01", help="path to images or video"
-    )
+    parser.add_argument("--path", default="/home/dva3/workspace/output/test/test01", help="path to images or video")
     parser.add_argument("--camid", type=int, default=0, help="webcam demo camera id")
-    parser.add_argument(
-        "--save_result",
-        action="store_true",
-        help="whether to save the inference result of image/video",
-    )
+    parser.add_argument("--save_result", action="store_true", help="whether to save the inference result of image/video")
 
     # exp file
-    parser.add_argument(
-        "-f",
-        "--exp_file",
-        default=None,
-        type=str,
-        help="If you want to use yolox, pls input your expriment description file",
-    )
+    parser.add_argument("-f", "--exp_file", default=None, type=str, help="If you want to use yolox, pls input your expriment description file")
     parser.add_argument("-c", "--ckpt", default="/mnt/models/v8_m_best.pt", type=str, help="ckpt for inf")
-    parser.add_argument(
-        "--device",
-        default="gpu",
-        type=str,
-        help="device to run our model, can either be cpu or gpu",
-    )
+    parser.add_argument("--device", default="gpu", type=str, help="device to run our model, can either be cpu or gpu")
     parser.add_argument("--conf", default=None, type=float, help="test conf")
     parser.add_argument("--nms", default=None, type=float, help="test nms threshold")
     parser.add_argument("--tsize", default=None, type=int, help="test img size")
     parser.add_argument("--fps", default=5, type=int, help="frame rate (fps)")
-    parser.add_argument(
-        "--fp16",
-        dest="fp16",
-        default=False,
-        action="store_true",
-        help="Adopting mix precision evaluating.",
-    )
-    parser.add_argument(
-        "--fuse",
-        dest="fuse",
-        default=False,
-        action="store_true",
-        help="Fuse conv and bn for testing.",
-    )
+    parser.add_argument("--fp16", dest="fp16", default=False, action="store_true", help="Adopting mix precision evaluating.")
+    parser.add_argument("--fuse", dest="fuse", default=False, action="store_true", help="Fuse conv and bn for testing.")
 
     return parser
 
 
 def get_image_list(path):
+    """
+        특정 확장자를 가진 이미지 파일의 경로 목록을 반환합니다.
+
+        Args:
+            - path (str): 하위 디렉터리를 탐색할 디렉터리 경로
+    
+        Return:
+            - image_names (list): 파일 경로 리스트를 반환합니다.
+    """
+
     image_names = []
     for maindir, subdir, file_name_list in os.walk(path):
         for filename in file_name_list:
@@ -98,18 +74,15 @@ def get_image_list(path):
             ext = osp.splitext(apath)[1]
             if ext in IMAGE_EXT:
                 image_names.append(apath)
+
     return image_names
 
 class Predictor(object):
-    def __init__(
-        self,
-        det_model,
-        cls_map,
-        sliced_path,
-        device=torch.device("cuda:0"),
-        fp16=False,
-        args = None
-    ):
+    """
+        SAHI와 Pretraiend YOLO 모델 기반 객체탐지를 수행합니다.
+
+    """
+    def __init__(self, det_model, cls_map, sliced_path, device=torch.device("cuda:0"), fp16=False, args = None):
         self.det_model = det_model
         self.cls_map = cls_map
         self.sliced_path = sliced_path
@@ -121,6 +94,17 @@ class Predictor(object):
         self.std = (0.229, 0.224, 0.225)
 
     def inference(self, img, frame_id):
+        """
+            실질적으로 SAHI를 적용하고 객체탐지를 수행합니다.
+
+            Args:
+                - img (str) or (np.array): 이미지 경로 또는 이미지를 읽은 넘파이 배열입니다.
+                - frame_id (int): 프레임 번호입니다.
+
+            Return:
+                det_outputs (list): 객체 탐지 결과 bbox입니다.
+        """
+
         img_info = {"id": frame_id}
         img_path = img
         if isinstance(img, str):
@@ -164,6 +148,18 @@ class Predictor(object):
         return det_outputs
 
 def image_demo(predictor, current_time, args):
+    """
+        이미지 파일에 대한 모델 인퍼런스 수행결과를 반환합니다.
+
+        Args:
+            - predictor ()
+            - current_time ():
+            - args (argparse.ArgumentParser)
+
+        Return:
+            - det_results (list): 객체 탐지 결과 bbox입니다.   
+    """
+
     if osp.isdir(args.path):
         files = get_image_list(args.path)
     else:
@@ -181,10 +177,14 @@ def image_demo(predictor, current_time, args):
     return det_results
 
 def write_csv(csv_file_path, det_results):
-    # CSV 파일 경로
-    # csv_file_path = "./example.csv"
-    
-    # CSV 파일에 데이터 쓰기
+    """
+        객체탐지 결과를 csv 파일로 저장합니다.
+
+        Args:
+            - csv_file_path (str): 객체탐지 결과를 저장할 파일명입니다.
+            - det_results (list): 객체탐지 결과가 담긴 bbox 정보입니다.
+    """
+
     with open(csv_file_path, mode='w', newline='', encoding='utf-8') as file:
         writer = csv.writer(file)
         for row in det_results:
@@ -194,6 +194,15 @@ def write_csv(csv_file_path, det_results):
 
 
 def main(img_path=None, csv_path=None, sliced_path = None):
+    """
+        SAHI + 객체탐지를 수행하고 그 결과를 csv 파일로 생성합니다.
+
+        Args:
+            - img_path (str): SAHI가 적용된 객체탐지를 수행할 원본 프레임이 위치하는 디렉터리 경로입니다.
+            - csv_path (str): SAHI가 적용된 객체탐지 결과를 저장할 csv 파일 이름입니다.
+            - sliced_path (str): SAHI에 의해 슬라이싱 된 패치가 저장된 디렉터리 경로입니다.
+    """
+
     args = make_parser().parse_args()
 
     args.device = torch.device("cuda" if args.device == "gpu" else "cpu")
@@ -262,6 +271,21 @@ router = APIRouter(tags=["sahi"])
     summary="detection inference",
 )
 async def inference(request: SahiRequest.SahiRequest):
+    """
+        SAHI가 적용된 객체탐지를 수행하고 그 결과를 반환합니다.
+
+        Args:
+            - request
+                - request.img_path (str): SAHI가 적용된 객체탐지를 수행할 원본 프레임이 위치하는 디렉터리 경로입니다.
+                - request.csv_path (str): SAHI가 적용된 객체탐지 결과를 저장할 csv 파일 이름입니다.
+                - request.sliced_path (str): SAHI에 의해 슬라이싱 된 패치가 저장된 디렉터리 경로입니다.
+
+        Return:
+            - img_path (str): SAHI가 적용된 객체탐지를 수행할 원본 프레임이 위치하는 디렉터리 경로입니다.
+            - csv_path (str): SAHI가 적용된 객체탐지 결과를 저장할 csv 파일 이름입니다.
+            - sliced_path (str): SAHI에 의해 슬라이싱 된 패치가 저장된 디렉터리 경로입니다.
+    """
+
     img_path = request.img_path
     csv_path = request.csv_path
     os.makedirs(os.path.dirname(csv_path), exist_ok=True)

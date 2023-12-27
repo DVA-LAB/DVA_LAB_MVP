@@ -6,6 +6,9 @@ from typing import Union
 import torch
 
 class RGLARE:
+    """
+        빛반사 제거를 목적으로 합니다. 
+    """
     def __init__(self, video_path: str, save_path: str, queue_len: int, save:bool=True,
                  gamma:bool=False):
         self.cap = cv2.VideoCapture(video_path)
@@ -30,12 +33,14 @@ class RGLARE:
 
     def get_weight(self) -> np.ndarray:
         '''
-            frame weight를 생성하는 기능을 수행하며 1을 기준으로 frame 개수만큼 0.1씩 감소시킵니다. 
-            
+            빛반사에 적용할 프레임 별 가중치를 계산합니다.
+
+            프레임 별 가중치는 첫 프레임을 가중치 1을 기준으로 프레임 개수만큼 0.1씩 감소시킵니다.
+        
             첫 프레임이 가중치가 제일 높습니다.
 
             Return:
-                - weight (np.ndarray): ?
+                - weight (np.ndarray): 프레임 별 가중치가 담긴 배열입니다.
         
         '''
         weight=[1]
@@ -44,6 +49,17 @@ class RGLARE:
         return np.array(weight)[:,None,None,None]
 
     def get_gpu_weight(self) -> torch.Tensor:
+        """
+            GPU를 기반으로 빛반사에 적용할 프레임 별 가중치를 계산합니다.
+
+            프레임 별 가중치는 첫 프레임을 가중치 1을 기준으로 프레임 개수만큼 0.1씩 감소시킵니다.
+        
+            첫 프레임이 가중치가 제일 높습니다.
+
+            Return:
+                - weight (torch.Tensor): 프레임 별 가중치가 담긴 배열입니다.
+        
+        """
         weight=[1]
         for _ in range(self.queue_len-1):
             weight.append(weight[-1]-0.1)
@@ -51,7 +67,7 @@ class RGLARE:
 
     def video_save(self, save_path) -> None:
         '''
-            비디오를 저장합니다. 
+            비디오를 저장합니다.
 
             Args:
                 - save_path (str): 비디오가 저장될 경로입니다.

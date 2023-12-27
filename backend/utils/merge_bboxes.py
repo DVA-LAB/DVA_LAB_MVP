@@ -11,9 +11,10 @@ def plot_detections(anomaly_detections, yolo_detections, output_detections, imag
         Args:
             - anomaly_detections (list): 이상 탐지 결과 
             - yolo_detections (list): 객체 탐지 결과
-            - output_detections (list): 
+            - output_detections (list): ?
             - image_size (tuple): 이미지 가로, 세로 크기
     """
+
     # Convert lists into dictionaries grouped by frame
     grouped_anomaly_outputs = {}
     for det in anomaly_detections:
@@ -89,7 +90,7 @@ def match_and_ensemble(anomaly_outputs, detection_outputs, use_anomaly, output_f
             - output_file (str): 이상 탐지 & 객체 탐지 앙상블 결과 파일 저장경로
 
         Return:
-            - output (list):
+            - output (list): 이상 탐지 결과와 객체 탐지 결과가 앙상블된 bbox 입니다.
     """
     output = []
     confidence_threshold = 0.7
@@ -136,12 +137,13 @@ def read_file(file_path):
         탐지 결과 파일을 라인 별로 읽고 라인 별로 리스트를 만든 2차원 리스트를 반환합니다.
     
         Args:
-            - file_path (str): 
+            - file_path (str): 탐지 결과 파일 경로입니다.
 
         Return:
             - detections (list): 라인 별 탐지 결과가 담긴 2차원 리스트
 
     """
+
     with open(file_path, 'r') as file:
         lines = file.readlines()
     detections = [[float(x) for x in line.strip().split(',')] for line in lines]
@@ -159,6 +161,7 @@ def read_csv_file(file_path):
             - detections (list): csv 파일 행단위 별 리스트가 담긴 2차원 리스트
 
     """
+
     detections = []
     with open(file_path, 'r') as file:
         csv_reader = csv.reader(file)

@@ -3,10 +3,10 @@ import shutil
 
 import cv2
 import numpy as np
-from api.services.Orthophoto_Maps.main_dg import *
+from models.BEV.api.services.Orthophoto_Maps.main_dg import *
 from fastapi import APIRouter, Depends, status
 from fastapi import HTTPException
-from interface.request.bev_request import BEV1, BEV2
+from models.BEV.interface.request.bev_request import BEV1, BEV2
 
 router = APIRouter(tags=["bev"])
 
@@ -17,6 +17,30 @@ router = APIRouter(tags=["bev"])
     summary="first dev",
 )
 async def bev_1(body: BEV1):
+    """
+        원본 프레임에 BirdEyeView(BEV) 시각화를 수행합니다.
+        
+        Args:
+            - body
+                - body.frame_num (int): BEV 시각화를 적용하고자 하는 프레임 번호입니다.
+                - body.frame_path (str): BEV 시각화를 적용하고자 하는 번호의 프레임 파일 경로입니다.
+                - body.csv_path (str): 동기화된 csv 파일 경로입니다.
+                - body.objects (list): 객체추적 결과입니다. ex) [frame_id, track_id, label, bbox, score, -1, -1, -1]
+                - body.realdistance (float): 실제 거리 값입니다.
+                - body.dst_dir (str): BEV 시각화가 적용된 프레임이 저장될 디렉터리 경로입니다.
+
+        Raise:
+            - HTTPException: BEV 변환에 실패했을 경우 서버 에러(500)를 발생시킵니다.
+
+        Return:
+            - result (tuple)
+                - rst (int): BEV 변환 성공 여부를 판단합니다. 
+                - img_dst (str): BEV 적용한 이미지 경로입니다.
+                - objects (list): BEV 상에서의 bbox로 정보로 변경된 객체추적 결과입니다. ex) [frame_id, track_id, label, bbox, score, -1, -1, -1]
+                - pixel_size (float): 한 픽셀당 실제 크기입니다.
+                - gsd (float): GSD 값입니다.
+    """
+
     try:
         result = BEV_UserInputFrame(
             body.frame_num,
@@ -39,6 +63,30 @@ async def bev_1(body: BEV1):
     summary="second dev",
 )
 async def bev_2(body: BEV2):
+    """
+        원본 프레임에 BirdEyeView(BEV) 시각화를 수행합니다.
+        
+        Args:
+            - body
+                - body.frame_num (int): BEV 시각화를 적용하고자 하는 프레임 번호입니다.
+                - body.frame_path (str): BEV 시각화를 적용하고자 하는 번호의 프레임 파일 경로입니다.
+                - body.csv_path (str): 동기화된 csv 파일 경로입니다.
+                - body.objects (list): 객체추적 결과입니다. ex) [frame_id, track_id, label, bbox, score, -1, -1, -1]
+                - body.realdistance (float): 실제 거리 값입니다.
+                - body.dst_dir (str): BEV 시각화가 적용된 프레임이 저장될 디렉터리 경로입니다.
+
+        Raise:
+            - HTTPException: BEV 변환에 실패했을 경우 서버 에러(500)를 발생시킵니다.
+
+        Return:
+            - result (tuple)
+                - rst (int): BEV 변환 성공 여부를 판단합니다. 
+                - img_dst (str): BEV 적용한 이미지 경로입니다.
+                - objects (list): BEV 상에서의 bbox로 정보로 변경된 객체추적 결과입니다. ex) [frame_id, track_id, label, bbox, score, -1, -1, -1]
+                - pixel_size (float): 한 픽셀당 실제 크기입니다.
+                - gsd (float): GSD 값입니다.
+    """
+
     try:
         result = BEV_FullFrame(
             body.frame_num,
@@ -117,6 +165,16 @@ async def bev_2(body: BEV2):
 
 
 def extract_frame_number(filename):
+    """
+        파일명에서 프레임 번호를 추출합니다.
+
+        Args:
+            - filename (str): 프레임 번호를 추출할 파일명입니다.
+
+        Return:
+            - frame_number (int): 프레임 번호입니다.
+    """
+
     # Extract the part of the filename without the directory and extension
     base_name = filename.split("/")[-1]  # Get the last part of the path
     name_without_extension = base_name.split(".")[0]  # Remove the extension
@@ -129,6 +187,16 @@ def extract_frame_number(filename):
 
 
 def read_float_from_file(file_path):
+    """
+        파일에 기재된 float 값을 읽어 반환합니다.
+
+        Args:
+            - file_path (str): float 값이 작성된 파일 경로입니다.
+
+        Return:
+            - float type의 값이 반환됩니다.
+    """
+
     with open(file_path, "r") as file:
         # Read the first line of the file
         line = file.readline()
