@@ -140,7 +140,7 @@ async def export_origin():
             - FileResponse: 시각화가 적용된 영상을 반환합니다.
     """
 
-    video_storage_path = "/home/dva4/DVA_LAB/backend/test/visualize.avi"
+    video_storage_path = "/home/dva4/DVA_LAB/backend/test/visualize.mp4"
     return FileResponse(video_storage_path)
 
 

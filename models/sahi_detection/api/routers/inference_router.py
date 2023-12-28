@@ -119,6 +119,7 @@ class Predictor(object):
         img_info["raw_img"] = img
         
         if self.sliced_path != None:
+            logger.info("in here")
             file_name_without_extension, _ = os.path.splitext(os.path.basename(img_path))
             result = get_sliced_prediction(img_path, self.det_model, slice_height=1024, slice_width=1024, output_file_name=file_name_without_extension, interim_dir = self.sliced_path)
         else:
@@ -252,7 +253,8 @@ def main(img_path=None, csv_path=None, sliced_path = None):
     for idx, cls in enumerate(cfg.OUT_CLASSES):
         m_cls_idx = cfg.CLASSES.index(cls)
         cls_map[m_cls_idx] = idx
-
+    
+    logger.info("sliced_path//////////////////", sliced_path)
     predictor = Predictor(detection_model, cls_map, sliced_path, args.device, args.fp16, args)
 
     current_time = time.localtime()
