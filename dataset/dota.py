@@ -13,12 +13,43 @@ from PIL import Image, ImageDraw
 
 
 def calculate_object_ratio(obj_w, obj_h, img_w, img_h):
+    """
+        객체의 비율을 계산하여 반환합니다.
+
+        Args:
+            - obj_w (float): 객체의 가로 크기
+            - obj_h (float): 객체의 세로 크기
+            - img_w (float): 이미지의 가로 크기
+            - img_h (float): 이미지의 세로 크기
+                
+        Return:
+            - (객체의 넓이 / 이미지 넓이) * 100
+    """
     obj_area = obj_w * obj_h
     img_area = img_w * img_h
     return (obj_area / img_area) * 100
 
 
 def generate_random_crop_coordinates(xmin, ymin, xmax, ymax, img_w, img_h, crop_size):
+    """
+        랜덤으로 크롭된 좌표(bbox)를 생성합니다. (why and for what?)
+
+        Args:
+            - xmin (float): bbox의 x좌표 최소값
+            - ymin (float): bbox의 y좌표 최소값
+            - xmax (float): bbox의 x좌표 최대값 
+            - ymax (float): bbox의 y좌표 최대값
+            - img_w (int): 이미지 가로 크기
+            - img_h (int): 이미지 세로 크기
+            - crop_size (int): 크롭할 영역의 한 변의 길이 (정사각형)
+
+        Return:
+            - start_x (int): 랜덤 시작 x 좌표
+            - start_y (int): 랜덤 시작 y 좌표
+            - end_x (int): 랜덤 종료 x 좌표 + crop_size
+            - end_y (int): 랜덤 종료 y 좌표 + crop_size
+
+    """
     min_x = max(0, xmin - crop_size + (xmax - xmin))
     max_x = min(img_w - crop_size, xmin)
     min_y = max(0, ymin - crop_size + (ymax - ymin))
@@ -36,10 +67,39 @@ def generate_random_crop_coordinates(xmin, ymin, xmax, ymax, img_w, img_h, crop_
 
 
 def check_object_within_crop(xmin, ymin, xmax, ymax, start_x, start_y, end_x, end_y):
+    """
+        객체가 크롭된 범위 이내에 있는지 확인합니다.
+        
+        Args:
+            - xmin (float): bbox의 x좌표 최소값
+            - ymin (float): bbox의 y좌표 최소값
+            - xmax (float): bbox의 x좌표 최대값
+            - ymax (float): bbox의 y좌표 최대값
+            - start_x (int): 랜덤 시작 x 좌표
+            - start_y (int): 랜덤 시작 y 좌표
+            - end_x (int): 랜덤 종료 x 좌표
+            - end_y (int): 랜덤 종료 y 좌표
+        Return:
+            - Bool(True or False)을 반환합니다.
+    """
+
     return xmax > start_x and xmin < end_x and ymax > start_y and ymin < end_y
 
 
 def process_image_and_labels(row):
+    """
+        ?
+
+        Args:
+            - row (?): 
+
+        Return:
+            - imgs (list): 크롭된 이미지가 담긴 배열입니다.
+            - objects (list): 크롭된 bbox와 label이 dictionary 형태로 담긴 배열입니다. 
+            
+            ex) objects.append({"bbox": cropped_bboxes, "categories": cropped_categories})
+    """
+
     img = row["image"]
     img_h, img_w = img.height, img.width
 
@@ -62,9 +122,7 @@ def process_image_and_labels(row):
         target_area = obj_w * obj_h / target_ratio
         crop_size = int(target_area**0.5)  # Crop 할 영역의 한 변의 길이 (정사각형)
 
-        coords = generate_random_crop_coordinates(
-            xmin, ymin, xmax, ymax, img_w, img_h, crop_size
-        )
+        coords = generate_random_crop_coordinates(xmin, ymin, xmax, ymax, img_w, img_h, crop_size)
         if coords is None:
             continue
 
@@ -79,14 +137,10 @@ def process_image_and_labels(row):
         for bbox, category in zip(bboxes, categories):
             oxmin, oymin, oxmax, oymax = bbox
 
-            if check_object_within_crop(
-                oxmin, oymin, oxmax, oymax, start_x, start_y, end_x, end_y
-            ):
+            if check_object_within_crop(oxmin, oymin, oxmax, oymax, start_x, start_y, end_x, end_y):
                 new_xmin, new_ymin = max(0, oxmin - start_x), max(0, oymin - start_y)
                 new_xmax, new_ymax = min(c_img_w, max(0, oxmax - start_x)), min(c_img_h, max(0, oymax - start_y))
-                cropped_bboxes.append(
-                    [new_xmin, new_ymin, new_xmax - new_xmin, new_ymax - new_ymin]
-                )
+                cropped_bboxes.append([new_xmin, new_ymin, new_xmax - new_xmin, new_ymax - new_ymin])
                 cropped_categories.append(category)
 
                 obj_w, obj_h = new_xmax - new_xmin, new_ymax - new_ymin
@@ -104,14 +158,23 @@ def process_image_and_labels(row):
 
 
 def get_dataset(save_path, exist_ok=False):
+    """
+        데이터셋을 로드하고 반환합니다.
+
+        Args:
+            - save_path (str): 데이터셋의 메타데이터가 저장될 파일경로입니다.
+            - exist_ok (bool): 메타데이터 파일의 존재여부를 의미합니다.
+
+        Return:
+            dataset (?): ?
+    """
+
     os.makedirs(save_path, exist_ok=True)
     meta_path = os.path.join(save_path, "metadata.jsonl")
     if exist_ok or not os.path.exists(meta_path):
         if os.path.exists(meta_path):
             os.remove(meta_path)
-        dataset = load_dataset(
-            path="datadrivenscience/ship-detection",
-        )
+        dataset = load_dataset(path="datadrivenscience/ship-detection")
         tr_data = dataset["train"]
         test_data = dataset["test"]
         count = 0
@@ -122,9 +185,7 @@ def get_dataset(save_path, exist_ok=False):
                 if img_list:
                     for img, objects in zip(img_list, objects_list):
                         with open(meta_path, "a") as f:
-                            json_line = json.dumps(
-                                {"img_id": count, "file_name": f"img_{count}.png", "objects": objects}
-                            )
+                            json_line = json.dumps({"img_id": count, "file_name": f"img_{count}.png", "objects": objects})
                             f.write(json_line + "\n")
                             img.save(os.path.join(save_path, f"img_{count}.png"))
                             count += 1

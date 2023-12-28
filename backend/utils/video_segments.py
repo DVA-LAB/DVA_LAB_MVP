@@ -21,8 +21,8 @@ def parse_srt_time(time_str):
 
         Return:
             - datetime.timedelta(seconds=total_seconds)
-
     """
+
     time_str = time_str.replace(",", ".")
     time_parts = time_str.split(':')
     hours, minutes, seconds = map(float, time_parts)
@@ -42,6 +42,7 @@ def make_video_segment(video_filename, srt_filename):
         Returns:
             - video_segments (list): VideoSegment 객체 목록
     """
+
     cap = cv2.VideoCapture(video_filename)
     subtitles = parsing_srt_file(srt_filename)
 

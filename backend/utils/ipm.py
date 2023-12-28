@@ -12,6 +12,14 @@ import numpy as np
     
 class IPM(object):
     """
+        원본 프레임을 BirdEyeView (BEV)로 변환합니다. (Inverse Perspective Mapping)
+
+        BEV 변환을 위해 Pin-hole 카메라를 가정합니다.
+
+        `_c`: 카메라 좌표입니다.
+        `_w`: 월드 좌표입니다.
+        `uv`: 입력 이미지에 대해 원근변환 된 uv 2D 좌표입니다.
+
         Inverse perspective mapping to a bird-eye view. Assume pin-hole camera model.
         There are detailed explanation of every step in the comments, and variable names in the code follow these conventions:
         `_c` for camera coordinates
@@ -19,6 +27,10 @@ class IPM(object):
         `uv` for perspective transformed uv 2d coordinates (the input image)
     """
     def __init__(self, camera_info, ipm_info):
+        """
+            ?
+
+        """
         self.camera_info = camera_info
         self.ipm_info = ipm_info
 
@@ -95,6 +107,16 @@ class IPM(object):
         self.uv_grid = (self.uv_grid[1], self.uv_grid[0])
 
     def xy2uv(self, xys): # all points have z=0 (ground plane): w (u,v,1) = KRT (x,y,z)_w
+        """
+            ?
+
+            Args:
+                - xys (?): ?
+
+            Return:
+                - xy_w (?): ?
+            
+        """
         # x축 좌표 반전
         xys[0, :] = -xys[0, :]
         xyzs = np.vstack((xys, -self.camera_info.camera_height * np.ones(xys.shape[1]))) # (x,y,z) after translation
@@ -102,6 +124,16 @@ class IPM(object):
         return xyzs_c[:2] / xyzs_c[2]
 
     def uv2xy(self, uvs): # all points have z=0 (ground plane): find (x,y,z)_c first, then x_w, y_w = (R^-1 (x,y,z)_c)[:2]
+        """
+            ?
+
+            Args:
+                - (uvs) (?): ?
+
+            Return:
+                - xy_w (?): ?
+        
+        """
         uvs = (uvs - np.array([self.camera_info.u_x, self.camera_info.u_y])[:, None]) /\
               np.array([self.camera_info.f_x, self.camera_info.f_y])[:, None] # converted using camara intrinsic parameters
         uvs = np.vstack((uvs, np.ones(uvs.shape[1])))
@@ -115,14 +147,36 @@ class IPM(object):
         return self.ipm(img)
 
     def ipm(self, img):
+        """
+           ?
+
+           Args:
+                - img (?): ?
+
+           Return:
+                - ? (?): ?
+        """
+
         return img[self.uv_grid]
 
     def reverse_ipm(self, img, shape=None):
+        """
+            ?
+
+            Args:
+                - img (?): ?
+                - shape (tuple): ?
+            
+            Return:
+                - out_img (?): ?
+        """
+
         if shape is None:
             shape = img.shape
         out_img = np.zeros(shape)
         out_img[self.uv_grid] = img
         return out_img
+
 
 class _DictObjHolder(object):
     def __init__(self, dct):
@@ -130,6 +184,7 @@ class _DictObjHolder(object):
 
     def __getattr__(self, name):
         return self.dct[name]
+
 
 def get_file_path(directory: str) -> list:
     """
@@ -141,6 +196,7 @@ def get_file_path(directory: str) -> list:
         Return:
             - filepaths (list): jpg 파일 경로 목록
     """
+
     filepaths = []
     for root, dirs, files in os.walk(directory):
         for file in files:
@@ -160,6 +216,7 @@ def extract_exif(filepath: str) -> dict:
         Return:
             - exif_table (dict): EXIF 정보가 매핑된 정보입니다.
     """
+
     image       = Image.open(filepath)
     info        = image._getexif()
     exif_table  = {}
@@ -190,6 +247,7 @@ def extract_xmp(filepath: str) -> Tuple[Tuple, Tuple, Tuple]:
                 - gimbal_pitch (float): 드론 짐벌 카메라가 pitch 축으로 회전한 각도
                 - gimbal_roll (float): 드론 짐벌 카메라가 roll 축으로 회전한 각도
     """
+    
     with open(filepath, mode="rb") as f:
         data        = f.read()
         xmp_start   = data.find(b'<x:xmpmeta')

@@ -6,6 +6,11 @@ __all__ = ["TrackingRequest"]
 
 @logged
 class TrackingRequest(BaseModel):
+    """
+        Attributes:
+            - det_result_path (str): 객체탐지와 이상탐지의 결과가 병합된 bbox 정보가 담긴 파일 경로입니다.
+            - result_path (str): 객체추적 결과가 저장될 파일 경로입니다.
+    """
     det_result_path: str = Field(..., description="detection result")
     result_path: str = Field(..., description="tracking result")
 

@@ -232,6 +232,17 @@ def make_video(image_paths, video_name, fps=30, max_resolution=(3840, 2160)):
     os.system(f"rm {video_name.split('.')[0]}_temp.mp4")
 
 def main(args):
+    """
+        BirdEyeView (BEV) 시각화를 수행 후 비디오를 생성합니다.
+
+        Args:
+            - args (argparse.ArgumentParser): BEV 시각화에 사용할 인자입니다.
+                - args.bbox_path (str): BEV와 매칭되도록 변환된 bbox가 위치하는 파일 경로입니다.
+                - args.output_video (str): BEV 시각화가 적용된 영상이 저장될 파일 경로입니다. 
+                - args.input_dir (str): BEV 시각화를 수행할 프레임이 저장된 디렉터리 경로입니다.
+                - args.output_dir (str): BEV 시각화를 적용한 프레임이 저장될 디렉터리 경로입니다.
+                - args.GSD_path (str): BEV 변환에 필요한 GSD 값이 기재된 파일 경로입니다.
+    """
     start_time = time.time()
     frame_rate=30
     image_paths = get_image_paths(args.input_dir)

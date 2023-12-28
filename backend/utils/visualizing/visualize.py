@@ -23,6 +23,19 @@ def read_log_file(log_path):
     return df
 
 def calculate_nearest_distance(centers, classes, track_ids, GSD):
+    """
+        선박과 돌고래 간의 최단거리를 계산합니다.
+    
+        Args:
+            - centers (list): 선박의 중심점이 담긴 배열입니다.
+            - classes (list): 클래스 정보가 담긴 배열입니다.
+            - track_ids (list): track_id가 담긴 배열입니다.
+            - GSD (float): gsd 값입니다.
+
+        Return:
+            - dolphin_present (bool): 돌고래 존재 여부를 의미합니다.
+            - distances (list): 병합된 돌고래 바운딩 박스 중심과 선박간의 실제 거리가 담긴 배열입니다.
+    """
     global merged_dolphin_center
     distances = {}
     dolphin_present = merged_dolphin_center is not None
@@ -43,6 +56,7 @@ def calculate_speed(center1, center2, frame_rate, GSD):
     """
     두 중심점과 프레임 속도를 기반으로 선박의 속도를 계산합니다.
     """
+    
     # 픽셀 단위의 거리
     pixel_distance = math.sqrt((center2[0] - center1[0]) ** 2 + (center2[1] - center1[1]) ** 2)
     # 실제 거리 (미터 단위)
@@ -90,6 +104,7 @@ def draw_radius_circles(draw, center, radii_info, font, gsd):
     주어진 중심점에서 지정된 반지름으로 원을 그리고 반지름 값을 표시합니다.
     radii_info는 (반지름, 색상) 튜플의 리스트입니다.
     """
+
     for radius, color in radii_info:
         # 원을 그립니다.
         draw.ellipse([center[0] - radius, center[1] - radius, center[0] + radius, center[1] + radius], outline=color, width=15)

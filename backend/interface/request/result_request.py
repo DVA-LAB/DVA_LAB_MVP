@@ -14,9 +14,9 @@ class VisRequest(BaseModel):
             - bbox_path (str): 객체 추적 결과 bbox 정보가 담긴 파일의 경로입니다.
             - set_merged_dolphin_center (bool): 돌고래 bbox를 병합하여 중심점을 설정합니다. 기본값은 False입니다.
 
-    Examples:
-        이 클래스에는 이해를 돕기 위해 `Config` 클래스 내에 예시 구성이 포함되어 있습니다.
-        다음과 같이 인스턴스를 생성할 수 있습니다:
+        Examples:
+            이 클래스에는 이해를 돕기 위해 `Config` 클래스 내에 예시 구성이 포함되어 있습니다.
+            다음과 같이 인스턴스를 생성할 수 있습니다:
 
         >>> request_data = {
         ...     "log_path": "/home/user/log/sync_csv",
@@ -56,18 +56,18 @@ class VisRequestBev(BaseModel):
             - GSD_path (str): GSD 값이 저장된 파일 경로입니다.
             - GSD_save_path (str): 전체 GSD 값이 저장된 파일 경로입니다.
 
-    Examples:
-        이 클래스에는 이해를 돕기 위해 `Config` 클래스 내에 예시 구성이 포함되어 있습니다.
-        다음과 같이 인스턴스를 생성할 수 있습니다:
+        Examples:
+            이 클래스에는 이해를 돕기 위해 `Config` 클래스 내에 예시 구성이 포함되어 있습니다.
+            다음과 같이 인스턴스를 생성할 수 있습니다:
 
-        >>> request_data = {
-        ...     "user_input": "/home/dva4/DVA_LAB/backend/test/input/user_input.txt",
-        ...     "frame_path": "/home/dva4/DVA_LAB/backend/test/frame_origin",
-        ...     "tracking_result": "/home/dva4/DVA_LAB/backend/test/model/tracking/result.txt",
-        ...     "GSD_path": "/home/dva4/DVA_LAB/backend/test/GSD.txt",
-        ...     "GSD_save_path": "/home/dva4/DVA_LAB/backend/test/GSD_total.txt",
-        ... }
-        >>> request = VisRequestBev(**request_data)
+            >>> request_data = {
+            ...     "user_input": "/home/dva4/DVA_LAB/backend/test/input/user_input.txt",
+            ...     "frame_path": "/home/dva4/DVA_LAB/backend/test/frame_origin",
+            ...     "tracking_result": "/home/dva4/DVA_LAB/backend/test/model/tracking/result.txt",
+            ...     "GSD_path": "/home/dva4/DVA_LAB/backend/test/GSD.txt",
+            ...     "GSD_save_path": "/home/dva4/DVA_LAB/backend/test/GSD_total.txt",
+            ... }
+            >>> request = VisRequestBev(**request_data)
 
     """
 

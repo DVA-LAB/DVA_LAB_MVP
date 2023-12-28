@@ -10,6 +10,7 @@ def create_app() -> FastAPI:
         Return:
             - app (FastAPI)
     """
+    
     app = FastAPI()
 
     app.add_middleware(

@@ -6,6 +6,17 @@ __all__ = ["BEV1", "BEV2"]
 
 @logged
 class BEV1(BaseModel):
+    """
+        BirdEyeView (BEV)
+
+        Attributes:
+            - frame_num (int): BEV를 적용할 프레임 번호입니다.
+            - frame_path (str): BEV를 적용할 프레임 파일 경로입니다.
+            - csv_path (str): 동기화된 csv 파일입니다.
+            - objects (list): BEV 상에서의 bbox 값으로 변환된 객체추적 결과입니다.
+            - realdistance (float): 실제거리 값 입니다.
+            - dst_dir (str): BEV가 적용된 프레임이 저장될 디렉터리 경로입니다.
+    """
     frame_num: int = Field(..., description="Frame number")
     frame_path: str = Field(..., description="Path to the frame image")
     csv_path: str = Field(..., description="Path to the CSV file")
@@ -27,6 +38,17 @@ class BEV1(BaseModel):
 
 @logged
 class BEV2(BaseModel):
+    """
+        BirdEyeView (BEV)
+
+        Attributes:
+            - frame_num (int): BEV를 적용할 프레임 번호입니다.
+            - frame_path (str): BEV를 적용할 프레임 파일 경로입니다.
+            - csv_path (str): 동기화된 csv 파일입니다.
+            - objects (list): BEV 상에서의 bbox 값으로 변환된 객체추적 결과입니다.
+            - realdistance (float): 실제거리 값 입니다.
+            - dst_dir (str): BEV가 적용된 프레임이 저장될 디렉터리 경로입니다.
+    """
     frame_num: int = Field(..., description="Frame number")
     frame_path: str = Field(..., description="Path to the frame image")
     csv_path: str = Field(..., description="Path to the CSV file")
