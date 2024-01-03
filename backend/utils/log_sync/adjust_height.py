@@ -16,11 +16,11 @@ def get_geoid_hgt(target_pt):
     """
         국토지리정보원에서 제공하는 KNGeoid18 데이터로부터 geoid의 높이를 구합니다.
 
-        Args:
-            - target_pt (list): [latitude, longitude]의 두 컬럼으로 구성된 입력 포인트입니다.
+        Args
+            - target_pt (list): [latitude, longitude]의 두 컬럼으로 구성된 입력 포인트
 
-        Return:
-            - hgt_geoid (list): geoid의 높이가 담긴 리스트를 반환합니다.
+        Return
+            - hgt_geoid (list): geoid의 높이 정보 리스트
     """
 
     with open('utils/log_sync/KNGeoid18.dat') as geoid_dir:
@@ -42,11 +42,11 @@ def get_obs(target_pt):
     """
         입력 좌표를 국립해양조사원(khoa)의 여러 관측점 중 가장 가까운 관측점과의 거리를 계산합니다.
     
-        Args:
-            - target_pt (list): 위도, 경도 두 컬럼으로 구성된 배열입니다.
+        Args
+            - target_pt (list): 위도, 경도 두 컬럼으로 구성된 배열
 
-        Return:
-            - 여러 관측점 중 가장 가까운 관측점과의 최단 거리를 계산해 반환합니다. (float)
+        Return
+            - 여러 관측점 중 가장 가까운 관측점과의 최단 거리 (float)
     """
 
     dist_obs = {}
@@ -62,12 +62,12 @@ def get_level(date, obs_code='DT_0023'):
     """
         국립해양조사원(khao)의 OpenAPI를 활용하여 조위를 구합니다.
 
-        Args:
+        Args
             - date (str): 날짜
             - obs_code (str): 관측코드
 
-        Return:
-            - 특정 시간에서의 조위 값을 반환합니다. (int)
+        Return
+            - 특정 시간에서의 조위 값 (int)
     """
 
     khoa_url = "http://www.khoa.go.kr/api/oceangrid/tideObs/search.do?" + \
@@ -94,13 +94,14 @@ def get_offset(osd_info, date):
     """
         해수면으로부터의 드론 높이를 계산합니다.
 
-        Args:
-            - osd_info (tuple): (OSD.latitude, OSD.longitude, HOME.latitude, HOME.longitude)로 구성된 정보입니다.
-            - date (str): 비행 날짜입니다.
+        Args
+            - osd_info (tuple): (OSD.latitude, OSD.longitude, HOME.latitude, HOME.longitude)로 구성된 정보
+            - date (str): 비행 날짜
 
-        Return:
-            - osd_hgt_offset (float): 해수면으로부터의 드론 높이 입니다.
+        Return
+            - osd_hgt_offset (float): 해수면으로부터의 드론 높이
     """
+    
     osd_lat, osd_lon, home_lat, home_lon = osd_info
     # osd_lat, osd_lon, home_lat, home_lon =  33.2629, 126.1815, 33.2632, 126.1814
     # date = '20231015171233'

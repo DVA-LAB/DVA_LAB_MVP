@@ -7,14 +7,16 @@ __all__ = ["VisRequest", "VisRequestBev"]
 @logged
 class VisRequest(BaseModel):
     """
-        Attributes:
-            - log_path (str): 로그 파일의 경로입니다.
-            - input_dir (str): 시각화가 적용될 원본 파일의 폴더 경로입니다.
-            - output_video (str): 시각화가 적용된 출력 비디오가 생성될 파일 경로입니다.
-            - bbox_path (str): 객체 추적 결과 bbox 정보가 담긴 파일의 경로입니다.
-            - set_merged_dolphin_center (bool): 돌고래 bbox를 병합하여 중심점을 설정합니다. 기본값은 False입니다.
+        영상 시각화에 필요한 요청 수행을 위한 변수를 포함하는 클래스입니다.
 
-        Examples:
+        Attributes
+            - log_path (str): 로그 파일 경로
+            - input_dir (str): 시각화가 적용될 원본 파일의 폴더 경로
+            - output_video (str): 시각화가 적용된 출력 비디오가 생성될 파일 경로
+            - bbox_path (str): 객체 추적 결과 bbox 정보가 담긴 파일 경로
+            - set_merged_dolphin_center (bool): 돌고래 bbox를 병합하여 중심점을 설정할 것인가의 여부 (기본값: False)
+
+        Examples
             이 클래스에는 이해를 돕기 위해 `Config` 클래스 내에 예시 구성이 포함되어 있습니다.
             다음과 같이 인스턴스를 생성할 수 있습니다:
 
@@ -26,7 +28,6 @@ class VisRequest(BaseModel):
         ...     "set_merged_dolphin_center": False
         ... }
         >>> request = VisRequest(**request_data)
-
     """
 
     log_path: str
@@ -49,14 +50,16 @@ class VisRequest(BaseModel):
 @logged
 class VisRequestBev(BaseModel):
     """
-        Attributes:
+        영상에 BEV 시각화에 필요한 요청 수행을 위해 필요한 변수를 담은 클래스입니다.
+
+        Attributes
             - user_input (str): 사용자의 입력이 저장된 파일 경로입니다.
             - frame_path (str): BEV 시각화를 적용할 프레임이 저장된 경로입니다.
             - tracking_result (str): 객체 추적 결과 bbox가 담긴 파일 경로입니다.
             - GSD_path (str): GSD 값이 저장된 파일 경로입니다.
             - GSD_save_path (str): 전체 GSD 값이 저장된 파일 경로입니다.
 
-        Examples:
+        Examples
             이 클래스에는 이해를 돕기 위해 `Config` 클래스 내에 예시 구성이 포함되어 있습니다.
             다음과 같이 인스턴스를 생성할 수 있습니다:
 
@@ -68,7 +71,6 @@ class VisRequestBev(BaseModel):
             ...     "GSD_save_path": "/home/dva4/DVA_LAB/backend/test/GSD_total.txt",
             ... }
             >>> request = VisRequestBev(**request_data)
-
     """
 
     user_input: str = Field(..., description="user_input_save file")

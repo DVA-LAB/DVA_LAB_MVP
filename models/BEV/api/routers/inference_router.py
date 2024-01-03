@@ -20,25 +20,25 @@ async def bev_1(body: BEV1):
     """
         원본 프레임에 BirdEyeView(BEV) 시각화를 수행합니다.
         
-        Args:
+        Args
             - body
-                - body.frame_num (int): BEV 시각화를 적용하고자 하는 프레임 번호입니다.
-                - body.frame_path (str): BEV 시각화를 적용하고자 하는 번호의 프레임 파일 경로입니다.
-                - body.csv_path (str): 동기화된 csv 파일 경로입니다.
+                - body.frame_num (int): BEV 시각화를 적용하고자 하는 프레임 번호
+                - body.frame_path (str): BEV 시각화를 적용하고자 하는 번호의 프레임 파일 경로
+                - body.csv_path (str): 동기화된 csv 파일 경로
                 - body.objects (list): 객체추적 결과입니다. ex) [frame_id, track_id, label, bbox, score, -1, -1, -1]
-                - body.realdistance (float): 실제 거리 값입니다.
-                - body.dst_dir (str): BEV 시각화가 적용된 프레임이 저장될 디렉터리 경로입니다.
+                - body.realdistance (float): 실제 거리 값
+                - body.dst_dir (str): BEV 시각화가 적용된 프레임이 저장될 디렉터리 경로
 
-        Raise:
-            - HTTPException: BEV 변환에 실패했을 경우 서버 에러(500)를 발생시킵니다.
+        Raise
+            - fastapi.HTTPException: BEV 변환에 실패했을 경우 서버 에러(500)를 발생
 
-        Return:
+        Return
             - result (tuple)
-                - rst (int): BEV 변환 성공 여부를 판단합니다. 
-                - img_dst (str): BEV 적용한 이미지 경로입니다.
-                - objects (list): BEV 상에서의 bbox로 정보로 변경된 객체추적 결과입니다. ex) [frame_id, track_id, label, bbox, score, -1, -1, -1]
-                - pixel_size (float): 한 픽셀당 실제 크기입니다.
-                - gsd (float): GSD 값입니다.
+                - rst (int): BEV 변환 성공 여부
+                - img_dst (str): BEV 적용한 이미지 경로
+                - objects (list): BEV 상에서의 bbox로 정보로 변경된 객체추적 결과 ex) [frame_id, track_id, label, bbox, score, -1, -1, -1]
+                - pixel_size (float): 한 픽셀당 실제 크기
+                - gsd (float): GSD 값
     """
 
     try:
@@ -52,9 +52,7 @@ async def bev_1(body: BEV1):
         )
         return result
     except:
-        raise HTTPException(
-            status_code=500, detail="BEV conversion failed or no image path returned"
-        )
+        raise HTTPException(status_code=500, detail="BEV conversion failed or no image path returned")
 
 
 @router.post(
@@ -66,25 +64,25 @@ async def bev_2(body: BEV2):
     """
         원본 프레임에 BirdEyeView(BEV) 시각화를 수행합니다.
         
-        Args:
+        Args
             - body
-                - body.frame_num (int): BEV 시각화를 적용하고자 하는 프레임 번호입니다.
-                - body.frame_path (str): BEV 시각화를 적용하고자 하는 번호의 프레임 파일 경로입니다.
-                - body.csv_path (str): 동기화된 csv 파일 경로입니다.
-                - body.objects (list): 객체추적 결과입니다. ex) [frame_id, track_id, label, bbox, score, -1, -1, -1]
-                - body.realdistance (float): 실제 거리 값입니다.
-                - body.dst_dir (str): BEV 시각화가 적용된 프레임이 저장될 디렉터리 경로입니다.
+                - body.frame_num (int): BEV 시각화를 적용하고자 하는 프레임 번호
+                - body.frame_path (str): BEV 시각화를 적용하고자 하는 번호의 프레임 파일 경로
+                - body.csv_path (str): 동기화된 csv 파일 경로
+                - body.objects (list): 객체추적 결과 ex) [frame_id, track_id, label, bbox, score, -1, -1, -1]
+                - body.realdistance (float): 실제 거리 값
+                - body.dst_dir (str): BEV 시각화가 적용된 프레임이 저장될 디렉터리 경로
 
-        Raise:
+        Raise
             - HTTPException: BEV 변환에 실패했을 경우 서버 에러(500)를 발생시킵니다.
 
-        Return:
+        Return
             - result (tuple)
-                - rst (int): BEV 변환 성공 여부를 판단합니다. 
-                - img_dst (str): BEV 적용한 이미지 경로입니다.
-                - objects (list): BEV 상에서의 bbox로 정보로 변경된 객체추적 결과입니다. ex) [frame_id, track_id, label, bbox, score, -1, -1, -1]
-                - pixel_size (float): 한 픽셀당 실제 크기입니다.
-                - gsd (float): GSD 값입니다.
+                - rst (int): BEV 변환 성공 여부
+                - img_dst (str): BEV 적용한 이미지 경로
+                - objects (list): BEV 상에서의 bbox로 정보로 변경된 객체추적 결과 ex) [frame_id, track_id, label, bbox, score, -1, -1, -1]
+                - pixel_size (float): 한 픽셀당 실제 크기
+                - gsd (float): GSD 값
     """
 
     try:
@@ -98,9 +96,7 @@ async def bev_2(body: BEV2):
         )
         return result
     except:
-        raise HTTPException(
-            status_code=500, detail="BEV conversion failed or no image path returned"
-        )
+        raise HTTPException(status_code=500, detail="BEV conversion failed or no image path returned")
 
 
 # @router.post(
@@ -168,11 +164,11 @@ def extract_frame_number(filename):
     """
         파일명에서 프레임 번호를 추출합니다.
 
-        Args:
-            - filename (str): 프레임 번호를 추출할 파일명입니다.
+        Args
+            - filename (str): 프레임 번호를 추출할 파일명
 
-        Return:
-            - frame_number (int): 프레임 번호입니다.
+        Return
+            - frame_number (int): 프레임 번호
     """
 
     # Extract the part of the filename without the directory and extension
@@ -190,11 +186,11 @@ def read_float_from_file(file_path):
     """
         파일에 기재된 float 값을 읽어 반환합니다.
 
-        Args:
-            - file_path (str): float 값이 작성된 파일 경로입니다.
+        Args
+            - file_path (str): float 값이 작성된 파일 경로
 
-        Return:
-            - float type의 값이 반환됩니다.
+        Return
+            - float type의 값이 반환
     """
 
     with open(file_path, "r") as file:

@@ -31,9 +31,15 @@ source_suffix = {
 master_doc = 'index'
 
 templates_path = ['_templates']
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'pull_request_template.md']
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'pull_request_template.md',
+                    '**models/sahi_detection**',
+                    '**models/bytetrack/api/services**'
+                    ]
 
 language = 'ko'
+
+
+add_module_names = False
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output

@@ -8,7 +8,7 @@ def plot_detections(anomaly_detections, yolo_detections, output_detections, imag
         Anomaly detections, YOLO detections, and final detections are plotted in red, blue, and green, respectively.
         Detections format: [frame, x, y, x+w, y+h, ...]
 
-        Args:
+        Args
             - anomaly_detections (list): 이상 탐지 결과 
             - yolo_detections (list): 객체 탐지 결과
             - output_detections (list): ?
@@ -66,13 +66,14 @@ def calculate_distance(box1, box2):
     """
         두 box의 중심점 간의 유클리드 거리를 계산합니다.
 
-        Args:
+        Args
             - box1 (list): 첫 번째 box (x, y, w, h)
             - box2 (list): 두 번째 box (x, y, w, h)
 
-        Return:
-            - distance (float)
+        Return
+            - distance (float): 두 box의 중심점 간의 거리
     """
+
     center1_x, center1_y = (box1[0] + box1[2]) / 2, (box1[1] + box1[3]) / 2
     center2_x, center2_y = (box2[0] + box2[2]) / 2, (box2[1] + box2[3]) / 2
     distance = ((center1_x - center2_x) ** 2 + (center1_y - center2_y) ** 2) ** 0.5
@@ -83,15 +84,16 @@ def match_and_ensemble(anomaly_outputs, detection_outputs, use_anomaly, output_f
     """
         이상 탐지의 결과와 객체 탐지의 결과를 앙상블 합니다.
     
-        Args:
+        Args
             - anomaly_outputs (list): 이상 탐지 결과 리스트
             - detection_outputs (list): 객체 탐지 결과 리스트
             - use_anomaly (bool): anomaly 적용 여부
             - output_file (str): 이상 탐지 & 객체 탐지 앙상블 결과 파일 저장경로
 
-        Return:
-            - output (list): 이상 탐지 결과와 객체 탐지 결과가 앙상블된 bbox 입니다.
+        Return
+            - output (list): 이상 탐지 결과와 객체 탐지 결과가 앙상블된 bbox
     """
+
     output = []
     confidence_threshold = 0.7
     grouped_anomaly_outputs = {}
@@ -134,12 +136,11 @@ def read_file(file_path):
     """
         탐지 결과 파일을 라인 별로 읽고 라인 별로 리스트를 만든 2차원 리스트를 반환합니다.
     
-        Args:
-            - file_path (str): 탐지 결과 파일 경로입니다.
+        Args
+            - file_path (str): 탐지 결과 파일 경로
 
-        Return:
+        Return
             - detections (list): 라인 별 탐지 결과가 담긴 2차원 리스트
-
     """
 
     with open(file_path, 'r') as file:
@@ -152,12 +153,11 @@ def read_csv_file(file_path):
     """
         csv 파일을 행단위로 읽어 리스트를 만든 2차원 리스트를 반환합니다.
 
-        Args:
+        Args
             - file_path (str): csv 파일 경로
 
-        Return:
+        Return
             - detections (list): csv 파일 행단위 별 리스트가 담긴 2차원 리스트
-
     """
 
     detections = []

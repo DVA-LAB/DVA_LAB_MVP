@@ -16,6 +16,17 @@ class Segment:
         self.processor = SamProcessor.from_pretrained("facebook/sam-vit-huge")
 
     def do_seg(self, bgr_img, boxes):
+        """
+            세그멘테이션 모델 추론을 수행하고 마스크를 추출합니다.
+
+            Args
+                - bgr_img (np.ndarray):
+                - boxes (?): ?
+            
+            Return
+                - masks (?): ?
+        """
+
         self.rgb_img = cv2.cvtColor(bgr_img, cv2.COLOR_BGR2RGB)
 
         if len(boxes):
@@ -37,6 +48,15 @@ class Segment:
             return None
 
     def show_mask(self, masks, random_color=False, save=None):
+        """
+            ?
+
+            Args
+                - masks (?): ?
+                - random_color (bool): 색상 랜덤 여부
+                - save (bool): 마스크 이미지 저장 여부
+        """
+
         plt.imshow(np.array(self.rgb_img))
         ax = plt.gca()
         for mask in masks:
@@ -50,6 +70,16 @@ class Segment:
         plt.show()
 
     def show_mask_bbox(self, masks, bboxes, random_color=False, save=None):
+        """
+            ?
+
+            Args
+                - masks (?): ?
+                - bboxes (list): bbox 리스트
+                - random_color (bool): 색상 랜덤 여부
+                - save (bool): 마스크 이미지 저장 여부
+        """
+
         for bbox in bboxes:
             x1, y1, x2, y2 = bbox
             cv2.rectangle(self.rgb_img, (x1, y1), (x2, y2), (255, 0, 0), 10)
@@ -57,6 +87,16 @@ class Segment:
 
     @staticmethod
     def get_color(random_color):
+        """
+            랜덤 색상 또는 고정된 색상을 가져옵니다.
+            
+            Args
+                - random_color (bool): 색상 랜덤 여부
+
+            Return
+                - color (np.array): 색상 정보
+        """
+
         if random_color:
             color = np.concatenate([np.random.random(3), np.array([0.6])], axis=0)
         else:
@@ -66,6 +106,16 @@ class Segment:
 
 if __name__ == "__main__":
     def convert_to_xyxy(bbox):
+        """
+            ?
+
+            Args
+                - bbox (list): [x_min, y_min, width, height]
+
+            Return
+                - bbox (list): [x_min, y_min, x_min+ width, y_min + height]
+        """
+
         x_min, y_min, width, height = bbox
         x1, y1 = x_min, y_min
         x2, y2 = x_min + width, y_min + height

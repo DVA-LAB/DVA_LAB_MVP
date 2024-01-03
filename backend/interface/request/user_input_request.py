@@ -19,9 +19,11 @@ class PointDistance(BaseModel):
 @logged
 class UserInput(BaseModel):
     """
-        Attributes:
-            - frame_number (int): 포인트 거리와 연관된 프레임 번호입니다.
-            - point_distances (List[PointDistance]): 포인트 쌍과 그들 간의 거리의 리스트입니다.
+        유저의 입력에 필요한 변수가 담긴 클래스입니다.
+
+        Attributes
+            - frame_number (int): 프레임 번호
+            - point_distances (List[PointDistance]): 두 점의 (x, y)좌표 정보와 두 점간의 거리가 담긴 리스트
     """
 
     frame_number: int = Field(description="Frame number associated with the point distances")

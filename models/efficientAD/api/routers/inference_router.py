@@ -39,15 +39,15 @@ async def anomaly_inference(request_body: SegRequest):
     """
         이상탐지 모델에 인퍼런스를 수행한 결과를 반환합니다.
 
-        Args:
+        Args
             - request_body
-                - request_body.frame_path (str): 이상탐지를 수행할 프레임 파일경로입니다.
-                - request_body.slices_path (str): 이상탐지를 수행할 프레임 파일이 슬라이싱된 디렉터리 경로입니다.
-                - request_body.output_path (str): 이상탐지 결과가 저장될 파일경로입니다.
+                - request_body.frame_path (str): 이상탐지를 수행할 프레임 파일경로
+                - request_body.slices_path (str): 이상탐지를 수행할 프레임 파일이 슬라이싱된 디렉터리 경로
+                - request_body.output_path (str): 이상탐지 결과가 저장될 파일경로
 
-        Return:
-            - output_img (np.ndarray): 이상탐지를 수행한 결과 이미지입니다.
-            - output_mask (?): 
+        Return
+            - output_img (np.ndarray): 이상탐지를 수행한 결과 이미지
+            - output_mask (?): ?
             - output_list (list): N x [frame_number, class_id, x1, y1, w1, h1, anomaly_score]
     """
 
@@ -58,16 +58,17 @@ def ad_slice_inference(frame_path, slices_path, output_path):
     """
         이상탐지 모델에 인퍼런스를 수행한 결과를 반환합니다.
 
-        Args:
-            - frame_path (str): 이상탐지를 수행할 프레임 파일경로입니다.
-            - slices_path (str): 이상탐지를 수행할 프레임 파일이 슬라이싱된 디렉터리 경로입니다.
-            - output_path (str): 이상탐지 결과가 저장될 파일경로입니다.
+        Args
+            - frame_path (str): 이상탐지를 수행할 프레임 파일경로
+            - slices_path (str): 이상탐지를 수행할 프레임 파일이 슬라이싱된 디렉터리 경로
+            - output_path (str): 이상탐지 결과가 저장될 파일경로
 
-        Return:
-            - output_img (np.ndarray): 이상탐지를 수행한 결과 이미지입니다.
-            - output_mask (?): 
+        Return
+            - output_img (np.ndarray): 이상탐지를 수행한 결과 이미지
+            - output_mask (?): ?
             - output_list (list): N x [frame_number, class_id, x1, y1, w1, h1, anomaly_score]
     """
+    
     config = get_configurable_parameters("efficient_ad")
     config.trainer.resume_from_checkpoint = os.path.join(add_path, 'services', 'weights', 'model.ckpt')
 

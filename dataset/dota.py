@@ -16,15 +16,16 @@ def calculate_object_ratio(obj_w, obj_h, img_w, img_h):
     """
         객체의 비율을 계산하여 반환합니다.
 
-        Args:
+        Args
             - obj_w (float): 객체의 가로 크기
             - obj_h (float): 객체의 세로 크기
             - img_w (float): 이미지의 가로 크기
             - img_h (float): 이미지의 세로 크기
                 
-        Return:
+        Return
             - (객체의 넓이 / 이미지 넓이) * 100
     """
+
     obj_area = obj_w * obj_h
     img_area = img_w * img_h
     return (obj_area / img_area) * 100
@@ -32,9 +33,9 @@ def calculate_object_ratio(obj_w, obj_h, img_w, img_h):
 
 def generate_random_crop_coordinates(xmin, ymin, xmax, ymax, img_w, img_h, crop_size):
     """
-        랜덤으로 크롭된 좌표(bbox)를 생성합니다. (why and for what?)
+        랜덤으로 크롭된 좌표(bbox)를 생성합니다.
 
-        Args:
+        Args
             - xmin (float): bbox의 x좌표 최소값
             - ymin (float): bbox의 y좌표 최소값
             - xmax (float): bbox의 x좌표 최대값 
@@ -43,13 +44,13 @@ def generate_random_crop_coordinates(xmin, ymin, xmax, ymax, img_w, img_h, crop_
             - img_h (int): 이미지 세로 크기
             - crop_size (int): 크롭할 영역의 한 변의 길이 (정사각형)
 
-        Return:
+        Return
             - start_x (int): 랜덤 시작 x 좌표
             - start_y (int): 랜덤 시작 y 좌표
             - end_x (int): 랜덤 종료 x 좌표 + crop_size
             - end_y (int): 랜덤 종료 y 좌표 + crop_size
-
     """
+
     min_x = max(0, xmin - crop_size + (xmax - xmin))
     max_x = min(img_w - crop_size, xmin)
     min_y = max(0, ymin - crop_size + (ymax - ymin))
@@ -70,7 +71,7 @@ def check_object_within_crop(xmin, ymin, xmax, ymax, start_x, start_y, end_x, en
     """
         객체가 크롭된 범위 이내에 있는지 확인합니다.
         
-        Args:
+        Args
             - xmin (float): bbox의 x좌표 최소값
             - ymin (float): bbox의 y좌표 최소값
             - xmax (float): bbox의 x좌표 최대값
@@ -79,8 +80,9 @@ def check_object_within_crop(xmin, ymin, xmax, ymax, start_x, start_y, end_x, en
             - start_y (int): 랜덤 시작 y 좌표
             - end_x (int): 랜덤 종료 x 좌표
             - end_y (int): 랜덤 종료 y 좌표
-        Return:
-            - Bool(True or False)을 반환합니다.
+            
+        Return
+            - True or False (bool)
     """
 
     return xmax > start_x and xmin < end_x and ymax > start_y and ymin < end_y
@@ -90,12 +92,12 @@ def process_image_and_labels(row):
     """
         ?
 
-        Args:
+        Args
             - row (?): 
 
-        Return:
-            - imgs (list): 크롭된 이미지가 담긴 배열입니다.
-            - objects (list): 크롭된 bbox와 label이 dictionary 형태로 담긴 배열입니다. 
+        Return
+            - imgs (list): 크롭된 이미지가 담긴 배열
+            - objects (list): 크롭된 bbox와 label이 dictionary 형태로 담긴 배열
             
             ex) objects.append({"bbox": cropped_bboxes, "categories": cropped_categories})
     """
@@ -161,9 +163,9 @@ def get_dataset(save_path, exist_ok=False):
     """
         데이터셋을 로드하고 반환합니다.
 
-        Args:
-            - save_path (str): 데이터셋의 메타데이터가 저장될 파일경로입니다.
-            - exist_ok (bool): 메타데이터 파일의 존재여부를 의미합니다.
+        Args
+            - save_path (str): 데이터셋의 메타데이터가 저장될 파일경로
+            - exist_ok (bool): 메타데이터 파일의 존재여부
 
         Return:
             dataset (?): ?

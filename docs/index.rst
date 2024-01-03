@@ -8,9 +8,32 @@ Welcome to DVA Lab's documentation!
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: Getting Started:
 
 
+.. toctree::
+   :maxdepth: 2
+   :caption: backend
+   
+   backend.api.rst
+   backend.interface.rst
+
+.. toctree::
+   :maxdepth: 2
+   :caption: models
+
+   models.BEV.rst
+   models.bytetrack.rst
+   models.efficientAD.rst
+   models.refiner.rst
+
+
+.. toctree::
+   :maxdepth: 2
+   :caption: dataset
+
+   dataset.rst
+   
 
 Indices and tables
 ==================
