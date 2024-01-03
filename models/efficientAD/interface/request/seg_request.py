@@ -7,6 +7,13 @@ __all__ = ["SegRequest"]
 
 @logged
 class SegRequest(BaseModel):
+    """
+        이상탐지 요청 수행에 필요한 프레임 변수 경로를 포함하는 클래스입니다.
+
+        Attributes
+            - frame_path (str): 프레임 경로
+    """
+
     frame_path: str = Field(description="Frame path")
     slices_path: str = Field(description="Slices path")
     output_path: str = Field(description="Test path")

@@ -16,10 +16,10 @@ def parse_srt_time(time_str):
     """
         SRT 시간 문자열을 datetime 객체로 변환합니다.
 
-        Args:
+        Args
             - time_str (str): 시간 문자열
 
-        Return:
+        Return
             - datetime.timedelta(seconds=total_seconds)
     """
 
@@ -35,11 +35,11 @@ def make_video_segment(video_filename, srt_filename):
     """
         SRT 파일을 파싱하여 VideoSegment 목록을 생성합니다.
 
-        Args:
+        Args
             - video_filename (str): 비디오 파일이름
             - srt_filename (str): srt 파일이름
 
-        Returns:
+        Returns
             - video_segments (list): VideoSegment 객체 목록
     """
 

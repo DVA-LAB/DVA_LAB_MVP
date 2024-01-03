@@ -20,13 +20,14 @@ def get_log(csv_path):
     """
         log csv 파일을 데이터 프레임 형식으로 변환합니다.
 
-        Args:
-            - csv_path (str): 데이터 프레임으로 변환할 csv 파일 경로입니다.
+        Args
+            - csv_path (str): 데이터 프레임으로 변환할 csv 파일 경로
 
-        Return:
-            - pd_use_log (pd.DataFrame): csv 파일을 pandas 데이터 프레임 형식으로 만든 데이터입니다.
-            - base_time (datetime): csv 파일명에서 추출한 시간 정보를 반환합니다.
+        Return
+            - pd_use_log (pd.DataFrame): csv 파일을 pandas 데이터 프레임 형식으로 만든 데이터
+            - base_time (datetime): csv 파일명에서 추출한 시간 정보
     """
+
     pd_log = pd.read_csv(csv_path, encoding='utf-8', low_memory=False).reset_index(drop=False)
     pd_log.columns = list(pd_log.iloc[0])
 
@@ -48,12 +49,12 @@ def get_srt(srt_path, osd_typ='mavic2zoom'):
     """
         srt 로그를 데이터 pandas 데이터 프레임 형식으로 변환합니다.
 
-        Args:
-            - srt_path (str): srt 파일이 저장된 경로입니다.
-            - osd_type (str): 드론 기종을 나타내는 정보입니다.
+        Args
+            - srt_path (str): srt 파일 경로
+            - osd_type (str): 드론 기종 정보
             
-        Return:
-            - pd_srt (pd.DataFrame): pandas 데이터 프레임 형식으로 변환된 srt 데이터 입니다.
+        Return
+            - pd_srt (pd.DataFrame): pandas 데이터 프레임 형식으로 변환된 srt 데이터
 
             ex) pd.DataFrame({'time_now': df_time, 'latitude': df_lat, 'longitude': df_lon, 'focal_length': df_fl})
     """
@@ -95,13 +96,11 @@ def get_mov_idx(pd_log):
     """
         csv 파일에서 SRT index 후보를 탐색합니다.    
     
-        Args:
-            - pd_log(pd.DataFrame): pandas 데이터 프레임 형식으로 변환된 log입니다.
+        Args
+            - pd_log(pd.DataFrame): pandas 데이터 프레임 형식으로 변환된 log
 
-        Return:
-            - pd_idx (pd.DataFrame): 시작 인덱스와 종료 인덱스가 담긴 데이터 프레임입니다.
-
-            ex) pd.DataFrame({'idx_start': start_idx, 'idx_end': end_idx})
+        Return
+            - pd_idx (pd.DataFrame): 시작 인덱스와 종료 인덱스가 담긴 데이터 프레임 ex) pd.DataFrame({'idx_start': start_idx, 'idx_end': end_idx})
     """
 
     mov_status = list(pd_log['CAMERA.isVideo'])
@@ -131,14 +130,14 @@ def get_time_diff(time1, time2):
     """
         두 타임스탬프 간의 차이를 계산하여 초 단위로 반환합니다.
 
-        Args:
-            - time1 (?): 첫 번째 타임스탬프입니다.
-            - time2 (?): 두 번째 타임스탬프입니다.
+        Args
+            - time1 (?): 첫 번째 타임스탬프
+            - time2 (?): 두 번째 타임스탬프
 
-        Return:
-            - 두 타임스탬프 간의 차이를 초 단위로 나타낸 값입니다.
-    
+        Return
+            - 두 타임스탬프 간의 차이를 초 단위로 나타낸 값
     """
+
     if time1 > time2:
         return (time1 - time2).seconds
     elif time1 < time2:
@@ -151,12 +150,13 @@ def get_num_frame(mov_path):
     """
         비디오 파일의 프레임 개수를 반환합니다.
 
-        Args:
-            - mov_path (str): 비디오 파일의 경로입니다.
+        Args
+            - mov_path (str): 비디오 파일의 경로
 
-        Return:
-            - cnt_frame (int): 프레임 개수입니다.
+        Return
+            - cnt_frame (int): 프레임 개수
     """
+
     video = cv2.VideoCapture(mov_path)
     cnt_frame = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
 
@@ -168,16 +168,17 @@ def match_srt(pd_log, pd_srt, pd_idx):
     """
         log 파일과 srt 파일 간 매칭을 수행합니다.
         
-        Args:
+        Args
             - pd_log (pd.DataFrame): pandas 데이터 프레임 형식으로 변환된 log입니다.
             - pd_srt (pd.DataFrame): pandas 데이터 프레임 형식으로 변환된 srt입니다.
             - pd_idx (pd.DataFrame): ?
 
-        Return:
+        Return
             - pd_log (pd.DataFrame): ?
             - start_idx (?): ?
             - end_idx (?): ?
     """
+
     # get lat/lon info of start & end point in input SRT file
     start_point = list(pd_srt[['time_now','latitude','longitude']].iloc[0])
 
@@ -244,13 +245,14 @@ def adjust_csv_w_srt(pd_log, pd_srt):
     """
         ?
 
-        Args:
+        Args
             - pd_log (pd.DataFrame): pandas 데이터 프레임 형식으로 변환된 log 입니다.
             - pd_srt (pd.DataFrame): pandas 데이터 프레임 형식으로 변환된 srt 입니다.
 
-        Return:
+        Return
             - pd_log_final (pd.DataFrame): ?
     """
+
     pd_log_adjust = pd_log.copy()
     pd_log_adjust = pd_log_adjust.drop(['CUSTOM.date [local]','CAMERA.isVideo','OSD.droneType'], axis='columns')
 
@@ -277,11 +279,11 @@ def adjust_csv_wo_srt(pd_log, cnt_frame):
     """
         ?
         
-        Args:
+        Args
             - pd_log (pd.DataFrame): pandas 데이터 프레임 형식으로 변환된 log입니다.
             - cnt_frame (int): 비디오의 프레임 개수입니다.
         
-        Return:
+        Return
             - pd_log_final (pd.DataFrame): ?
     """
     pd_log_adjust = pd_log.copy()
@@ -393,13 +395,13 @@ def do_sync(video_path, csv_path, srt_path, save_path):
 
         동기화된 파일은 `save_path` 경로에 `sync_log.csv`라는 파일명으로 저장됩니다.
 
-        Args:
-            - video_path (str): 비디오 파일 경로입니다.
-            - csv_path (str): csv 파일 경로입니다.
-            - srt_path (str): srt 파일 경로입니다.
-            - save_path (str): 동기화된 파일이 저장될 경로입니다.
-
+        Args
+            - video_path (str): 비디오 파일 경로
+            - csv_path (str): csv 파일 경로
+            - srt_path (str): srt 파일 경로
+            - save_path (str): 동기화된 파일이 저장될 경로
     """
+
     log_dirs = glob.glob(os.path.join(csv_path, '*.csv'))
     assert len(log_dirs) == 1, '[ERROR] Input log file should be one'
     log_dir = log_dirs[0]

@@ -22,11 +22,11 @@ def estimate_focal_length(image_width: int, sensor_width_mm: float, fov_degrees:
     """
         FOV와 이미지 가로 길이가 주어졌을 때 focal length를 추정합니다.
 
-        Args:
+        Args
             - image_width (int): 이미지 가로 크기
             - fov_degrees (float): field of view in degrees
     
-        Return:
+        Return
             - focal_lelngth_mm (float): 추정된 focal length 길이
     """
 
@@ -39,12 +39,12 @@ def get_params_from_csv(csv_file, idx = None):
     """
         csv 파일에서 파라미터를 추출합니다.
 
-        Args:
-            - csv_file (str): csv 파일의 경로입니다.
-            - idx (int): 프레임 번호입니다.
+        Args
+            - csv_file (str): csv 파일의 경로
+            - idx (int): 프레임 번호
             
-        Return:
-            - df (pd.DataFrame): 프레임 번호에 해당하는 행을 반환하며, 프레임 번호가 없을 경우 전체를 반환합니다.
+        Return
+            - df (pd.DataFrame): 프레임 번호에 해당하는 행을 반환하며, 프레임 번호가 없을 경우 전체 반환
     """
 
 
@@ -67,7 +67,7 @@ def BEV_UserInputFrame(frame_num, frame_path, csv_path, objects, realdistance, d
     """
         프레임에 BirdEyeView (BEV)를 적용합니다.
 
-        Args:
+        Args
             - frame_num (int): BEV를 적용할 프레임 번호
             - frame_path (str): BEV를 적용할 프레임 경로
             - csv_path (str): csv 파일 경로
@@ -75,7 +75,7 @@ def BEV_UserInputFrame(frame_num, frame_path, csv_path, objects, realdistance, d
             - realdistance (float): 실제 거리 (Meter)
             - dst_dir (str): BEV가 적용된 프레임이 저장될 디렉터리 경로
     
-        Return:
+        Return
             - rst (bool): 0: Success, 1: rectify fail, 2: fail to calculate gsd
             - img_dst (str): BEV가 적용된 프레임이 저장될 파일 경로
             - objects (list): [frame_id, track_id, label, bbox, score, -1, -1, -1]
@@ -192,19 +192,19 @@ def BEV_Points(image_shape, boundary, boundary_rows, boundary_cols, gsd, eo, R, 
     """
         BEV 상에서의 bbox로 변환된 bbox 정보를 반환합니다.
 
-        Args:
-            - image_shape (tuple): 이미지의 가로 세로입니다.
+        Args
+            - image_shape (tuple): 이미지의 가로 세로
             - boundary (?): ? 
             - boundary_rows (?): ?
             - boundary_cols (?): ? 
-            - gsd (?): GSD 값입니다.
+            - gsd (float): GSD 값
             - eo (?): ?
-            - R (?): BEV 변환에 활용되는 회전행렬 입니다.
+            - R (?): BEV 변환에 활용되는 회전행렬
             - focal_length (float): ?
             - pixel_size (float): unit: m/px
             - obj_points (list): ?
 
-        Return:
+        Return
             - rectify_points (list): BEV 상의 bbox로 변환된 bbox
     """
 
@@ -284,25 +284,25 @@ def BEV_FullFrame(frame_num, frame_path, csv_path, gsd, dst_dir='./', DEV = Fals
     """
         프레임에 BirdEyeView (BEV)를 적용합니다.
         
-        Args:
-            - frame_num (int): BEV를 적용할 프레임 번호입니다.
-            - frame_path (str): BEV를 적용할 프레임 경로입니다.
-            - csv_path (str): csv 파일 경로입니다.
-            - gsd (float): gsd 값입니다.
-            - dst_dir (str): BEV가 적용된 프레임이 저장될 디렉터리 경로입니다.
-            - DEV (bool): 
+        Args
+            - frame_num (int): BEV를 적용할 프레임 번호
+            - frame_path (str): BEV를 적용할 프레임 경로
+            - csv_path (str): csv 파일 경로
+            - gsd (float): gsd 값
+            - dst_dir (str): BEV가 적용된 프레임이 저장될 디렉터리 경로
+            - DEV (bool): ?
     
-        Return:
+        Return
             - rst (int): 0: Success, 1: rectify fail, 2: fail to calculate gsd
-            - transformed_img (np.ndarray): BEV가 변환된 이미지입니다.
-            - bbox ():
-            - boundary_rows (?):
-            - boundary_cols (?):
+            - transformed_img (np.ndarray): BEV로 변환된 이미지
+            - bbox (?): ?
+            - boundary_rows (?): ?
+            - boundary_cols (?): ?
             - gsd (float): gsd 값입니다.
-            - eo (?):
-            - R (?): BEV 변환에 활용되는 회전행렬 입니다.
-            - focal_length (float):
-            - pixel_size ():
+            - eo (?): ?
+            - R (?): BEV 변환에 활용되는 회전행렬
+            - focal_length (float): 초점 거리
+            - pixel_size (?): ?
     """
 
     # Step 0 : Meta Info.

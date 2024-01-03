@@ -16,9 +16,9 @@ class IPM(object):
 
         BEV 변환을 위해 Pin-hole 카메라를 가정합니다.
 
-        `_c`: 카메라 좌표입니다.
-        `_w`: 월드 좌표입니다.
-        `uv`: 입력 이미지에 대해 원근변환 된 uv 2D 좌표입니다.
+        `_c`: 카메라 좌표
+        `_w`: 월드 좌표
+        `uv`: 입력 이미지에 대해 원근변환 된 uv 2D 좌표
 
         Inverse perspective mapping to a bird-eye view. Assume pin-hole camera model.
         There are detailed explanation of every step in the comments, and variable names in the code follow these conventions:
@@ -30,7 +30,11 @@ class IPM(object):
         """
             ?
 
+            Args
+                - camera_info (?): ?
+                - ipm_info (?): ?
         """
+
         self.camera_info = camera_info
         self.ipm_info = ipm_info
 
@@ -110,13 +114,13 @@ class IPM(object):
         """
             ?
 
-            Args:
+            Args
                 - xys (?): ?
 
-            Return:
+            Return
                 - xy_w (?): ?
-            
         """
+
         # x축 좌표 반전
         xys[0, :] = -xys[0, :]
         xyzs = np.vstack((xys, -self.camera_info.camera_height * np.ones(xys.shape[1]))) # (x,y,z) after translation
@@ -127,13 +131,13 @@ class IPM(object):
         """
             ?
 
-            Args:
-                - (uvs) (?): ?
+            Args
+                - uvs (?): ?
 
-            Return:
+            Return
                 - xy_w (?): ?
-        
         """
+
         uvs = (uvs - np.array([self.camera_info.u_x, self.camera_info.u_y])[:, None]) /\
               np.array([self.camera_info.f_x, self.camera_info.f_y])[:, None] # converted using camara intrinsic parameters
         uvs = np.vstack((uvs, np.ones(uvs.shape[1])))
@@ -150,10 +154,10 @@ class IPM(object):
         """
            ?
 
-           Args:
+           Args
                 - img (?): ?
 
-           Return:
+           Return
                 - ? (?): ?
         """
 
@@ -163,11 +167,11 @@ class IPM(object):
         """
             ?
 
-            Args:
+            Args
                 - img (?): ?
                 - shape (tuple): ?
             
-            Return:
+            Return
                 - out_img (?): ?
         """
 
@@ -190,10 +194,10 @@ def get_file_path(directory: str) -> list:
     """
         특정 디렉터리 하위에 존재하는 jpg 파일 경로 목록을 추출합니다.
 
-        Args:
+        Args
             - directory (str): 디렉터리 경로
 
-        Return:
+        Return
             - filepaths (list): jpg 파일 경로 목록
     """
 
@@ -210,11 +214,11 @@ def extract_exif(filepath: str) -> dict:
     """
         jpg 파일에서 EXIF 정보를 추출합니다.
 
-        Args:
-            - filepath (str): jpg 파일 경로입니다.
+        Args
+            - filepath (str): jpg 파일 경로
 
-        Return:
-            - exif_table (dict): EXIF 정보가 매핑된 정보입니다.
+        Return
+            - exif_table (dict): EXIF 정보가 매핑된 정보
     """
 
     image       = Image.open(filepath)
@@ -233,10 +237,10 @@ def extract_xmp(filepath: str) -> Tuple[Tuple, Tuple, Tuple]:
     """
         jpg 파일에서 XMP 정보를 추출합니다.
 
-        Args:
-            - filepath (str): jpg 파일 경로입니다.
+        Args
+            - filepath (str): jpg 파일 경로
 
-        Return:
+        Return
             - xmp (tuple): xmp에서 추출한 드론 절대고도, 상대고도 비행 요 각도, 피치각도 롤각도, 짐벌의 요각도, 피치각도 롤각도
                 - altitude_absolute (float): 드론 절대고도
                 - altitude_relative (float): 드론 상대고도
@@ -247,7 +251,7 @@ def extract_xmp(filepath: str) -> Tuple[Tuple, Tuple, Tuple]:
                 - gimbal_pitch (float): 드론 짐벌 카메라가 pitch 축으로 회전한 각도
                 - gimbal_roll (float): 드론 짐벌 카메라가 roll 축으로 회전한 각도
     """
-    
+
     with open(filepath, mode="rb") as f:
         data        = f.read()
         xmp_start   = data.find(b'<x:xmpmeta')
@@ -287,12 +291,12 @@ def estimate_focal_length(image_width: int, fov_degrees: float) -> float:
     """
         이미지 가로 길이와 FOV 가 주어졌을 때 focal length를 추정합니다.
 
-        Args:
+        Args
             - image_width (float): 픽셀상의 이미지 가로 길이
             - fov_degrees (?): field of view in degree
     
     
-        Return:
+        Return
             - 추정 된 픽셀 상의 focal length
     """
 

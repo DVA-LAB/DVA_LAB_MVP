@@ -20,6 +20,18 @@ class Refiner:
         self.processor = SamProcessor.from_pretrained("facebook/sam-vit-huge")
 
     def _get_loader(self, json_path, image_folder):
+        """
+            
+
+            Args
+                - json_path (str): 
+                - image_folder (str): 
+
+            Return
+                - image (np.ndarray):
+                - bbox (list):
+                - anno_id (int):
+        """
         with open(json_path, "r") as file:
             coco_data = json.load(file)
 
@@ -34,6 +46,17 @@ class Refiner:
             yield image, bbox, anno_id
 
     def do_refine(self, json_path, image_folder):
+        """
+            ?
+
+            Args
+                - json_path (str): ?
+                - image_folder (str): ?
+
+            Return
+                - coco_data (json): ?
+        """
+
         loader = self._get_loader(json_path, image_folder)
 
         with open(json_path, "r") as file:
@@ -59,10 +82,29 @@ class Refiner:
         return coco_data
 
     def save_update(self, coco_data, save_path):
+        """
+            ?
+
+            Args
+                - coco_data (json): ?
+                - save_path (str): 파일 저장 경로
+        """
+
         with open(save_path, "w") as file:
             json.dump(coco_data, file, indent=4)
 
     def _get_horizontal_bbox_from_mask(self, mask, bbox):
+        """
+            ?
+            
+            Args
+                - mask (?): ?
+                - bbox (?): ?
+
+            Return
+                - bbox (?): ?
+        """
+
         mask = mask[0, :, :]
         if mask.any():
             y_indices, x_indices = mask.nonzero(as_tuple=True)
@@ -73,10 +115,32 @@ class Refiner:
             return bbox
 
     def update_bbox_with_mask(self, mask, bbox):
+        """
+            ?
+            
+            Args
+                - mask (?): ?
+                - bbox (?): ?
+
+            Return
+                - updated_bbox (?): ?
+        """
+
         updated_bbox = self._get_horizontal_bbox_from_mask(mask[0], bbox)
         return updated_bbox
 
     def _do_seg(self, bgr_img, boxes):
+        """
+            ?
+
+            Args
+                - bgr_img (?): ?
+                - boxes (?): ?
+
+            Return
+                - ? (?): ?
+        """
+
         self.rgb_img = cv2.cvtColor(bgr_img, cv2.COLOR_BGR2RGB)
 
         if len(boxes):
@@ -98,6 +162,15 @@ class Refiner:
             return None
 
     def show_mask(self, masks, random_color=False, save=None):
+        """
+            ?
+
+            Args
+                - mask (?): ?
+                - random_color (bool): 색상 랜덤 여부
+                - save (bool): mask 저장 여부
+        """
+
         plt.imshow(np.array(self.rgb_img))
         ax = plt.gca()
         for mask in masks:
@@ -110,9 +183,18 @@ class Refiner:
             plt.savefig(save, dpi=600)
         plt.show()
 
-    def show_mask_bbox(
-        self, masks, old_bboxes, new_bboxes, random_color=False, save=None
-    ):
+    def show_mask_bbox(self, masks, old_bboxes, new_bboxes, random_color=False, save=None):
+        """
+            ?
+
+            Args
+                - mask (?): ?
+                - old_bboxes (?): ?
+                - new_bboxes (?): ?
+                - random_color (bool): 색상 랜덤 여부
+                - save (bool): mask 저장 여부
+        """
+
         for bbox in old_bboxes:
             x1, y1, x2, y2 = bbox
             cv2.rectangle(self.rgb_img, (x1, y1), (x2, y2), (255, 0, 0), 2)
@@ -122,6 +204,16 @@ class Refiner:
         self.show_mask(masks, random_color, save)
 
     def convert_to_xyxy(self, bbox):
+        """
+            ?
+
+            Args
+                - bbox (list): [x_min, y_min, width, height]
+
+            Return
+                - bbox (list): [x_min, y_min, x_min + width, y_min + height]
+        """
+
         x_min, y_min, width, height = bbox
         x1, y1 = x_min, y_min
         x2, y2 = x_min + width, y_min + height
@@ -129,6 +221,15 @@ class Refiner:
 
     @staticmethod
     def get_color(random_color):
+        """
+            색상을 반환합니다.
+
+            Args
+                - random_color (bool): 색상 랜덤 여부
+
+            Return
+                - color (np.array): 색상
+        """
         if random_color:
             color = np.concatenate([np.random.random(3), np.array([0.6])], axis=0)
         else:
@@ -137,6 +238,16 @@ class Refiner:
 
     @staticmethod
     def calculate_length_along_major_axis(mask):
+        """
+            ?
+
+            Args
+                - mask (?): ?
+
+            Return
+                - length (?): ?
+        """
+
         mask_2d = mask[0, 0, :, :].numpy()  # 첫 번째 채널을 2차원 배열로 변환
         y_coords, x_coords = np.where(mask_2d)
         coords = np.column_stack((x_coords, y_coords))
@@ -154,6 +265,18 @@ class Refiner:
 
     @staticmethod
     def find_rotated_bounding_box_and_max_length(mask):
+        """
+            ?
+
+            Args
+                - mask (?): ?
+
+            Return
+                - max_length (?): ?
+                - box (?): ?
+                - longest_edge_points (tuple): ?
+        """
+
         mask_np = mask.numpy().astype(np.uint8)
         mask_np = mask_np.squeeze()
 

@@ -32,17 +32,17 @@ class RGLARE:
             self.video_save(save_path)
 
     def get_weight(self) -> np.ndarray:
-        '''
+        """
             빛반사에 적용할 프레임 별 가중치를 계산합니다.
 
             프레임 별 가중치는 첫 프레임을 가중치 1을 기준으로 프레임 개수만큼 0.1씩 감소시킵니다.
         
             첫 프레임이 가중치가 제일 높습니다.
 
-            Return:
-                - weight (np.ndarray): 프레임 별 가중치가 담긴 배열입니다.
-        
-        '''
+            Return
+                - weight (np.ndarray): 프레임 별 가중치가 담긴 배열
+        """
+
         weight=[1]
         for _ in range(self.queue_len-1):
             weight.append(weight[-1]-0.1)
@@ -56,38 +56,40 @@ class RGLARE:
         
             첫 프레임이 가중치가 제일 높습니다.
 
-            Return:
-                - weight (torch.Tensor): 프레임 별 가중치가 담긴 배열입니다.
-        
+            Return
+                - weight (torch.Tensor): 프레임 별 가중치가 담긴 배열
         """
+
         weight=[1]
         for _ in range(self.queue_len-1):
             weight.append(weight[-1]-0.1)
         return torch.Tensor(weight)[:,None,None,None].to(self.device)
 
     def video_save(self, save_path) -> None:
-        '''
+        """
             비디오를 저장합니다.
 
-            Args:
-                - save_path (str): 비디오가 저장될 경로입니다.
-        '''
+            Args
+                - save_path (str): 비디오가 저장될 경로
+        """
+
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         fps = self.cap.get(cv2.CAP_PROP_FPS)
         # save_path = video_path.replace(video_path[-4:], '_result'+ video_path[-4:])
         self.out = cv2.VideoWriter(save_path, fourcc, fps, self.frame_size)
 
     def gamma_correction(self, frame:np.ndarray, alpha:float=0.8) -> np.ndarray:
-        '''
+        """
             프레임에서 영상의 밝기 변화를 주기 위해 입력으로 받은 프레임에 alpha 값을 적용해 감마 보정이 적용된 이미지를 반환합니다.
             
-            Args:
-                - frame (np.ndarray): 감마 보정을 적용할 프레임입니다.
-                - alpha (float): Alpha 값입니다.
+            Args
+                - frame (np.ndarray): 감마 보정을 적용할 프레임
+                - alpha (float): Alpha 값
 
-            Return:
-                - gamma_corrected (np.ndarray): 감마 보정이 적용된 이미지입니다.
-        '''
+            Return
+                - gamma_corrected (np.ndarray): 감마 보정이 적용된 이미지
+        """
+
         gamma_corrected = np.power(frame[:,:,2],alpha)
         return gamma_corrected
 
@@ -99,6 +101,7 @@ class RGLARE:
         """
             GPU를 사용해 빛반사가 제거된 비디오를 생성합니다.
         """
+
         with tqdm.tqdm(total=self.total_frame, desc="GPU Remove Light") as pbar:
             while self.frame_count < self.total_frame+self.queue_len:
                 ret, frame = self.cap.read()
@@ -155,9 +158,10 @@ class RGLARE:
         """ 
             GPU를 사용해 빛반사가 제거된 프레임을 생성합니다.
         
-            Return:
-                output_frame (np.ndarray): 빛반사가 제거된 프레임입니다.
+            Return
+                output_frame (np.ndarray): 빛반사가 제거된 프레임
         """
+
         if self.queue_full:
             ret, frame = self.cap.read()
             if ret is None:
@@ -247,9 +251,10 @@ class RGLARE:
             
             영상 모두 반환했다면 None을 반환합니다.
 
-            Return:
-                out_frame (np.ndarray): 빛반사가 적용된 프레임입니다.
+            Return
+                - out_frame (np.ndarray): 빛반사가 제거된 프레임
         '''
+
         if self.queue_full:
             ret, frame = self.cap.read()
             if ret is None:
