@@ -3,10 +3,10 @@ import shutil
 
 import cv2
 import numpy as np
-from models.BEV.api.services.Orthophoto_Maps.main_dg import *
+from api.services.Orthophoto_Maps.main_dg import *
 from fastapi import APIRouter, Depends, status
 from fastapi import HTTPException
-from models.BEV.interface.request.bev_request import BEV1, BEV2
+from interface.request.bev_request import BEV1, BEV2
 
 router = APIRouter(tags=["bev"])
 
