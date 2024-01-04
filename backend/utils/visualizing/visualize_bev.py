@@ -14,7 +14,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 def read_log_file(log_path):
     """
-        로그 파일을 pandas 데이터 프레임으로 읽어 반환합니다.
+        로그 파일을 pandas 데이터 프레임 형식으로 읽고 반환합니다.
 
         Args
             log_path (str): 로그 파일 경로
@@ -204,7 +204,7 @@ def get_max_dimensions(image_paths):
 
 def make_video(image_paths, video_name, fps=30, max_resolution=(3840, 2160)):
     """
-        BEV 시각화된 비디오를 생성합니다.
+        BirdEyeView (BEV)로 시각화된 비디오를 생성합니다.
 
         Args
             - image_paths (list): 이미지 파일 경로 리스트

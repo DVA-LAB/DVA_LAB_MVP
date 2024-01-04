@@ -74,7 +74,7 @@ async def bev_2(body: BEV2):
                 - body.dst_dir (str): BEV 시각화가 적용된 프레임이 저장될 디렉터리 경로
 
         Raise
-            - HTTPException: BEV 변환에 실패했을 경우 서버 에러(500)를 발생시킵니다.
+            - fastapi.HTTPException: BEV 변환에 실패했을 경우 서버 에러(500)를 발생시킵니다.
 
         Return
             - result (tuple)

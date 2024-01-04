@@ -14,13 +14,13 @@ class VideoSegment:
 
 def parse_srt_time(time_str):
     """
-        SRT 시간 문자열을 datetime 객체로 변환합니다.
+        SRT 파일의 시간 문자열로부터 초 기준 시간 정보를 반환합니다.
 
         Args
             - time_str (str): 시간 문자열
 
         Return
-            - datetime.timedelta(seconds=total_seconds)
+            - 전체 초 (datetime.timedelta)
     """
 
     time_str = time_str.replace(",", ".")

@@ -91,10 +91,10 @@ def calculate_speed(center1, center2, frame_rate, GSD):
 
 def read_bbox_data(file_path):
     """
-        bbox.txt 파일을 읽고 프레임별 bounding box 데이터를 저장합니다.
+        bbox.txt 파일을 읽고 프레임별 bbox 정보를 저장합니다.
     
         Args
-            - file_path (str): bbox.txt 파일이 위치하는 경로
+            - file_path (str): bbox 정보가 담긴 파일이 위치하는 경로
 
         Return
             - data (dict): 프레임 번호 당 track_id, bbox, class, conf가 담긴 데이터
@@ -123,7 +123,7 @@ def draw_lines_and_distances(draw, centers, classes, font, gsd, line_color=(0, 0
             - gsd (float): GSD 값
             - line_color (tuple): 선 색
     """
-        
+
     global merged_dolphin_center
     if merged_dolphin_center is None:
         return  # 돌고래가 없으면 거리를 그릴 필요가 없습니다.

@@ -7,8 +7,7 @@ from argparse import Namespace
 import pandas as pd
 import requests
 from autologging import logged
-from fastapi import (APIRouter, Depends, FastAPI, File, Form, HTTPException,
-                     UploadFile, status)
+from fastapi import (APIRouter, Depends, FastAPI, File, Form, HTTPException, UploadFile, status)
 from fastapi.responses import FileResponse, JSONResponse
 from interface.request import VisRequest, VisRequestBev
 from utils.visualizing import visualize_bev
@@ -206,10 +205,8 @@ def get_gsd(frame_number, frame_file, x1, y1, x2, y2, m_distance):
             - m_distance (float): 실제 거리
 
         Return
-            - Tuple(
-                - gsd (float): GSD 값
-                - pixel_size (float): 픽셀 크기
-            )
+            - gsd (float): GSD 값
+            - pixel_size (float): 픽셀 크기
     """
     
     url = "http://112.216.237.124:8001/bev1"
