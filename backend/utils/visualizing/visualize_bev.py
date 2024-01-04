@@ -416,7 +416,7 @@ def main(args):
                         previous_centers_dg[track_id] = (center_x_dg, center_y_dg)
 
                     speed_info = {"frame_id":frame_count, "track_id":track_id,
-                                  "speed(km/h)":speed_kmh_dg, "max_speed(km/h)":max_ship_speed_dg}
+                                  "speed":speed_kmh_dg, "max_speed":max_ship_speed_dg}
                     boat_speed = boat_speed.append(speed_info, ignore_index=True)
 
                 else: # 돌고래인 경우
