@@ -35,7 +35,7 @@ def make_parser():
 
     parser = argparse.ArgumentParser("ByteTrack")
     parser.add_argument("--demo", default="image", help="demo type, eg. image, video and webcam")
-    parser.add_argument("--model", default="yolov8", help="Model name | yolov5, yolox, yolov8")
+    parser.add_argument("--model", default="trt", help="Model name | yolov5, yolox, yolov8, Tensorrt")
     parser.add_argument("-expn", "--experiment-name", type=str, default=None)
     parser.add_argument("-n", "--name", type=str, default=None, help="model name")
     parser.add_argument("--path", default="/home/dva3/workspace/output/test/test01", help="path to images or video")
@@ -44,7 +44,7 @@ def make_parser():
 
     # exp file
     parser.add_argument("-f", "--exp_file", default=None, type=str, help="If you want to use yolox, pls input your expriment description file")
-    parser.add_argument("-c", "--ckpt", default="/mnt/models/v8_m_best.pt", type=str, help="ckpt for inf")
+    parser.add_argument("-c", "--ckpt", default="/mnt/models/yolov8_dva.trt", type=str, help="ckpt for inf")
     parser.add_argument("--device", default="gpu", type=str, help="device to run our model, can either be cpu or gpu")
     parser.add_argument("--conf", default=None, type=float, help="test conf")
     parser.add_argument("--nms", default=None, type=float, help="test nms threshold")
