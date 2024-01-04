@@ -97,7 +97,7 @@ async def inference(request_body: ShipRequest):
                 mask = refiner._do_seg(cv2.imread(frame), [bbox_xyxy])
                 _, _, point = refiner.find_rotated_bounding_box_and_max_length(mask)
                 ships_info.append(
-                    [frame_no, point[0][0], point[0][1], point[1][0], point[1][0]] # 마지막은 point[1][1]이 되어야 하는 것이 아닌지 재검증 필요 (By HE)
+                    [frame_no, point[0][0], point[0][1], point[1][0], point[1][1]] # 마지막은 point[1][1]이 되어야 하는 것이 아닌지 재검증 필요 (By HE)
                 )
             except Exception as e:
                 # TODO@jh: 이미지가 읽히지 않는 프레임이 있는 것 같음. 추후 확인 필요

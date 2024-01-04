@@ -61,6 +61,32 @@ def get_params_from_csv(csv_file, idx = None):
     else : 
         return df.iloc[idx, :]
 
+def get_params_for_dg(csv_file, idx=None):
+    """
+        csv 파일에서 Georeferencing을 위한 파라미터를 추출합니다.
+
+        Args:
+            - csv_file (str): csv 파일의 경로입니다.
+            - idx (int): 프레임 번호입니다.
+
+        Return:
+            - df (pd.DataFrame): 프레임 번호에 해당하는 행을 반환하며, 프레임 번호가 없을 경우 전체를 반환합니다.
+    """
+
+    df = pd.read_csv(csv_file, encoding_errors='ignore')
+    df.loc[:, "R"] = df["GIMBAL.roll"]  # +  df["OSD.roll"]
+    df.loc[:, "P"] = df["GIMBAL.pitch"]  # + df["OSD.pitch"]
+    df.loc[:, "Y"] = df["GIMBAL.yaw"]  # + df["OSD.yaw"]
+    df.loc[:, "V"] = df["adjusted height"]  # Meter
+    df.loc[:, "Drone"] = df["Drone type"].str.upper()
+    df.loc[:, "Lat"] = df["OSD.latitude"]  # Degree
+    df.loc[:, "Lon"] = df["OSD.longitude"]  # Degree
+
+    df = df.loc[:, ["R", "P", "Y", "V", "Drone", "Lat", "Lon"]]
+    if idx == None:
+        return df
+    else:
+        return df.iloc[idx, :]
 
 
 def BEV_UserInputFrame(frame_num, frame_path, csv_path, objects, realdistance, dst_dir, DEV = False):
@@ -388,6 +414,66 @@ def BEV_FullFrame(frame_num, frame_path, csv_path, gsd, dst_dir='./', DEV = Fals
         return rst, None, None, None, None, None, None, None, None, None
 
     return rst, transformed_img, bbox, boundary_rows, boundary_cols, gsd, eo, R, focal_length, pixel_size
+
+def DG_Boundary(frame_num, frame_path, csv_path):
+    """
+        프레임에 Georeferencing을 위한 영역 정보를 산출합니다.
+
+        Args:
+            - frame_num (int): Georeferencing을 적용할 프레임 번호입니다.
+            - frame_path (str): Georeferencing을 적용할 프레임 경로입니다.
+            - csv_path (str): csv 파일 경로입니다.
+
+        Return:
+            - bbox ():
+    """
+
+    # Step 0 : Meta Info.
+    info_row = get_params_for_dg(csv_path, frame_num)  # R, P, Y, V, Drone, Lat, Lon
+
+    drone_model = info_row["Drone"]
+    ground_height = 0  # unit: m
+
+    if DRONE_SENSOR_INFO.get(drone_model) is None:
+        drone_model = "MAVIC PRO"
+    sensor_width = DRONE_SENSOR_INFO[drone_model][0]  # unit: mm
+    sensor_height = DRONE_SENSOR_INFO[drone_model][1]  # unit: mm
+    fov_degrees = DRONE_SENSOR_INFO[drone_model][2]
+
+    image = cv2.imread(frame_path, -1)
+
+    # Step 1. Extract metadata from a df and advance information
+    # focal_length, orientation, eo, maker = get_metadata(file_path)  # unit: m, _, ndarray
+    orientation = 1  # NEED Check from csv??
+    maker = "DJI"  #
+    eo = []  #
+    eo.append(info_row["Lon"]) # longitude
+    eo.append(info_row["Lat"]) # latitude
+    eo.append(info_row["V"])  # altitude
+    eo.append(info_row["R"])  # Roll
+    eo.append(info_row["P"])  # Pitch
+    eo.append(info_row["Y"])  # Yaw
+
+    focal_length = estimate_focal_length(image.shape[1], sensor_width, fov_degrees) / (1000)
+
+    # Step 2. Restore the image based on orientation information
+    restored_image = restoreOrientation(image, orientation)
+
+    image_rows = restored_image.shape[0]
+    image_cols = restored_image.shape[1]
+
+    pixel_size = sensor_width / image_cols  # unit: mm/px
+    pixel_size = pixel_size / 1000  # unit: m/px
+
+    eo = geographic2plane(eo, 5186)  # epsg = 5186 the global coordinate system definition # 5186 : Korea Center
+    opk = rpy_to_opk(eo[3:], maker)  # Roll Pitch Yaw Correction
+    eo[3:] = opk * np.pi / 180  # degree to radian
+    R = Rot3D(eo)  # Rotation Matrix
+
+    # Step 3. Extract a projected boundary of the image
+    bbox = boundary(restored_image, eo, R, ground_height, pixel_size, focal_length)
+
+    return bbox
 
 if __name__ == "__main__":
     ### Test Data ###

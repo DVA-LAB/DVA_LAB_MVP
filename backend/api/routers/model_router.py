@@ -141,9 +141,12 @@ async def inference_detection(img_path, csv_path, sliced_path):
 - `frame_path`: /home/dva4/DVA_LAB/backend/test/frame_origin/DJI_0119_30_00000.jpg
 - `slices_path`: /home/dva4/DVA_LAB/backend/test/model/sliced
 - `output_path`: /home/dva4/DVA_LAB/backend/test/model/segment/DJI_0119_30_00000.jpg
+- `patch_size` : 1024
+- `overlap_ratio` : 0.2
 """,
 )
-async def inference_segmentation(frame_path, slices_path, output_path):
+
+async def inference_segmentation(frame_path, slices_path, output_path, patch_size:int, overlap_ratio:float):
     """
         Pretrained Anomaly Detection 모델을 사용해 이상탐지 인퍼런스 결과를 요청합니다.
 
@@ -174,6 +177,8 @@ async def inference_segmentation(frame_path, slices_path, output_path):
         "frame_path": frame_path,
         "slices_path": slices_path,
         "output_path": output_path,
+        "patch_size": patch_size,
+        "overlap_ratio":overlap_ratio
     }
     response = requests.post(url, headers=headers, data=json.dumps(data))
     if response.status_code != 200:

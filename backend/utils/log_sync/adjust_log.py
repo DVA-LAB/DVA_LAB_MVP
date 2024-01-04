@@ -243,7 +243,7 @@ def match_srt(pd_log, pd_srt, pd_idx):
 
 
 # adjust SRT matching region based on SRT file
-def adjust_csv_w_srt(pd_log, pd_srt):
+def adjust_csv_w_srt(pd_log, pd_srt, cnt_frame):
     """
         ?
 
@@ -258,10 +258,21 @@ def adjust_csv_w_srt(pd_log, pd_srt):
     pd_log_adjust = pd_log.copy()
     pd_log_adjust = pd_log_adjust.drop(['CUSTOM.date [local]','CAMERA.isVideo','OSD.droneType'], axis='columns')
 
-    pd_log_final = pd.DataFrame(index=range(len(pd_srt)), columns=pd_log_adjust.columns)
+    print("video length:", cnt_frame, ' ', "srt length:", len(pd_srt))
+
+    if len(pd_srt) == cnt_frame:
+        print("Length of video and SRT file are same!")
+        print("Thus, we set the final length of log file into the length of SRT file")
+        len_log = len(pd_srt)
+    else:
+        print("Length of video and SRT file are not same..")
+        print("Thus, we set the final length of log file into the length of video")
+        len_log = cnt_frame
+
+    pd_log_final = pd.DataFrame(index=range(len_log), columns=pd_log_adjust.columns)
 
     cnt = 0.
-    cnt_inc = len(pd_srt) / len(pd_log_adjust)
+    cnt_inc = len_log / len(pd_log_adjust)
     for idx in range(len(pd_log_adjust)):
         pd_log_final.iloc[int(cnt)] = pd_log_adjust.iloc[idx]
         cnt += cnt_inc
@@ -269,7 +280,7 @@ def adjust_csv_w_srt(pd_log, pd_srt):
     pd_log_final = pd_log_final.astype('float')
     pd_log_final = pd_log_final.interpolate(method='values')
 
-    pd_log_final.insert(0, 'FrameCnt', [idx+1 for idx in range(len(pd_srt))])
+    pd_log_final.insert(0, 'FrameCnt', [idx+1 for idx in range(len_log)])
     pd_log_final.insert(1, 'focal_length', pd_srt['focal_length'])
     pd_log_final.insert(2, 'datetime', pd_srt['time_now'])
 
@@ -412,6 +423,11 @@ def do_sync(video_path, csv_path, srt_path, save_path):
     pd_use_log, flight_date = get_log(log_dir)
     osd_dronetype = list(set(pd_use_log['OSD.droneType']))[0]
     osd_typ = drone_type[osd_dronetype]
+
+    video_list_1 = glob.glob(os.path.join(video_path, '*.mov'))
+    video_list_2 = glob.glob(os.path.join(video_path, '*.mp4'))
+    mov_dir_list = video_list_1 + video_list_2
+    cnt_frame = get_num_frame(mov_dir_list[0])
     
     out_dir = os.path.join(save_path, 'sync_log.csv')
 
@@ -423,7 +439,7 @@ def do_sync(video_path, csv_path, srt_path, save_path):
             pd_use_idx = get_mov_idx(pd_use_log)
 
             pd_use_log_adjust, start_idx, end_idx = match_srt(pd_use_log, pd_use_srt, pd_use_idx)
-            pd_use_log_final = adjust_csv_w_srt(pd_use_log_adjust, pd_use_srt)
+            pd_use_log_final = adjust_csv_w_srt(pd_use_log_adjust, pd_use_srt, cnt_frame)
 
             # fill unexpected NaN value
             pd_use_log_final = pd_use_log_final.fillna(method='backfill')

@@ -51,10 +51,10 @@ async def anomaly_inference(request_body: SegRequest):
             - output_list (list): N x [frame_number, class_id, x1, y1, w1, h1, anomaly_score]
     """
 
-    output_img, output_mask, output_list = ad_slice_inference(request_body.frame_path, request_body.slices_path, request_body.output_path) # 설정 필요
+    output_img, output_mask, output_list = ad_slice_inference(request_body.frame_path, request_body.slices_path, request_body.output_path, request_body.patch_size, request_body.overlap_ratio) # 설정 필요
     return output_img, output_mask, output_list
 
-def ad_slice_inference(frame_path, slices_path, output_path):
+def ad_slice_inference(frame_path, slices_path, output_path, patch_size, overlap_ratio):
     """
         이상탐지 모델에 인퍼런스를 수행한 결과를 반환합니다.
 
@@ -98,8 +98,9 @@ def ad_slice_inference(frame_path, slices_path, output_path):
     frame_img = cv2.imread(frame)
     
     h, w = frame_img.shape[:2]
-    patch_size = 1024   # 최종적으로는 SAHI에서 적용된 값을 그대로 받아오도록 수정
-    overlap = 0.25      # 
+    # Replace local variable(request body input value)
+    patch_size = patch_size
+    overlap = overlap_ratio
     step = 1 - overlap
     resize_rate = 1
 

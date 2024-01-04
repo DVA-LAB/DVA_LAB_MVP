@@ -12,6 +12,25 @@ import pandas as pd
 from PIL import Image, ImageDraw, ImageFont
 
 
+def get_world_coordinate(boundary, gsd, col, row):
+    """
+        이미지 좌표를 실제세계 좌표로 변환합니다.
+
+        Args
+            boundary (list): 이미지 영역의 실제세계 좌표 정보 (default : EPSG:5186 좌표계)
+            gsd (float) : gsd값
+            col : 이미지 x좌표
+            row : 이미지 y좌표
+
+        Return
+            xgeo : 실제세계 x좌표
+            ygeo : 실제세계 y좌표
+    """
+    xgeo = boundary[0] + gsd * row
+    ygeo = boundary[3] + (-gsd) * col
+
+    return xgeo, ygeo
+
 def read_log_file(log_path):
     """
         로그 파일을 pandas 데이터 프레임 형식으로 읽고 반환합니다.
@@ -60,24 +79,20 @@ def calculate_nearest_distance(dolphin_present, merged_dolphin_center, centers, 
     return distances
 
 
-def calculate_speed(center1, center2, frame_rate, gsd):
+def calculate_speed(center1_dg, center2_dg, frame_rate):
     """
         두 중심점과 프레임 속도를 기반으로 선박의 속도를 계산합니다.
 
-        Args
-            - center1 (list): 첫 번째 중심점이며 [x, y]로 구성
-            - center2 (list): 두 번째 중심점이며 [x, y]로 구성
-            - frame_rate (float): 프레임 레이트
-            - gsd (float): GSD 값
+        Args:
+            - center1_dg (list): 첫 번째 중심점이며 [x_dg, y_dg]로 구성됩니다.
+            - center2_dg (list): 두 번째 중심점이며 [x_dg, y_dg]로 구성됩니다.
+            - frame_rate (float): 프레임 레이트입니다.
 
-        Return
-            - speed_kmh (float): 선박의 km/h 속도
+        Return:
+            - speed_kmh (float): 선박의 km/h 속도입니다.
     """
-    
-    # 픽셀 단위의 거리
-    pixel_distance = math.sqrt((center2[0] - center1[0]) ** 2 + (center2[1] - center1[1]) ** 2)
-    # 실제 거리 (미터 단위)
-    real_distance = pixel_distance * gsd
+    # 실제 거리
+    real_distance = math.sqrt((center2_dg[0] - center1_dg[0]) ** 2 + (center2_dg[1] - center1_dg[1]) ** 2)
     # 시간 간격 (초 단위)
     time_interval = 1 / frame_rate
     # 속도 (미터/초)
@@ -271,34 +286,31 @@ def main(args):
     frame_count = 0
     previous_centers = {}
     max_ship_speed = 0
-    
-    # frame_count = 162
+    boat_speed = pd.DataFrame(columns={"frame_id", "track_id", "speed", "max_speed"})
+
 
     for image_path in tqdm(image_paths):
-        ### DEV ### 
-        if frame_count != 1604 :
-            frame_count += 1
-            continue
-
         frame = cv2.imread(image_path)
         date = logs['datetime'][frame_count]
         frame_bboxes = bbox_data.get(frame_count, [])
-        print(frame_bboxes)
         gsd = gsd_list[frame_count][1]
-        # pixel_size = gsd_list[frame_count][2]
+        pixel_size = gsd_list[frame_count][2]
 
         dolphin_bboxes = []
         track_ids=[]
         centers = []  # bbox 중심점들을 저장합니다.
+        centers_dg = []  # bbox 중심점의 실제세계 좌표들을 저장합니다. (EPSG:5186 기반, 단위 : m)
         classes = []  # bbox의 클래스 정보를 저장합니다.
         ships_within_50m = set()
         ships_within_300m = set()
         ship_speeds = {}
         center_x, center_y = None, None
+        center_x_dg, center_y_dg = None, None
         dolphin_present = False
 
-
         rst, transformed_img, bbox, boundary_rows, boundary_cols, gsd_bev, eo, R, focal_length, pixel_size = BEV_FullFrame(frame_count, image_path, args.log_path, gsd, args.output_dir, DEV = False)
+
+        bbox_for_dg = DG_Boundary(frame_count, image_path, args.log_path)
 
         if rst:
             continue
@@ -317,18 +329,17 @@ def main(args):
                 else:
                     rectify_points = BEV_Points(frame.shape, bbox, boundary_rows, boundary_cols, gsd, eo, R, focal_length, pixel_size, bbox_info['bbox'])
 
-                print(bbox_info['bbox'])
-                print(rectify_points)
                 x1, y1, x2, y2 = rectify_points
-                
-                gsd /= 2
                 
                 if class_id == 1:
                     center_x, center_y = x2, y2
                 else:
                     center_x, center_y = (x1 + x2) / 2, (y1 + y2) / 2
+
+                center_x_dg, center_y_dg = get_world_coordinate(bbox_for_dg, gsd, center_x, center_y)
                 
                 centers.append((center_x, center_y))
+                centers_dg.append((center_x_dg, center_y_dg))
                 classes.append(class_id)
                 track_ids.append(track_id)
 
@@ -341,16 +352,20 @@ def main(args):
                     outer_radius = 10  # 외부 원의 반지름
                     draw.ellipse((center_x - outer_radius, center_y - outer_radius, center_x + outer_radius, center_y + outer_radius), outline=(0, 0, 255), width=10)
 
-                    # 중심점 저장
+                    # 실제세계 좌표 기준 중심점 저장
                     if track_id not in previous_centers:
-                        previous_centers[track_id] = (center_x, center_y)
+                        previous_centers[track_id] = (center_x_dg, center_y_dg)
                     else:
                         # 속도 계산
-                        speed_kmh = calculate_speed(previous_centers[track_id], (center_x, center_y), frame_rate, gsd)
+                        speed_kmh = calculate_speed(previous_centers[track_id], (center_x_dg, center_y_dg), frame_rate)
                         ship_speeds[track_id] = speed_kmh
                         max_ship_speed = max(max_ship_speed, speed_kmh)
                         # 중심점 업데이트
                         previous_centers[track_id] = (center_x, center_y)
+
+                    speed_info = {"frame_id":frame_count, "track_id":track_id,
+                                  "speed":speed_kmh_dg, "max_speed":max_ship_speed_dg}
+                    boat_speed = boat_speed.append(speed_info, ignore_index=True)
 
                 else: # 돌고래인 경우
                     dolphin_bboxes.append(bbox_info)
@@ -427,17 +442,11 @@ def main(args):
         cv2.imwrite(output_frame_path, img)
         frame_count += 1
 
-        ### 1223 DEV ###
-        break 
-
-    
-    ### 1223 DEV ###
-    if 0 : 
-        make_video(get_image_paths(args.output_dir), args.output_video)
-        end_time = time.time()
-        # 걸린 시간 계산
-        elapsed_time = end_time - start_time
-        print(f"코드 실행 시간: {elapsed_time} 초")
+    make_video(get_image_paths(args.output_dir), args.output_video)
+    end_time = time.time()
+    # 걸린 시간 계산
+    elapsed_time = end_time - start_time
+    print(f"코드 실행 시간: {elapsed_time} 초")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -446,6 +455,6 @@ if __name__ == "__main__":
     parser.add_argument('--output_video', type=str, default='/home/dva4/DVA_LAB/backend/test/visualize_bev.mp4')
     parser.add_argument('--input_dir', type=str, default='/home/dva4/DVA_LAB/backend/test/frame_origin')
     parser.add_argument('--output_dir', type=str, default='/home/dva4/DVA_LAB/backend/test_saved/frame_bev_infer')
-    parser.add_argument('--GSD_path', type=str, default='backend/test_saved/GSD_total.txt')
+    parser.add_argument('--GSD_path', type=str, default='/home/dva4/DVA_LAB/backend/test/GSD_total.txt')
     args = parser.parse_args()
     main(args)
