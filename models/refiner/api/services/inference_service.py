@@ -135,7 +135,7 @@ class Refiner:
 
             Args
                 - bgr_img (?): ?
-                - boxes (?): ?
+                - boxes (list): ?
 
             Return
                 - ? (?): ?
@@ -188,9 +188,9 @@ class Refiner:
             ?
 
             Args
-                - mask (?): ?
-                - old_bboxes (?): ?
-                - new_bboxes (?): ?
+                - mask (list): ?
+                - old_bboxes (list): ?
+                - new_bboxes (list): ?
                 - random_color (bool): 색상 랜덤 여부
                 - save (bool): mask 저장 여부
         """
@@ -245,7 +245,7 @@ class Refiner:
                 - mask (?): ?
 
             Return
-                - length (?): ?
+                - length (float): ?
         """
 
         mask_2d = mask[0, 0, :, :].numpy()  # 첫 번째 채널을 2차원 배열로 변환
