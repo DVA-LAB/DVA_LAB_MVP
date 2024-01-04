@@ -218,6 +218,7 @@ def show_result(args): #log_path, input_dir, output_video, bbox_path, frame_rate
         Args
             - args (argparse.ArgumentParser): 시각화에 사용할 옵션
                 - args.input_dir (str): 원본 프레임이 위치한 폴더 경로
+                - args.boat_speed (str): 선박 속도 파일이 위치한 파일 경로
                 - args.log_path (str): log 파일이 위치한 파일 경로
                 - args.bbox_path (str): bbox 정보가 담긴 파일이 위치한 경로
                 - args.output_video (str): 출력 비디오로 생성할 파일 경로
@@ -245,6 +246,7 @@ def show_result(args): #log_path, input_dir, output_video, bbox_path, frame_rate
     frame_height, frame_width, _ = first_image.shape
 
     logs = read_log_file(args.log_path)
+    boat_speeds = read_log_file(args.boat_speed)
     bbox_data = read_bbox_data(args.bbox_path)
     
     # font = ImageFont.truetype('AppleGothic.ttf', 40)
@@ -268,13 +270,15 @@ def show_result(args): #log_path, input_dir, output_video, bbox_path, frame_rate
             draw = ImageDraw.Draw(image)
             gsd = gsd_list[frame_count][1]
             pixel_size = gsd_list[frame_count][2]
+            current_frame_boat_speeds = boat_speeds[boat_speeds['frame_id'] == frame_count]  # 현재 프레임에 해당하는 선박 속도 정보를 가져옵니다.
+
 
             track_ids=[]
             centers = []  # bbox 중심점들을 저장합니다.
             classes = []  # bbox의 클래스 정보를 저장합니다.
             ships_within_50m = set()
             ships_within_300m = set()
-            ship_speeds = {}
+            boat_speeds_dict = {}
 
             try:
                 if pixel_size == 0:
@@ -311,6 +315,8 @@ def show_result(args): #log_path, input_dir, output_video, bbox_path, frame_rate
                 track_ids.append(track_id)
                 
                 if class_id == 1:  # 선박인 경우
+
+
                     # 중심 좌표에 작은 초록색 점을 그림
                     outer_radius = 10  # 외부 원의 반지름
                     draw.ellipse((center_x - outer_radius, center_y - outer_radius, center_x + outer_radius, center_y + outer_radius), outline=(0, 0, 255), width=10)
@@ -319,12 +325,13 @@ def show_result(args): #log_path, input_dir, output_video, bbox_path, frame_rate
                     if track_id not in previous_centers:
                         previous_centers[track_id] = (center_x, center_y)
                     else:
-                        # 속도 계산
-                        speed_kmh = calculate_speed(previous_centers[track_id], (center_x, center_y), frame_rate, gsd)
-                        ship_speeds[track_id] = speed_kmh
-                        max_ship_speed = max(max_ship_speed, speed_kmh)
-                        # 중심점 업데이트
-                        previous_centers[track_id] = (center_x, center_y)           
+                        boat_speed_info = current_frame_boat_speeds[current_frame_boat_speeds['track_id'] == track_id]
+                        if not boat_speed_info.empty:
+                            current_speed = boat_speed_info.iloc[0]['speed']  # 현재 선박의 속도
+                            max_speed = boat_speed_info.iloc[0]['max_speed']  # 선박의 최대 속도
+                            # 시각화에 선박 속도 정보를 반영합니다.
+                            x1, y1, x2, y2 = bbox_info['bbox']
+                            draw.text((x1, y1 - 20), f"Speed: {current_speed} km/h", font=font, fill=(255, 0, 0))        
                 else : # 돌고래인 경우, class_id = 999999, 합쳐진 돌고래
                     merged_dolphin_center = (center_x, center_y)
                     draw_radius_circles(draw, (center_x, center_y), [(50/gsd, "black"), (300/gsd, "yellow")], font, gsd)
@@ -341,26 +348,26 @@ def show_result(args): #log_path, input_dir, output_video, bbox_path, frame_rate
                         ships_within_300m.add(track_id)
                     if distance <= 50:
                         ships_within_50m.add(track_id)
-            violation = False
+            # violation = False
 
-            if dolphin_present:
-                # Apply the rules based on the distance and speed
-                for ship_id, speed in ship_speeds.items():
-                    if ship_id in ships_within_300m:
-                        distance = nearest_distances.get((ship_id, 1), float('inf'))  # Assuming class 1 is for ships
-                        if distance <= 50:
-                            violation = True  # Rule 1
-                        elif 50 < distance <= 300 and speed > 0:
-                            violation = True  # Rule 2
-                        elif 300 < distance <= 750 and speed >= 9.26:
-                            violation = True  # Rule 3
-                        elif 750 < distance <= 1500 and speed >= 18.52:
-                            violation = True  # Rule 4
-                        elif distance <= 300 and len(ships_within_300m) >= 3:
-                            violation = True  # Rule 5
-            else:
-                # Rule 6: No dolphins, no violation
-                violation = False
+            # if dolphin_present:
+            #     # Apply the rules based on the distance and speed
+            #     for ship_id, speed in ship_speeds.items():
+            #         if ship_id in ships_within_300m:
+            #             distance = nearest_distances.get((ship_id, 1), float('inf'))  # Assuming class 1 is for ships
+            #             if distance <= 50:
+            #                 violation = True  # Rule 1
+            #             elif 50 < distance <= 300 and speed > 0:
+            #                 violation = True  # Rule 2
+            #             elif 300 < distance <= 750 and speed >= 9.26:
+            #                 violation = True  # Rule 3
+            #             elif 750 < distance <= 1500 and speed >= 18.52:
+            #                 violation = True  # Rule 4
+            #             elif distance <= 300 and len(ships_within_300m) >= 3:
+            #                 violation = True  # Rule 5
+            # else:
+            #     # Rule 6: No dolphins, no violation
+            #     violation = False
 
             if nearest_distances:
                 min_distance = min(nearest_distances.values())
@@ -377,6 +384,7 @@ def show_result(args): #log_path, input_dir, output_video, bbox_path, frame_rate
                 f"프레임 숫자: {frame_count}",
                 f"픽셀 사이즈: {round(gsd,5)}m/px",
                 f"선박과 가장 가까운 거리: {min_distance}m",
+                f"선박 최대 속도: {max_speed}km/h",
                 f"50m 이내의 선박 수: {len(ships_within_50m)}",
                 f"300m 이내의 선박 수: {len(ships_within_300m)}"
             ]
@@ -412,6 +420,7 @@ def show_result(args): #log_path, input_dir, output_video, bbox_path, frame_rate
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--log_path', type=str, default='backend/test/sync_csv/sync_log.csv')
+    parser.add_argument('--boat_speed', type=str, default='backend/test/boat_speed.csv')
     parser.add_argument('--input_dir', type=str, default='backend/test/frame_origin')
     parser.add_argument('--output_video', type=str, default='backend/test/visualize.mp4')
     parser.add_argument('--bbox_path', type=str, default='backend/test/bev_points.csv')

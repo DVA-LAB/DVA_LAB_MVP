@@ -17,12 +17,16 @@ class SegRequest(BaseModel):
     frame_path: str = Field(description="Frame path")
     slices_path: str = Field(description="Slices path")
     output_path: str = Field(description="Test path")
+    patch_size: int = Field(default=1024, description="Sahi patch size")
+    overlap_ratio: float = Field(default= 0.2, description="Sahi overlap ratio")
 
     class Config:
         schema_extra = {
             "example": {
                 "frame_path": '/home/dva4/DVA_LAB/backend/test/frame_origin',
                 "slices_path": '/home/dva4/DVA_LAB/backend/test/model/sliced',
-                "output_path": '/home/dva4/DVA_LAB/backend/test/model/segment'
+                "output_path": '/home/dva4/DVA_LAB/backend/test/model/segment',
+                "patch_size": '1024',
+                "overlap_ratio": '0.2'
             }
         }

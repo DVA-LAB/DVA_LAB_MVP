@@ -143,11 +143,11 @@ async def inference_detection(img_path, csv_path, sliced_path):
 - `frame_path`: /home/dva4/DVA_LAB/backend/test/frame_origin/DJI_0119_30_00000.jpg
 - `slices_path`: /home/dva4/DVA_LAB/backend/test/model/sliced
 - `output_path`: /home/dva4/DVA_LAB/backend/test/model/segment/DJI_0119_30_00000.jpg
+- `patch_size` : 1024
+- `overlap_ratio` : 0.2
 """,
 )
-async def inference_segmentation(frame_path, slices_path, output_path):
-<<<<<<< Updated upstream
-=======
+async def inference_segmentation(frame_path, slices_path, output_path, patch_size:int, overlap_ratio:float):
     """
         Pretrained Anomaly Detection 모델을 사용해 이상탐지 인퍼런스 결과를 요청합니다.
 
@@ -169,7 +169,6 @@ async def inference_segmentation(frame_path, slices_path, output_path):
             )
     """
 
->>>>>>> Stashed changes
     url = "http://localhost:8003/anomaly/inference"
     headers = {
         "accept": "application/json",
@@ -179,6 +178,8 @@ async def inference_segmentation(frame_path, slices_path, output_path):
         "frame_path": frame_path,
         "slices_path": slices_path,
         "output_path": output_path,
+        "patch_size": patch_size,
+        "overlap_ratio":overlap_ratio
     }
     response = requests.post(url, headers=headers, data=json.dumps(data))
     if response.status_code != 200:
@@ -205,11 +206,6 @@ async def inference_segmentation(frame_path, slices_path, output_path):
 - `anomaly_detection_output`: /home/dva4/DVA_LAB/backend/test/model/detection/result.csv -> 임시로 detection csv를 받게 함
 """,
 )
-<<<<<<< Updated upstream
-async def inference_merge(
-    output_merge_path, csv_path, anomaly_detection_output, use_anomaly: bool = True
-):
-=======
 async def inference_merge(output_merge_path, csv_path, anomaly_detection_output, use_anomaly: bool = True):
     """
         객체 탐지 결과와 이상 탐지 결과를 병합한 파일을 생성합니다. 
@@ -229,7 +225,6 @@ async def inference_merge(output_merge_path, csv_path, anomaly_detection_output,
             - 파일이 특정 경로에 저장되었다는 메세지 스트링
     """
 
->>>>>>> Stashed changes
     try:
         os.makedirs(output_merge_path, exist_ok=True)
         # delete_files_in_folder(output_merge_path)
@@ -261,8 +256,6 @@ async def inference_merge(output_merge_path, csv_path, anomaly_detection_output,
 """,
 )
 async def inference_tracking(detection_path, save_path):
-<<<<<<< Updated upstream
-=======
     """
         ByteTrack을 활용하여 객체추적 인퍼런스 결과를 요청후 파일 저장 성공 메시지를 반환합니다.
 
@@ -279,7 +272,6 @@ async def inference_tracking(detection_path, save_path):
             - 객체추적 인퍼런스 결과 파일이 저장되었다는 메시지 스트링
     """
 
->>>>>>> Stashed changes
     url = "http://localhost:8004/bytetrack/track"
     headers = {
         "accept": "application/json",
@@ -297,8 +289,6 @@ async def inference_tracking(detection_path, save_path):
 
 
 def delete_files_in_folder(folder_path):
-<<<<<<< Updated upstream
-=======
     """
         특정 폴더에 담긴 파일을 전부 삭제합니다.
 
@@ -306,7 +296,6 @@ def delete_files_in_folder(folder_path):
             - folder_path (str): 폴더 경로
     """
 
->>>>>>> Stashed changes
     files = glob.glob(os.path.join(folder_path, "*"))
     for file in files:
         if os.path.isfile(file):

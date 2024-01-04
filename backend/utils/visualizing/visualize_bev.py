@@ -79,33 +79,7 @@ def calculate_nearest_distance(dolphin_present, merged_dolphin_center, centers, 
     return distances
 
 
-def calculate_speed(center1, center2, frame_rate, gsd):
-    """
-        두 중심점과 프레임 속도를 기반으로 선박의 속도를 계산합니다.
-
-        Args
-            - center1 (list): 첫 번째 중심점이며 [x, y]로 구성
-            - center2 (list): 두 번째 중심점이며 [x, y]로 구성
-            - frame_rate (float): 프레임 레이트
-            - gsd (float): GSD 값
-
-        Return
-            - speed_kmh (float): 선박의 km/h 속도
-    """
-    
-    # 픽셀 단위의 거리
-    pixel_distance = math.sqrt((center2[0] - center1[0]) ** 2 + (center2[1] - center1[1]) ** 2)
-    # 실제 거리 (미터 단위)
-    real_distance = pixel_distance * gsd
-    # 시간 간격 (초 단위)
-    time_interval = 1 / frame_rate
-    # 속도 (미터/초)
-    speed = real_distance / time_interval
-    # 속도를 km/h 단위로 변환
-    speed_kmh = round(speed * 3.6, 2)
-    return speed_kmh
-
-def calculate_speed_dg(center1_dg, center2_dg, frame_rate):
+def calculate_speed(center1_dg, center2_dg, frame_rate):
     """
         두 중심점과 프레임 속도를 기반으로 선박의 속도를 계산합니다.
 
@@ -311,25 +285,16 @@ def main(args):
     min_distance = '-'
     frame_count = 0
     previous_centers = {}
-    previous_centers_dg = {}
     max_ship_speed = 0
-    max_ship_speed_dg = 0
     boat_speed = pd.DataFrame(columns={"frame_id", "track_id", "speed", "max_speed"})
-    
-    # frame_count = 162
+
 
     for image_path in tqdm(image_paths):
-        ### DEV ### 
-        if frame_count != 1604 :
-            frame_count += 1
-            continue
-
         frame = cv2.imread(image_path)
         date = logs['datetime'][frame_count]
         frame_bboxes = bbox_data.get(frame_count, [])
-        print(frame_bboxes)
         gsd = gsd_list[frame_count][1]
-        # pixel_size = gsd_list[frame_count][2]
+        pixel_size = gsd_list[frame_count][2]
 
         dolphin_bboxes = []
         track_ids=[]
@@ -339,11 +304,9 @@ def main(args):
         ships_within_50m = set()
         ships_within_300m = set()
         ship_speeds = {}
-        ship_speeds_dg = {}
         center_x, center_y = None, None
         center_x_dg, center_y_dg = None, None
         dolphin_present = False
-
 
         rst, transformed_img, bbox, boundary_rows, boundary_cols, gsd_bev, eo, R, focal_length, pixel_size = BEV_FullFrame(frame_count, image_path, args.log_path, gsd, args.output_dir, DEV = False)
 
@@ -366,8 +329,6 @@ def main(args):
                 else:
                     rectify_points = BEV_Points(frame.shape, bbox, boundary_rows, boundary_cols, gsd, eo, R, focal_length, pixel_size, bbox_info['bbox'])
 
-                print(bbox_info['bbox'])
-                print(rectify_points)
                 x1, y1, x2, y2 = rectify_points
                 
                 if class_id == 1:
@@ -376,8 +337,6 @@ def main(args):
                     center_x, center_y = (x1 + x2) / 2, (y1 + y2) / 2
 
                 center_x_dg, center_y_dg = get_world_coordinate(bbox_for_dg, gsd, center_x, center_y)
-
-                gsd /= 2
                 
                 centers.append((center_x, center_y))
                 centers_dg.append((center_x_dg, center_y_dg))
@@ -393,27 +352,16 @@ def main(args):
                     outer_radius = 10  # 외부 원의 반지름
                     draw.ellipse((center_x - outer_radius, center_y - outer_radius, center_x + outer_radius, center_y + outer_radius), outline=(0, 0, 255), width=10)
 
-                    # 중심점 저장
+                    # 실제세계 좌표 기준 중심점 저장
                     if track_id not in previous_centers:
-                        previous_centers[track_id] = (center_x, center_y)
+                        previous_centers[track_id] = (center_x_dg, center_y_dg)
                     else:
                         # 속도 계산
-                        speed_kmh = calculate_speed(previous_centers[track_id], (center_x, center_y), frame_rate, gsd)
+                        speed_kmh = calculate_speed(previous_centers[track_id], (center_x_dg, center_y_dg), frame_rate)
                         ship_speeds[track_id] = speed_kmh
                         max_ship_speed = max(max_ship_speed, speed_kmh)
                         # 중심점 업데이트
                         previous_centers[track_id] = (center_x, center_y)
-
-                    # 실제세계 좌표 기준 중심점 저장
-                    if track_id not in previous_centers_dg:
-                        previous_centers_dg[track_id] = (center_x_dg, center_y_dg)
-                    else:
-                        # 속도 계산
-                        speed_kmh_dg = calculate_speed_dg(previous_centers_dg[track_id], (center_x_dg, center_y_dg), frame_rate)
-                        ship_speeds_dg[track_id] = speed_kmh_dg
-                        max_ship_speed_dg = max(max_ship_speed_dg, speed_kmh_dg)
-                        # 중심점 업데이트
-                        previous_centers_dg[track_id] = (center_x_dg, center_y_dg)
 
                     speed_info = {"frame_id":frame_count, "track_id":track_id,
                                   "speed":speed_kmh_dg, "max_speed":max_ship_speed_dg}
@@ -494,19 +442,11 @@ def main(args):
         cv2.imwrite(output_frame_path, img)
         frame_count += 1
 
-        ### 1223 DEV ###
-        break 
-
-    output_csv_path = os.path.join(args.output_dir, 'boat_speed.csv')
-    boat_speed.to_csv(output_csv_path)
-    
-    ### 1223 DEV ###
-    if 0 : 
-        make_video(get_image_paths(args.output_dir), args.output_video)
-        end_time = time.time()
-        # 걸린 시간 계산
-        elapsed_time = end_time - start_time
-        print(f"코드 실행 시간: {elapsed_time} 초")
+    make_video(get_image_paths(args.output_dir), args.output_video)
+    end_time = time.time()
+    # 걸린 시간 계산
+    elapsed_time = end_time - start_time
+    print(f"코드 실행 시간: {elapsed_time} 초")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -515,6 +455,6 @@ if __name__ == "__main__":
     parser.add_argument('--output_video', type=str, default='/home/dva4/DVA_LAB/backend/test/visualize_bev.mp4')
     parser.add_argument('--input_dir', type=str, default='/home/dva4/DVA_LAB/backend/test/frame_origin')
     parser.add_argument('--output_dir', type=str, default='/home/dva4/DVA_LAB/backend/test_saved/frame_bev_infer')
-    parser.add_argument('--GSD_path', type=str, default='backend/test_saved/GSD_total.txt')
+    parser.add_argument('--GSD_path', type=str, default='/home/dva4/DVA_LAB/backend/test/GSD_total.txt')
     args = parser.parse_args()
     main(args)
