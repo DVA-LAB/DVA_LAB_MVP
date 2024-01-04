@@ -1,4 +1,4 @@
-name: detection
+name: api_dva
 channels:
   - conda-forge
   - defaults
@@ -125,6 +125,9 @@ dependencies:
       - nvidia-nccl-cu12==2.18.1
       - nvidia-nvjitlink-cu12==12.3.52
       - nvidia-nvtx-cu12==12.1.105
+      - nvidia-pyindex==1.0.9
+      - nvidia-tensorrt==8.4.3.1
+      - pycuda==2022.2.2
       - oauthlib==3.2.2
       - onnx==1.8.1
       - onnx-simplifier==0.3.5
@@ -185,4 +188,4 @@ dependencies:
       - xmltodict==0.13.0
       - yolov5==7.0.13
       - zipp==3.17.0
-prefix: /home/dva3/anaconda3/envs/api_dva
+prefix: /home/superbin/anaconda3/envs/api_dva

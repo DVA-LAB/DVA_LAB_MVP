@@ -9,18 +9,18 @@ import torch
 import numpy as np
 
 from loguru import logger
-from interface.request import SahiRequest
+from models.sahi_detection.interface.request import SahiRequest
 from typing import List
 
-from api.services import preproc
-from api.services import get_exp
-from api.services import fuse_model, get_model_info, postprocess
-from api.services import plot_tracking
-from api.services import Timer
-from api.services import YoloxDetectionModel
-from api.services import get_sliced_prediction
-from api.services import AutoDetectionModel
-from api.services import config as cfg
+from models.sahi_detection.api.services import preproc
+from models.sahi_detection.api.services import get_exp
+from models.sahi_detection.api.services import fuse_model, get_model_info, postprocess
+from models.sahi_detection.api.services import plot_tracking
+from models.sahi_detection.api.services import Timer
+from models.sahi_detection.api.services import YoloxDetectionModel
+from models.sahi_detection.api.services import get_sliced_prediction
+from models.sahi_detection.api.services import AutoDetectionModel
+from models.sahi_detection.api.services import config as cfg
 
 IMAGE_EXT = [".jpg", ".jpeg", ".webp", ".bmp", ".png"]
 
@@ -247,6 +247,23 @@ def main(img_path=None, csv_path=None, sliced_path = None):
         model_path= args.ckpt,
         device='cuda:0', # or 'cpu'
         )
+
+    elif args.model == 'trt':
+        """
+        2024.01.04
+        args.model = Tensorrt
+        model_type = trt
+        classes = classes list
+        """
+        detection_model = AutoDetectionModel.from_pretrained(
+        model_type='trt',
+        confidence_threshold=0.3,
+        image_size = 1024,
+        model_path= args.ckpt,
+        device='cuda:0', # or 'cpu'
+        classes = ['background','ship','dolphin'],
+        )
+
 
     cls_map = {}
     # det 모델과 anomaly 모델 머지 input class를 맞춰주기 위함
