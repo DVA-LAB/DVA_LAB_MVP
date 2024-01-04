@@ -12,6 +12,25 @@ import pandas as pd
 from PIL import Image, ImageDraw, ImageFont
 
 
+def get_world_coordinate(boundary, gsd, col, row):
+    """
+        이미지 좌표를 실제세계 좌표로 변환합니다.
+
+        Args
+            boundary (list): 이미지 영역의 실제세계 좌표 정보 (default : EPSG:5186 좌표계)
+            gsd (float) : gsd값
+            col : 이미지 x좌표
+            row : 이미지 y좌표
+
+        Return
+            xgeo : 실제세계 x좌표
+            ygeo : 실제세계 y좌표
+    """
+    xgeo = boundary[0] + gsd * row
+    ygeo = boundary[3] + (-gsd) * col
+
+    return xgeo, ygeo
+
 def read_log_file(log_path):
     """
         로그 파일을 pandas 데이터 프레임으로 읽어 반환합니다.
@@ -78,6 +97,28 @@ def calculate_speed(center1, center2, frame_rate, gsd):
     pixel_distance = math.sqrt((center2[0] - center1[0]) ** 2 + (center2[1] - center1[1]) ** 2)
     # 실제 거리 (미터 단위)
     real_distance = pixel_distance * gsd
+    # 시간 간격 (초 단위)
+    time_interval = 1 / frame_rate
+    # 속도 (미터/초)
+    speed = real_distance / time_interval
+    # 속도를 km/h 단위로 변환
+    speed_kmh = round(speed * 3.6, 2)
+    return speed_kmh
+
+def calculate_speed_dg(center1_dg, center2_dg, frame_rate):
+    """
+        두 중심점과 프레임 속도를 기반으로 선박의 속도를 계산합니다.
+
+        Args:
+            - center1_dg (list): 첫 번째 중심점이며 [x_dg, y_dg]로 구성됩니다.
+            - center2_dg (list): 두 번째 중심점이며 [x_dg, y_dg]로 구성됩니다.
+            - frame_rate (float): 프레임 레이트입니다.
+
+        Return:
+            - speed_kmh (float): 선박의 km/h 속도입니다.
+    """
+    # 실제 거리
+    real_distance = math.sqrt((center2_dg[0] - center1_dg[0]) ** 2 + (center2_dg[1] - center1_dg[1]) ** 2)
     # 시간 간격 (초 단위)
     time_interval = 1 / frame_rate
     # 속도 (미터/초)
@@ -270,7 +311,9 @@ def main(args):
     min_distance = '-'
     frame_count = 0
     previous_centers = {}
+    previous_centers_dg = {}
     max_ship_speed = 0
+    max_ship_speed_dg = 0
     
     # frame_count = 162
 
@@ -290,15 +333,20 @@ def main(args):
         dolphin_bboxes = []
         track_ids=[]
         centers = []  # bbox 중심점들을 저장합니다.
+        centers_dg = []  # bbox 중심점의 실제세계 좌표들을 저장합니다. (EPSG:5186 기반, 단위 : m)
         classes = []  # bbox의 클래스 정보를 저장합니다.
         ships_within_50m = set()
         ships_within_300m = set()
         ship_speeds = {}
+        ship_speeds_dg = {}
         center_x, center_y = None, None
+        center_x_dg, center_y_dg = None, None
         dolphin_present = False
 
 
         rst, transformed_img, bbox, boundary_rows, boundary_cols, gsd_bev, eo, R, focal_length, pixel_size = BEV_FullFrame(frame_count, image_path, args.log_path, gsd, args.output_dir, DEV = False)
+
+        bbox_for_dg = DG_Boundary(frame_count, image_path, args.log_path)
 
         if rst:
             continue
@@ -321,14 +369,17 @@ def main(args):
                 print(rectify_points)
                 x1, y1, x2, y2 = rectify_points
                 
-                gsd /= 2
-                
                 if class_id == 1:
                     center_x, center_y = x2, y2
                 else:
                     center_x, center_y = (x1 + x2) / 2, (y1 + y2) / 2
+
+                center_x_dg, center_y_dg = get_world_coordinate(bbox_for_dg, gsd, center_x, center_y)
+
+                gsd /= 2
                 
                 centers.append((center_x, center_y))
+                centers_dg.append((center_x_dg, center_y_dg))
                 classes.append(class_id)
                 track_ids.append(track_id)
 
@@ -351,6 +402,17 @@ def main(args):
                         max_ship_speed = max(max_ship_speed, speed_kmh)
                         # 중심점 업데이트
                         previous_centers[track_id] = (center_x, center_y)
+
+                    # 실제세계 좌표 기준 중심점 저장
+                    if track_id not in previous_centers_dg:
+                        previous_centers_dg[track_id] = (center_x_dg, center_y_dg)
+                    else:
+                        # 속도 계산
+                        speed_kmh_dg = calculate_speed_dg(previous_centers_dg[track_id], (center_x_dg, center_y_dg), frame_rate)
+                        ship_speeds_dg[track_id] = speed_kmh_dg
+                        max_ship_speed_dg = max(max_ship_speed_dg, speed_kmh_dg)
+                        # 중심점 업데이트
+                        previous_centers_dg[track_id] = (center_x_dg, center_y_dg)
 
                 else: # 돌고래인 경우
                     dolphin_bboxes.append(bbox_info)
