@@ -188,4 +188,4 @@ dependencies:
       - xmltodict==0.13.0
       - yolov5==7.0.13
       - zipp==3.17.0
-prefix: /home/superbin/anaconda3/envs/api_dva
+prefix: /home/dva3/anaconda3/envs/api_dva
