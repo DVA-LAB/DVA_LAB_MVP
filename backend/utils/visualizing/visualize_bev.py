@@ -286,6 +286,8 @@ def main(args):
     frame_count = 0
     previous_centers = {}
     max_ship_speed = 0
+    boat_speed = pd.DataFrame(columns={"frame_id", "track_id", "speed", "max_speed"})
+
 
     for image_path in tqdm(image_paths):
         frame = cv2.imread(image_path)
@@ -360,6 +362,10 @@ def main(args):
                         max_ship_speed = max(max_ship_speed, speed_kmh)
                         # 중심점 업데이트
                         previous_centers[track_id] = (center_x, center_y)
+
+                    speed_info = {"frame_id":frame_count, "track_id":track_id,
+                                  "speed":speed_kmh_dg, "max_speed":max_ship_speed_dg}
+                    boat_speed = boat_speed.append(speed_info, ignore_index=True)
 
                 else: # 돌고래인 경우
                     dolphin_bboxes.append(bbox_info)
