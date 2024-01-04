@@ -314,7 +314,7 @@ def main(args):
     previous_centers_dg = {}
     max_ship_speed = 0
     max_ship_speed_dg = 0
-    boat_speed = pd.DataFrame(columns={"frame_id", "track_id", "speed(km/h)", "max_speed(km/h)"})
+    boat_speed = pd.DataFrame(columns={"frame_id", "track_id", "speed", "max_speed"})
     
     # frame_count = 162
 
