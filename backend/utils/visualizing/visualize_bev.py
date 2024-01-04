@@ -314,6 +314,7 @@ def main(args):
     previous_centers_dg = {}
     max_ship_speed = 0
     max_ship_speed_dg = 0
+    boat_speed = pd.DataFrame(columns={"frame_id", "track_id", "speed(km/h)", "max_speed(km/h)"})
     
     # frame_count = 162
 
@@ -414,6 +415,10 @@ def main(args):
                         # 중심점 업데이트
                         previous_centers_dg[track_id] = (center_x_dg, center_y_dg)
 
+                    speed_info = {"frame_id":frame_count, "track_id":track_id,
+                                  "speed(km/h)":speed_kmh_dg, "max_speed(km/h)":max_ship_speed_dg}
+                    boat_speed = boat_speed.append(speed_info, ignore_index=True)
+
                 else: # 돌고래인 경우
                     dolphin_bboxes.append(bbox_info)
                     dolphin_present = True
@@ -492,6 +497,8 @@ def main(args):
         ### 1223 DEV ###
         break 
 
+    output_csv_path = os.path.join(args.output_dir, 'boat_speed.csv')
+    boat_speed.to_csv(output_csv_path)
     
     ### 1223 DEV ###
     if 0 : 
