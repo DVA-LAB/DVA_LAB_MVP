@@ -46,6 +46,8 @@ class DetectionModel:
                 If True, automatically loads the model at initalization
             image_size: int
                 Inference input size.
+            classes : list[str]
+                category name list
         """
         self.model_path = model_path
         self.config_path = config_path
@@ -58,6 +60,7 @@ class DetectionModel:
         self.category_remapping = category_remapping
         self.classes = classes
         self.image_size = image_size
+        self.slice_size = (image_size, image_size)
         self._original_predictions = None
         self._object_prediction_list_per_image = None
 
