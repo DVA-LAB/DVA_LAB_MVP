@@ -153,8 +153,8 @@ def image_demo(predictor, current_time, args):
         이미지 파일에 대한 모델 인퍼런스 수행결과를 반환합니다.
 
         Args:
-            - predictor ()
-            - current_time ():
+            - predictor (Predictor): 인퍼런스를 수행할 모델 객체
+            - current_time (time.localtime): 현재 시간
             - args (argparse.ArgumentParser)
 
         Return:
