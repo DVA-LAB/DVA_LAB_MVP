@@ -287,6 +287,12 @@ def main(args):
     previous_centers = {}
     max_ship_speed = 0
 
+    # About Text
+    font_color = (0, 0, 0) # if violation else (0, 255, 0)
+    # 텍스트를 흰색 배경 사각형 위에 그립니다.
+    text_positions = [(30, 30), (30, 80), (30, 130), (30, 180), (30, 230), (30, 280)]
+    
+
     for image_path in tqdm(image_paths):
         frame = cv2.imread(image_path)
         date = logs['datetime'][frame_count]
@@ -305,6 +311,35 @@ def main(args):
         center_x, center_y = None, None
         center_x_dg, center_y_dg = None, None
         dolphin_present = False
+
+        roll = get_params_from_csv(args.log_path, frame_count)["R"]
+        pitch = get_params_from_csv(args.log_path, frame_count)["P"]
+        if (roll > -5 and pitch >-30) or (roll > -30 and pitch > -5) or ((-5 > roll > -30)&(-5 > pitch > -30)) :
+            err_texts = [
+                f"일시: {date}",
+                f"프레임 숫자: {frame_count}",
+                f"*** 판정불가 ***",
+                f"Flight angle out of range",
+                f"Roll : {roll}",
+                f"Pitch : {pitch}",
+            ]
+            image = Image.fromarray(frame) # Original Image 
+            draw = ImageDraw.Draw(image)
+
+            # 좌상단에 흰색 배경 사각형을 그립니다.
+            dashboard_background = (0, 0, 700, 350)  # 좌표 (x0, y0, x1, y1)
+            draw.rectangle(dashboard_background, fill=(255, 255, 255))
+            
+            for text, pos in zip(err_texts, text_positions):
+                draw.text(pos, text, font=font, fill=(0, 0, 255))
+            
+            # 나머지 코드
+            img = np.array(image)
+            # 결과 이미지 저장
+            output_frame_path = os.path.join(args.output_dir, f'frame_{str(frame_count).zfill(6)}.jpg')
+            cv2.imwrite(output_frame_path, img)
+            frame_count += 1
+            continue
 
         rst, transformed_img, bbox, boundary_rows, boundary_cols, gsd_bev, eo, R, focal_length, pixel_size = BEV_FullFrame(frame_count, image_path, args.log_path, gsd, args.output_dir, DEV = False)
 
