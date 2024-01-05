@@ -33,7 +33,7 @@ def get_world_coordinate(boundary, gsd, col, row):
 
 def read_log_file(log_path):
     """
-        로그 파일을 pandas 데이터 프레임으로 읽어 반환합니다.
+        로그 파일을 pandas 데이터 프레임 형식으로 읽고 반환합니다.
 
         Args
             log_path (str): 로그 파일 경로
@@ -219,7 +219,7 @@ def get_max_dimensions(image_paths):
 
 def make_video(image_paths, video_name, fps=30, max_resolution=(3840, 2160)):
     """
-        BEV 시각화된 비디오를 생성합니다.
+        BirdEyeView (BEV)로 시각화된 비디오를 생성합니다.
 
         Args
             - image_paths (list): 이미지 파일 경로 리스트
@@ -286,6 +286,8 @@ def main(args):
     frame_count = 0
     previous_centers = {}
     max_ship_speed = 0
+    boat_speed = pd.DataFrame(columns={"frame_id", "track_id", "speed", "max_speed"})
+
 
     # About Text
     font_color = (0, 0, 0) # if violation else (0, 255, 0)
@@ -395,6 +397,10 @@ def main(args):
                         max_ship_speed = max(max_ship_speed, speed_kmh)
                         # 중심점 업데이트
                         previous_centers[track_id] = (center_x, center_y)
+
+                    speed_info = {"frame_id":frame_count, "track_id":track_id,
+                                  "speed":speed_kmh_dg, "max_speed":max_ship_speed_dg}
+                    boat_speed = boat_speed.append(speed_info, ignore_index=True)
 
                 else: # 돌고래인 경우
                     dolphin_bboxes.append(bbox_info)

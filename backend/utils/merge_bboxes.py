@@ -9,9 +9,9 @@ def plot_detections(anomaly_detections, yolo_detections, output_detections, imag
         Detections format: [frame, x, y, x+w, y+h, ...]
 
         Args
-            - anomaly_detections (list): 이상 탐지 결과 
-            - yolo_detections (list): 객체 탐지 결과
-            - output_detections (list): ?
+            - anomaly_detections (list): 이상 탐지 결과 bbox 
+            - yolo_detections (list): 객체 탐지 결과 bbox
+            - output_detections (list): 결과 bbox
             - image_size (tuple): 이미지 가로, 세로 크기
     """
 

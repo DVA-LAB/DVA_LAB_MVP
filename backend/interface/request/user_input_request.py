@@ -6,11 +6,27 @@ __all__ = ["UserInput"]
 
 
 class Point(BaseModel):
+    """
+        2차원 점 표현을 위한 클래스입니다.
+
+        Attribute
+            - x (float): x 좌표
+            - y (float): y 좌표
+    """
     x: float
     y: float
 
 
 class PointDistance(BaseModel):
+    """
+        두 점과 두 점사이의 거리를 표현하기 위한 클래스입니다.    
+    
+        Attribute
+            - point1 (Point): 첫 번째 점의 좌표 (x, y)
+            - point2 (Point): 두 번째 점의 좌표 (x, y)
+            - distance (float): point1과 point2의 거리
+    """
+
     point1: Point = Field(description="Coordinates of the first point")
     point2: Point = Field(description="Coordinates of the second point")
     distance: float = Field(ge=0, description="The distance between point1 and point2")
@@ -19,11 +35,11 @@ class PointDistance(BaseModel):
 @logged
 class UserInput(BaseModel):
     """
-        유저의 입력에 필요한 변수가 담긴 클래스입니다.
+        사용자의 입력에 필요한 변수가 담긴 클래스입니다.
 
         Attributes
-            - frame_number (int): 프레임 번호
-            - point_distances (List[PointDistance]): 두 점의 (x, y)좌표 정보와 두 점간의 거리가 담긴 리스트
+            - frame_number (int): 사용자가 선택한 프레임의 번호
+            - point_distances (List[PointDistance]): 두 점의 좌표 (x, y) 정보와 두 점 간의 거리가 담긴 리스트
     """
 
     frame_number: int = Field(description="Frame number associated with the point distances")

@@ -42,12 +42,12 @@ async def anomaly_inference(request_body: SegRequest):
         Args
             - request_body
                 - request_body.frame_path (str): 이상탐지를 수행할 프레임 파일경로
-                - request_body.slices_path (str): 이상탐지를 수행할 프레임 파일이 슬라이싱된 디렉터리 경로
+                - request_body.slices_path (str): 이상탐지를 수행할 프레임 파일이 슬라이싱된 패치 디렉터리 경로
                 - request_body.output_path (str): 이상탐지 결과가 저장될 파일경로
 
         Return
             - output_img (np.ndarray): 이상탐지를 수행한 결과 이미지
-            - output_mask (?): ?
+            - output_mask (np.ndarray): 이상탐지 결과 마스크
             - output_list (list): N x [frame_number, class_id, x1, y1, w1, h1, anomaly_score]
     """
 
@@ -65,7 +65,7 @@ def ad_slice_inference(frame_path, slices_path, output_path, patch_size, overlap
 
         Return
             - output_img (np.ndarray): 이상탐지를 수행한 결과 이미지
-            - output_mask (?): ?
+            - output_mask (np.ndarray): 이상탐지 결과 마스크
             - output_list (list): N x [frame_number, class_id, x1, y1, w1, h1, anomaly_score]
     """
     
