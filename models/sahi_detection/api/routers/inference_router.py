@@ -12,15 +12,15 @@ from loguru import logger
 from interface.request import SahiRequest
 from typing import List
 
-from api.services import preproc
-from api.services import get_exp
-from api.services import fuse_model, get_model_info, postprocess
-from api.services import plot_tracking
-from api.services import Timer
-from api.services import YoloxDetectionModel
-from api.services import get_sliced_prediction
-from api.services import AutoDetectionModel
-from api.services import config as cfg
+from models.sahi_detection.api.services import preproc
+from models.sahi_detection.api.services import get_exp
+from models.sahi_detection.api.services import fuse_model, get_model_info, postprocess
+from models.sahi_detection.api.services import plot_tracking
+from models.sahi_detection.api.services import Timer
+from models.sahi_detection.api.services import YoloxDetectionModel
+from models.sahi_detection.api.services import get_sliced_prediction
+from models.sahi_detection.api.services import AutoDetectionModel
+from models.sahi_detection.api.services import config as cfg
 
 IMAGE_EXT = [".jpg", ".jpeg", ".webp", ".bmp", ".png"]
 
