@@ -361,10 +361,10 @@ def main(args):
                         ship_speeds[track_id] = speed_kmh
                         max_ship_speed = max(max_ship_speed, speed_kmh)
                         # 중심점 업데이트
-                        previous_centers[track_id] = (center_x, center_y)
+                        previous_centers[track_id] = (center_x_dg, center_y_dg)
 
                     speed_info = {"frame_id":frame_count, "track_id":track_id,
-                                  "speed":speed_kmh_dg, "max_speed":max_ship_speed_dg}
+                                  "speed":speed_kmh, "max_speed":max_ship_speed}
                     boat_speed = boat_speed.append(speed_info, ignore_index=True)
 
                 else: # 돌고래인 경우
