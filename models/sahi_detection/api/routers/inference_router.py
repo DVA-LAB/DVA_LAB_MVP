@@ -12,15 +12,15 @@ from loguru import logger
 from interface.request import SahiRequest
 from typing import List
 
-from api.services import preproc
-from api.services import get_exp
-from api.services import fuse_model, get_model_info, postprocess
-from api.services import plot_tracking
-from api.services import Timer
-from api.services import YoloxDetectionModel
-from api.services import get_sliced_prediction
-from api.services import AutoDetectionModel
-from api.services import config as cfg
+from models.sahi_detection.api.services import preproc
+from models.sahi_detection.api.services import get_exp
+from models.sahi_detection.api.services import fuse_model, get_model_info, postprocess
+from models.sahi_detection.api.services import plot_tracking
+from models.sahi_detection.api.services import Timer
+from models.sahi_detection.api.services import YoloxDetectionModel
+from models.sahi_detection.api.services import get_sliced_prediction
+from models.sahi_detection.api.services import AutoDetectionModel
+from models.sahi_detection.api.services import config as cfg
 
 IMAGE_EXT = [".jpg", ".jpeg", ".webp", ".bmp", ".png"]
 
@@ -35,7 +35,7 @@ def make_parser():
 
     parser = argparse.ArgumentParser("ByteTrack")
     parser.add_argument("--demo", default="image", help="demo type, eg. image, video and webcam")
-    parser.add_argument("--model", default="yolov8", help="Model name | yolov5, yolox, yolov8")
+    parser.add_argument("--model", default="trt", help="Model name | yolov5, yolox, yolov8, Tensorrt")
     parser.add_argument("-expn", "--experiment-name", type=str, default=None)
     parser.add_argument("-n", "--name", type=str, default=None, help="model name")
     parser.add_argument("--path", default="/home/dva3/workspace/output/test/test01", help="path to images or video")
@@ -44,7 +44,7 @@ def make_parser():
 
     # exp file
     parser.add_argument("-f", "--exp_file", default=None, type=str, help="If you want to use yolox, pls input your expriment description file")
-    parser.add_argument("-c", "--ckpt", default="/mnt/models/v8_m_best.pt", type=str, help="ckpt for inf")
+    parser.add_argument("-c", "--ckpt", default="/mnt/models/yolov8_dva.trt", type=str, help="ckpt for inf")
     parser.add_argument("--device", default="gpu", type=str, help="device to run our model, can either be cpu or gpu")
     parser.add_argument("--conf", default=None, type=float, help="test conf")
     parser.add_argument("--nms", default=None, type=float, help="test nms threshold")
@@ -153,8 +153,8 @@ def image_demo(predictor, current_time, args):
         이미지 파일에 대한 모델 인퍼런스 수행결과를 반환합니다.
 
         Args:
-            - predictor ()
-            - current_time ():
+            - predictor (Predictor): 인퍼런스를 수행할 모델 객체
+            - current_time (time.localtime): 현재 시간
             - args (argparse.ArgumentParser)
 
         Return:
@@ -247,6 +247,23 @@ def main(img_path=None, csv_path=None, sliced_path = None):
         model_path= args.ckpt,
         device='cuda:0', # or 'cpu'
         )
+
+    elif args.model == 'trt':
+        """
+        2024.01.04
+        args.model = Tensorrt
+        model_type = trt
+        classes = classes list
+        """
+        detection_model = AutoDetectionModel.from_pretrained(
+        model_type='trt',
+        confidence_threshold=0.3,
+        image_size = 1024,
+        model_path= args.ckpt,
+        device='cuda:0', # or 'cpu'
+        classes = ['background','ship','dolphin'],
+        )
+
 
     cls_map = {}
     # det 모델과 anomaly 모델 머지 input class를 맞춰주기 위함

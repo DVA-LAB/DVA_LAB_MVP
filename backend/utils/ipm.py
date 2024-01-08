@@ -293,8 +293,7 @@ def estimate_focal_length(image_width: int, fov_degrees: float) -> float:
 
         Args
             - image_width (float): 픽셀상의 이미지 가로 길이
-            - fov_degrees (?): field of view in degree
-    
+            - fov_degrees (float): field of view in degree
     
         Return
             - 추정 된 픽셀 상의 focal length

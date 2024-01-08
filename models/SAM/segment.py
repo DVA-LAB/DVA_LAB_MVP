@@ -6,6 +6,10 @@ from transformers import SamModel, SamProcessor
 
 
 class Segment:
+    """
+        세그멘테이션 모델 추론을 위한 클래스입니다.    
+    """
+    
     def __init__(self, device):
         self.device = device
         self.rgb_img = None
@@ -20,8 +24,8 @@ class Segment:
             세그멘테이션 모델 추론을 수행하고 마스크를 추출합니다.
 
             Args
-                - bgr_img (np.ndarray):
-                - boxes (?): ?
+                - bgr_img (np.ndarray): ?
+                - boxes (list): ?
             
             Return
                 - masks (?): ?

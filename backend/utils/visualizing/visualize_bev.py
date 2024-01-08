@@ -33,7 +33,7 @@ def get_world_coordinate(boundary, gsd, col, row):
 
 def read_log_file(log_path):
     """
-        로그 파일을 pandas 데이터 프레임으로 읽어 반환합니다.
+        로그 파일을 pandas 데이터 프레임 형식으로 읽고 반환합니다.
 
         Args
             log_path (str): 로그 파일 경로
@@ -219,7 +219,7 @@ def get_max_dimensions(image_paths):
 
 def make_video(image_paths, video_name, fps=30, max_resolution=(3840, 2160)):
     """
-        BEV 시각화된 비디오를 생성합니다.
+        BirdEyeView (BEV)로 시각화된 비디오를 생성합니다.
 
         Args
             - image_paths (list): 이미지 파일 경로 리스트
@@ -268,7 +268,8 @@ def main(args):
     start_time = time.time()
     frame_rate=30
     image_paths = get_image_paths(args.input_dir)
-    
+    violation = False
+
     # 첫 번째 이미지를 기준으로 비디오 크기 설정
     first_image = cv2.imread(image_paths[0])
 
@@ -286,9 +287,12 @@ def main(args):
     frame_count = 0
     previous_centers = {}
     max_ship_speed = 0
-    boat_speed = pd.DataFrame(columns={"frame_id", "track_id", "speed", "max_speed"})
+    boat_speed = pd.DataFrame(columns=["frame_id", "track_id", "speed", "max_speed"])
 
-
+    # About Text
+    font_color = (0, 0, 0) if violation else (0, 255, 0)
+    text_positions = [(30, 30), (30, 80), (30, 130), (30, 180), (30, 230), (30, 280), (30, 330)]
+    
     for image_path in tqdm(image_paths):
         frame = cv2.imread(image_path)
         date = logs['datetime'][frame_count]
@@ -307,6 +311,35 @@ def main(args):
         center_x, center_y = None, None
         center_x_dg, center_y_dg = None, None
         dolphin_present = False
+
+        roll = get_params_from_csv(args.log_path, frame_count)["R"]
+        pitch = get_params_from_csv(args.log_path, frame_count)["P"]
+        if (roll > -5 and pitch >-30) or (roll > -30 and pitch > -5) or ((-5 > roll > -30)&(-5 > pitch > -30)) :
+            err_texts = [
+                f"일시: {date}",
+                f"프레임 숫자: {frame_count}",
+                f"*** 판정불가 ***",
+                f"짐벌 각도 범위 벗어남",
+                f"Roll : {round(roll,2)}",
+                f"Pitch : {round(pitch,2)}",
+            ]
+            image = Image.fromarray(frame) # Original Image 
+            draw = ImageDraw.Draw(image)
+
+            # 좌상단에 흰색 배경 사각형을 그립니다.
+            dashboard_background = (0, 0, 700, 450)  # 좌표 (x0, y0, x1, y1)
+            draw.rectangle(dashboard_background, fill=(255, 255, 255))
+            
+            for text, pos in zip(err_texts, text_positions):
+                draw.text(pos, text, font=font, fill=(0, 0, 255))
+            
+            # 나머지 코드
+            img = np.array(image)
+            # 결과 이미지 저장
+            output_frame_path = os.path.join(args.output_dir, f'frame_{str(frame_count).zfill(6)}.jpg')
+            cv2.imwrite(output_frame_path, img)
+            frame_count += 1
+            continue
 
         rst, transformed_img, bbox, boundary_rows, boundary_cols, gsd_bev, eo, R, focal_length, pixel_size = BEV_FullFrame(frame_count, image_path, args.log_path, gsd, args.output_dir, DEV = False)
 
@@ -351,7 +384,7 @@ def main(args):
                     # 중심 좌표에 작은 초록색 점을 그림
                     outer_radius = 10  # 외부 원의 반지름
                     draw.ellipse((center_x - outer_radius, center_y - outer_radius, center_x + outer_radius, center_y + outer_radius), outline=(0, 0, 255), width=10)
-
+                    
                     # 실제세계 좌표 기준 중심점 저장
                     if track_id not in previous_centers:
                         previous_centers[track_id] = (center_x_dg, center_y_dg)
@@ -363,9 +396,14 @@ def main(args):
                         # 중심점 업데이트
                         previous_centers[track_id] = (center_x_dg, center_y_dg)
 
-                    speed_info = {"frame_id":frame_count, "track_id":track_id,
-                                  "speed":speed_kmh, "max_speed":max_ship_speed}
-                    boat_speed = boat_speed.append(speed_info, ignore_index=True)
+                        draw.text((center_x, center_y), str(speed_kmh), font=font, fill=font_color)
+                        # Inside your loop
+                        speed_info = {"frame_id": frame_count, "track_id": track_id,
+                                    "speed": speed_kmh, "max_speed": max_ship_speed}
+
+                        # Append the new data
+                        boat_speed = boat_speed.append(speed_info, ignore_index=True)
+
 
                 else: # 돌고래인 경우
                     dolphin_bboxes.append(bbox_info)
@@ -386,7 +424,6 @@ def main(args):
                                     ships_within_300m.add(track_id)
                                 if distance <= 50:
                                     ships_within_50m.add(track_id)
-                        violation = False
 
                         # Apply the rules based on the distance and speed
                         for ship_id, speed in ship_speeds.items():
@@ -414,16 +451,14 @@ def main(args):
                     else:
                         min_distance = "-"  # Or any other placeholder you prefer
                 
-        font_color = (0, 0, 0) # if violation else (0, 255, 0)
-
-        # 텍스트를 흰색 배경 사각형 위에 그립니다.
-        text_positions = [(30, 30), (30, 80), (30, 130), (30, 180), (30, 230), (30, 280)]
+        font_color = (0, 0, 0) if violation else (0, 255, 0)
 
         texts = [
             f"일시: {date}",
             f"프레임 숫자: {frame_count}",
-            f"픽셀 사이즈: {round(gsd,5)}m/px",
+            f"픽셀 사이즈: {round(gsd,4)}m/px",
             f"선박과 가장 가까운 거리: {min_distance}m",
+            f"선박 최대 속도: {max_ship_speed}km/h",
             f"50m 이내의 선박 수: {len(ships_within_50m)}",
             f"300m 이내의 선박 수: {len(ships_within_300m)}"
         ]
@@ -442,6 +477,8 @@ def main(args):
         cv2.imwrite(output_frame_path, img)
         frame_count += 1
 
+    # Save the boat_speed DataFrame as a CSV file
+    boat_speed.to_csv(args.boat_speed_path, index=False)
     make_video(get_image_paths(args.output_dir), args.output_video)
     end_time = time.time()
     # 걸린 시간 계산
@@ -456,5 +493,6 @@ if __name__ == "__main__":
     parser.add_argument('--input_dir', type=str, default='/home/dva4/DVA_LAB/backend/test/frame_origin')
     parser.add_argument('--output_dir', type=str, default='/home/dva4/DVA_LAB/backend/test_saved/frame_bev_infer')
     parser.add_argument('--GSD_path', type=str, default='/home/dva4/DVA_LAB/backend/test/GSD_total.txt')
+    parser.add_argument('--boat_speed_path', type=str, default='/home/dva4/DVA_LAB/backend/test/boat_speed.csv')
     args = parser.parse_args()
     main(args)

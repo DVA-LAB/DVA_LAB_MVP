@@ -100,7 +100,9 @@ def get_mov_idx(pd_log):
             - pd_log(pd.DataFrame): pandas 데이터 프레임 형식으로 변환된 log
 
         Return
-            - pd_idx (pd.DataFrame): 시작 인덱스와 종료 인덱스가 담긴 데이터 프레임 ex) pd.DataFrame({'idx_start': start_idx, 'idx_end': end_idx})
+            - pd_idx (pd.DataFrame): 시작 인덱스와 종료 인덱스가 담긴 데이터 프레임 
+            
+            ex) pd.DataFrame({'idx_start': start_idx, 'idx_end': end_idx})
     """
 
     mov_status = list(pd_log['CAMERA.isVideo'])
@@ -131,8 +133,8 @@ def get_time_diff(time1, time2):
         두 타임스탬프 간의 차이를 계산하여 초 단위로 반환합니다.
 
         Args
-            - time1 (?): 첫 번째 타임스탬프
-            - time2 (?): 두 번째 타임스탬프
+            - time1 (datetime): 첫 번째 타임스탬프
+            - time2 (datetime): 두 번째 타임스탬프
 
         Return
             - 두 타임스탬프 간의 차이를 초 단위로 나타낸 값
@@ -407,7 +409,7 @@ def do_sync(video_path, csv_path, srt_path, save_path):
         동기화된 파일은 `save_path` 경로에 `sync_log.csv`라는 파일명으로 저장됩니다.
 
         Args
-            - video_path (str): 비디오 파일 경로
+            - video_path (str): 입력 비디오 파일 경로
             - csv_path (str): csv 파일 경로
             - srt_path (str): srt 파일 경로
             - save_path (str): 동기화된 파일이 저장될 경로

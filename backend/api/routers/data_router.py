@@ -35,7 +35,7 @@ async def upload_video(file: UploadFile = File(...), preprocess: bool = Form(...
             - file (fastapi.UploadFile): 사용자로부터 업로드되는 파일
             - preprocess (bool): 빛반사 제거와 같은 전처리 기능 사용 여부
         Raise
-            - 비디오 전처리 또는 저장과정에서 에러가 발생할 경우 서버 에러 발생
+            - fastapi.HTTPException: 비디오 전처리 또는 저장과정에서 에러가 발생할 경우 서버 에러(500) 발생
         Return
             - json 형식의 파일 업로드 성공 메시지
     """
@@ -199,7 +199,7 @@ async def sync_log():
         사용자가 업로드한 csv 파일과 srt 파일을 간의 동기화를 수행합니다.
 
         Raise
-            - csv, srt 파일 간 동기화에 실패할 경우 서버 에러(500)를 발생
+            - fastapi.HTTPException: csv, srt 파일 간 동기화에 실패할 경우 서버 에러(500)를 발생
         Return
             - 동기화 성공 메시지를 담은 "message" 필드를 포함하는 json
     """
@@ -264,7 +264,7 @@ async def save_input(request: UserInput):
 
 def get_gsd(frame_number, frame_file, x1, y1, x2, y2, m_distance):
     """
-        사용자 입력 값을 기반으로 http://[IP].[PORT]/bev1로 POST를 요청한 뒤 GSD 값과 픽셀거리 값을 가져옵니다.
+        사용자 입력 값을 기반으로 http://localhost/bev1로 POST를 요청한 뒤 GSD 값과 픽셀거리 값을 가져옵니다.
 
         Args
             - frame_number (int): 프레임 파일 번호
@@ -275,10 +275,8 @@ def get_gsd(frame_number, frame_file, x1, y1, x2, y2, m_distance):
             - y2 (float): point2의 y좌표
             - m_distance (float): point1과 point2 간 거리
         Return
-            - Tuple (
-                - gsd (float): GSD 값
-                - pixel_size (float): 픽셀 크기 값
-            )
+            - gsd (float): GSD 값
+            - pixel_size (float): 픽셀 크기 값
     """
 
     url = "http://112.216.237.124:8001/bev1"
@@ -320,11 +318,11 @@ def calculate_pixel_distance(point1, point2):
             - point2.x, point2.y
 
         Args
-            - point1: 이미지의 픽셀 상의 한 점
-            - point2: 이미지의 픽셀 상의 한 점
+            - point1(Point): 이미지의 픽셀 상의 한 점
+            - point2(Point): 이미지의 픽셀 상의 한 점
             
         Return
-            - 두 픽셀 좌표 간 유클리드 거리
+            - 두 픽셀 좌표 간 유클리드 거리 (float)
     """
 
     return ((point2.x - point1.x) ** 2 + (point2.y - point1.y) ** 2) ** 0.5
@@ -338,7 +336,7 @@ def calculate_average_distance(distances):
             - distances (list): 거리 배열
 
         Return
-            - sum(distances) / len(distances)
+            - distnaces 배열 변수의 평균값 (float)
     """
     
     return sum(distances) / len(distances)
