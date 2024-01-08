@@ -37,8 +37,8 @@ async def bev_1(body: BEV1):
                 - rst (int): BEV 변환 성공 여부
                 - img_dst (str): BEV 적용한 이미지 경로
                 - objects (list): BEV 상에서의 bbox로 정보로 변경된 객체추적 결과 ex) [frame_id, track_id, label, bbox, score, -1, -1, -1]
-                - pixel_size (float): 한 픽셀당 실제 크기
-                - gsd (float): GSD 값
+                - pixel_size (float): 한 픽셀당 실제 크기(User Input 기반)
+                - gsd (float): GSD 값(Sensor 정보 기반)
     """
 
     try:
@@ -78,11 +78,16 @@ async def bev_2(body: BEV2):
 
         Return
             - result (tuple)
-                - rst (int): BEV 변환 성공 여부
-                - img_dst (str): BEV 적용한 이미지 경로
-                - objects (list): BEV 상에서의 bbox로 정보로 변경된 객체추적 결과 ex) [frame_id, track_id, label, bbox, score, -1, -1, -1]
-                - pixel_size (float): 한 픽셀당 실제 크기
-                - gsd (float): GSD 값
+                - rst (int): 0: Success, 1: rectify fail, 2: fail to calculate gsd
+                - transformed_img (np.ndarray): BEV로 변환된 이미지
+                - bbox (np.ndarray): BEV 이미지의 최외각 Bounding Box [Xmin, Xmax, Ymin, Ymax]
+                - boundary_rows (int): # of rows 
+                - boundary_cols (ing): # of cols 
+                - gsd (float): gsd 값입니다.
+                - eo (list): drone meta information [longitude, latitude, altitude, roll, pitch, yaw]
+                - R (np.ndarray): BEV 변환에 활용되는 회전행렬
+                - focal_length (float): 초점 거리
+                - pixel_size (float): sensor_width / image cols # unit: mm/px
     """
 
     try:
