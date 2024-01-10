@@ -11,9 +11,7 @@ DVA_LAB
 │ ├── bytetrack
 │ ├── efficientAD
 │ ├── refiner
-│ ├── sahi_detection
-│ └── SAM
-├── dataset
+│ └── sahi_detection
 ├── docs
 ├── frontend
 └── README.md
@@ -40,14 +38,10 @@ This directory contains different model directories, each operating as a microse
 - `efficientAD`: An efficient anomaly detection microservice model designed to identify unusual patterns or anomalies in video data.
 - `refiner`: A microservice that refines detection or tracking results, improving the accuracy and reliability of the analysis.
 - `sahi_detection`: A dedicated microservice for detection operations, capable of identifying a wide range of objects in various conditions.
-- `SAM`: The Specific Application Model microservice for segmentation mask as util function.
 
 Each microservice is self-contained, with its own dedicated environment and dependencies, ensuring that updates or changes to one service do not impact the others, in line with the principles of MSA.
 
-## 4. dataset
-The dataset directory is where the video and image datasets are stored for analysis.
-
-## 5. frontend
+## 4. frontend
 A React application for interactive video analysis.
 
 ## Contributors ✨
