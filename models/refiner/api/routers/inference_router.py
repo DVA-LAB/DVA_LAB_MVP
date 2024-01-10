@@ -21,15 +21,17 @@ router = APIRouter(tags=["data"])
 )
 async def inference(request_body: DataRequest):
     """
-        ?
+        SAM을 이용하여 COCO 형식의 BBox 레이블을 객체에 더 fit하게 세그먼트 마스크로 세밀화하는 함수입니다.
 
-        Args
-            - request_body
-                - request_body.img_path (str): ?
-                - request_body.json_file (str): ?
+        이 API는 주어진 이미지 경로와 JSON 파일을 사용하여 BBox 레이블을 개선합니다. 개선된 데이터는 세그먼트 마스크로서 더 정확하게 객체를 표현합니다.
 
-        Return
-            - updated_date (json): ?
+        Args:
+            - request_body (DataRequest): 요청 본문, 아래의 필드를 포함합니다.
+                - img_path (str): 세그먼트 마스크를 적용할 이미지의 경로입니다.
+                - json_file (str): COCO 형식의 BBox 레이블이 포함된 JSON 파일의 경로입니다.
+
+        Returns:
+            - updated_data (json): 세그먼트 마스크로 세밀화된 레이블이 포함된 JSON 데이터입니다.
     """
 
     refiner = Refiner("cuda")
@@ -38,7 +40,6 @@ async def inference(request_body: DataRequest):
     json_path = request_body.json_file
 
     updated_data = refiner.do_refine(json_path, imgs_path)
-    # refiner.save_update(updated_data, "refined_train.json")
     return updated_data
 
 
