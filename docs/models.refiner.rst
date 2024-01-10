@@ -1,6 +1,11 @@
 models.refiner package
 ======================
 
+.. automodule:: models.refiner
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Subpackages
 -----------
 
@@ -12,18 +17,7 @@ Subpackages
 Submodules
 ----------
 
-models.refiner.app module
--------------------------
+.. toctree::
+   :maxdepth: 4
 
-.. automodule:: models.refiner.app
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-Module contents
----------------
-
-.. automodule:: models.refiner
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   models.refiner.app

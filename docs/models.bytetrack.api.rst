@@ -1,6 +1,11 @@
 models.bytetrack.api package
 ============================
 
+.. automodule:: models.bytetrack.api
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Subpackages
 -----------
 
@@ -8,12 +13,3 @@ Subpackages
    :maxdepth: 4
 
    models.bytetrack.api.routers
-   models.bytetrack.api.services
-
-Module contents
----------------
-
-.. automodule:: models.bytetrack.api
-   :members:
-   :undoc-members:
-   :show-inheritance:

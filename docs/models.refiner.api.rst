@@ -1,6 +1,11 @@
 models.refiner.api package
 ==========================
 
+.. automodule:: models.refiner.api
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Subpackages
 -----------
 
@@ -9,11 +14,3 @@ Subpackages
 
    models.refiner.api.routers
    models.refiner.api.services
-
-Module contents
----------------
-
-.. automodule:: models.refiner.api
-   :members:
-   :undoc-members:
-   :show-inheritance:

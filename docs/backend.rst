@@ -1,6 +1,11 @@
 backend package
 ===============
 
+.. automodule:: backend
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Subpackages
 -----------
 
@@ -14,18 +19,7 @@ Subpackages
 Submodules
 ----------
 
-backend.app module
-------------------
+.. toctree::
+   :maxdepth: 4
 
-.. automodule:: backend.app
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-Module contents
----------------
-
-.. automodule:: backend
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   backend.app
