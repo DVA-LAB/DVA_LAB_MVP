@@ -7,9 +7,9 @@ import os
 
 from loguru import logger
 
-from api.services import BYTETracker
-from api.services import Timer
-from interface.request import TrackingRequest
+from models.bytetrack.api.services import BYTETracker
+from models.bytetrack.api.services import Timer
+from models.bytetrack.interface.request import TrackingRequest
 
 import numpy as np
 

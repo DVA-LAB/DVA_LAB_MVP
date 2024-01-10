@@ -5,7 +5,7 @@ import cv2
 import datetime
 import pandas as pd
 from haversine import haversine
-from utils.log_sync.adjust_height import get_offset
+from backend.utils.log_sync.adjust_height import get_offset
 # from log_sync import adjust_height
 
 use_cols = ['OSD.latitude', 'OSD.longitude', 'OSD.height [ft]', 'OSD.altitude [ft]',

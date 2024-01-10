@@ -5,8 +5,8 @@ import os
 import requests
 from autologging import logged
 from fastapi import APIRouter, Depends, HTTPException, status
-from interface.request import ModelRequest
-from utils.merge_bboxes import (match_and_ensemble, plot_detections, read_csv_file, read_file)
+from backend.interface.request import ModelRequest
+from backend.utils.merge_bboxes import (match_and_ensemble, plot_detections, read_csv_file, read_file)
 
 router = APIRouter(tags=["model"])
 
@@ -108,7 +108,7 @@ async def inference_detection(img_path, csv_path, sliced_path):
                 - img_path (str): 원본 프레임 경로
                 - csv_path (str): 객체인식 결과파일 저장경로
                 - sliced_path (str): 원본 프레임이 슬라이싱된 경로
-            )
+            )     
     """
 
     url = "http://localhost:8002/sahi/inference"

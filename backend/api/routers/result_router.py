@@ -9,9 +9,9 @@ import requests
 from autologging import logged
 from fastapi import (APIRouter, Depends, FastAPI, File, Form, HTTPException, UploadFile, status)
 from fastapi.responses import FileResponse, JSONResponse
-from interface.request import VisRequest, VisRequestBev
-from utils.visualizing import visualize_bev
-from utils.visualizing.visualize import show_result
+from backend.interface.request import VisRequest, VisRequestBev
+from backend.utils.visualizing import visualize_bev
+from backend.utils.visualizing.visualize import show_result
 
 router = APIRouter(tags=["result"])
 

@@ -26,7 +26,7 @@ print(response.json())
 
 ## 2. 코드 사용
 ```python
-from api.services import Refiner
+from models.refiner.api.services import Refiner
 
 refiner = Refiner("cuda")
 

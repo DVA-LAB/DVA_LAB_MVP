@@ -7,13 +7,13 @@ from typing import List
 
 import requests
 import torch
-from api.services.data_service import parse_videos_multithreaded
+from backend.api.services.data_service import parse_videos_multithreaded
 from fastapi import (APIRouter, Depends, FastAPI, File, Form, HTTPException,
                      UploadFile, status)
 from fastapi.responses import FileResponse, JSONResponse
-from interface.request.user_input_request import UserInput
-from utils.log_sync.adjust_log import do_sync
-from utils.remove_glare import remove_glare
+from backend.interface.request.user_input_request import UserInput
+from backend.utils.log_sync.adjust_log import do_sync
+from backend.utils.remove_glare import remove_glare
 
 router = APIRouter(tags=["data"])
 

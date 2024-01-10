@@ -3,7 +3,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"  # GPU 0번만 사용하도록 설정
 
 from fastapi import FastAPI
 import uvicorn
-from api import routers
+from models.sahi_detection.api import routers
 
 def create_app() -> FastAPI:
     """

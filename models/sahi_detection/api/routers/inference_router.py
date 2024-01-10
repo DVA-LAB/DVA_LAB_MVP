@@ -9,7 +9,7 @@ import torch
 import numpy as np
 
 from loguru import logger
-from interface.request import SahiRequest
+from models.sahi_detection.interface.request import SahiRequest
 from typing import List
 
 from models.sahi_detection.api.services import preproc

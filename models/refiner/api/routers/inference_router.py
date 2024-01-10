@@ -8,8 +8,8 @@ import numpy as np
 import requests
 from fastapi import APIRouter, Depends, status
 
-from api.services import Refiner
-from interface.request import DataRequest, ShipRequest
+from models.refiner.api.services import Refiner
+from models.refiner.interface.request import DataRequest, ShipRequest
 
 router = APIRouter(tags=["data"])
 
