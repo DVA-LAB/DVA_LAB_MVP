@@ -423,7 +423,7 @@ def main(args):
                         ship_speeds[track_id] = speed_kmh
                         max_ship_speed = max(max_ship_speed, speed_kmh)
                         # 중심점 업데이트
-                        previous_centers[track_id] = (center_x, center_y)
+                        previous_centers[track_id] = (bev_center_x_dg, bev_center_y_dg)
 
                         bev_draw.text((bev_center_x, bev_center_y), str(speed_kmh), font=font, fill=font_color)
                         draw.text((center_x, center_y), str(speed_kmh), font=font, fill=font_color)
