@@ -12,15 +12,6 @@ from loguru import logger
 from interface.request import SahiRequest
 from typing import List
 
-# from models.sahi_detection.api.services import preproc
-# from models.sahi_detection.api.services import get_exp
-# from models.sahi_detection.api.services import fuse_model, get_model_info, postprocess
-# from models.sahi_detection.api.services import plot_tracking
-# from models.sahi_detection.api.services import Timer
-# from models.sahi_detection.api.services import YoloxDetectionModel
-# from models.sahi_detection.api.services import get_sliced_prediction
-# from models.sahi_detection.api.services import AutoDetectionModel
-# from models.sahi_detection.api.services import config as cfg
 from ..services import preproc
 from ..services import get_exp
 from ..services import fuse_model, get_model_info, postprocess
@@ -30,6 +21,17 @@ from ..services import YoloxDetectionModel
 from ..services import get_sliced_prediction
 from ..services import AutoDetectionModel
 from ..services import config as cfg
+
+# from models.sahi_detection.api.services import preproc
+# from models.sahi_detection.api.services import get_exp
+# from models.sahi_detection.api.services import fuse_model, get_model_info, postprocess
+# from models.sahi_detection.api.services import plot_tracking
+# from models.sahi_detection.api.services import Timer
+# from models.sahi_detection.api.services import YoloxDetectionModel
+# from models.sahi_detection.api.services import get_sliced_prediction
+# from models.sahi_detection.api.services import AutoDetectionModel
+# from models.sahi_detection.api.services import config as cfg
+
 IMAGE_EXT = [".jpg", ".jpeg", ".webp", ".bmp", ".png"]
 
 
@@ -43,7 +45,7 @@ def make_parser():
 
     parser = argparse.ArgumentParser("ByteTrack")
     parser.add_argument("--demo", default="image", help="demo type, eg. image, video and webcam")
-    parser.add_argument("--model", default="yolov8", help="Model name | yolov5, yolox, yolov8")
+    parser.add_argument("--model", default="trt", help="Model name | yolov5, yolox, yolov8, Tensorrt")
     parser.add_argument("-expn", "--experiment-name", type=str, default=None)
     parser.add_argument("-n", "--name", type=str, default=None, help="model name")
     parser.add_argument("--path", default="/home/dva3/workspace/output/test/test01", help="path to images or video")
@@ -52,7 +54,7 @@ def make_parser():
 
     # exp file
     parser.add_argument("-f", "--exp_file", default=None, type=str, help="If you want to use yolox, pls input your expriment description file")
-    parser.add_argument("-c", "--ckpt", default="/mnt/models/v8_m_best.pt", type=str, help="ckpt for inf")
+    parser.add_argument("-c", "--ckpt", default="/mnt/models/yolov8_dva.trt", type=str, help="ckpt for inf")
     parser.add_argument("--device", default="gpu", type=str, help="device to run our model, can either be cpu or gpu")
     parser.add_argument("--conf", default=None, type=float, help="test conf")
     parser.add_argument("--nms", default=None, type=float, help="test nms threshold")
@@ -256,6 +258,23 @@ def main(img_path=None, csv_path=None, sliced_path = None):
         device='cuda:0', # or 'cpu'
         )
 
+    elif args.model == 'trt':
+        """
+        2024.01.04
+        args.model = Tensorrt
+        model_type = trt
+        classes = classes list
+        """
+        detection_model = AutoDetectionModel.from_pretrained(
+        model_type='trt',
+        confidence_threshold=0.3,
+        image_size = 1024,
+        model_path= args.ckpt,
+        device='cuda:0', # or 'cpu'
+        classes = ['background','ship','dolphin'],
+        )
+
+
     cls_map = {}
     # det 모델과 anomaly 모델 머지 input class를 맞춰주기 위함
     for idx, cls in enumerate(cfg.OUT_CLASSES):
@@ -295,7 +314,7 @@ async def inference(request: SahiRequest.SahiRequest):
             - csv_path (str): SAHI가 적용된 객체탐지 결과를 저장할 csv 파일 이름입니다.
             - sliced_path (str): SAHI에 의해 슬라이싱 된 패치가 저장된 디렉터리 경로입니다.
     """
-    print(request.img_path)
+
     img_path = request.img_path
     csv_path = request.csv_path
     os.makedirs(os.path.dirname(csv_path), exist_ok=True)

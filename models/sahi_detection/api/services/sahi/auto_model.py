@@ -11,7 +11,8 @@ MODEL_TYPE_TO_MODEL_CLASS_NAME = {
     "torchvision": "TorchVisionDetectionModel",
     "yolov5sparse": "Yolov5SparseDetectionModel",
     "yolonas": "YoloNasDetectionModel",
-    "yolox": "YoloxDetectionModel"
+    "yolox": "YoloxDetectionModel",
+    "trt": "TensorRTDetectionModel",
 }
 
 
@@ -29,6 +30,7 @@ class AutoDetectionModel:
         category_remapping: Optional[Dict] = None,
         load_at_init: bool = True,
         image_size: int = None,
+        classes: Optional[Any] = None,
         **kwargs,
     ):
         """
@@ -63,7 +65,9 @@ class AutoDetectionModel:
 
         model_class_name = MODEL_TYPE_TO_MODEL_CLASS_NAME[model_type]
         DetectionModel = import_model_class(model_type, model_class_name)
-
+        if (category_mapping is None) and (classes is not None):
+            category_mapping = classes
+            
         return DetectionModel(
             model_path=model_path,
             model=model,
