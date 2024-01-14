@@ -11,9 +11,19 @@ from transformers import SamModel, SamProcessor
 
 class Refiner:
     def __init__(self, device):
+        """
+            SAM (Segmentation-Aware Model)을 사용하여 이미지의 객체를 세그먼트화하는 Refiner 클래스의 생성자입니다.
+
+            Args
+                - device (str): 모델을 실행할 장치 ('cuda' 또는 'cpu').
+
+            Note
+                - `self.model`과 `self.processor`는 Facebook의 'sam-vit-huge' 모델을 사용하여 초기화됩니다.
+                - 추후 'refiner-HQ' 옵션을 추가할 예정입니다 (https://drive.google.com/file/d/1qobFYrI4eyIANfBSmYcGuWRaSIXfMOQ8/view?usp=sharing).
+        """
         self.device = device
         self.rgb_img = None
-        # TODO@jh: refiner-HQ 옵션 추가 (https://drive.google.com/file/d/1qobFYrI4eyIANfBSmYcGuWRaSIXfMOQ8/view?usp=sharing)
+        # TODO: refiner-HQ 옵션 추가 (https://drive.google.com/file/d/1qobFYrI4eyIANfBSmYcGuWRaSIXfMOQ8/view?usp=sharing)
         self.model = SamModel.from_pretrained(
             pretrained_model_name_or_path="facebook/sam-vit-huge"
         ).to(self.device)
@@ -21,16 +31,16 @@ class Refiner:
 
     def _get_loader(self, json_path, image_folder):
         """
-            
+            COCO 형식의 JSON 파일과 이미지 폴더에서 이미지와 해당 바운딩 박스, 어노테이션 ID를 로드하는 제너레이터입니다.
 
             Args
-                - json_path (str): 
-                - image_folder (str): 
+                - json_path (str): COCO 형식의 어노테이션 데이터가 담긴 JSON 파일 경로.
+                - image_folder (str): 이미지 파일들이 있는 폴더 경로.
 
-            Return
-                - image (np.ndarray):
-                - bbox (list):
-                - anno_id (int):
+            Yields
+                - image (np.ndarray): 로드된 이미지.
+                - bbox (list): 해당 이미지의 바운딩 박스 좌표.
+                - anno_id (int): 어노테이션 ID.
         """
         with open(json_path, "r") as file:
             coco_data = json.load(file)
@@ -47,14 +57,14 @@ class Refiner:
 
     def do_refine(self, json_path, image_folder):
         """
-            ?
+            지정된 JSON 파일과 이미지 폴더를 사용하여 바운딩 박스를 세그먼트 마스크로 세밀화합니다.
 
             Args
-                - json_path (str): ?
-                - image_folder (str): ?
+                - json_path (str): COCO 형식의 어노테이션 데이터가 담긴 JSON 파일 경로.
+                - image_folder (str): 이미지 파일들이 있는 폴더 경로.
 
             Return
-                - coco_data (json): ?
+                - coco_data (json): 세그먼트 마스크로 업데이트된 어노테이션 데이터.
         """
 
         loader = self._get_loader(json_path, image_folder)
@@ -83,11 +93,11 @@ class Refiner:
 
     def save_update(self, coco_data, save_path):
         """
-            ?
+            업데이트된 어노테이션 데이터를 JSON 파일로 저장합니다.
 
             Args
-                - coco_data (json): ?
-                - save_path (str): 파일 저장 경로
+                - coco_data (json): 업데이트된 어노테이션 데이터.
+                - save_path (str): 저장할 파일 경로.
         """
 
         with open(save_path, "w") as file:
@@ -95,14 +105,14 @@ class Refiner:
 
     def _get_horizontal_bbox_from_mask(self, mask, bbox):
         """
-            ?
-            
+            마스크를 기반으로 수평 바운딩 박스 좌표를 계산합니다.
+
             Args
-                - mask (?): ?
-                - bbox (?): ?
+                - mask (np.ndarray): 세그먼트화된 객체의 마스크.
+                - bbox (list): 원래 바운딩 박스 좌표 [x_min, y_min, width, height].
 
             Return
-                - bbox (?): ?
+                - bbox (list): 마스크에 기반한 새로운 바운딩 박스 좌표 [x_min, y_min, width, height].
         """
 
         mask = mask[0, :, :]
@@ -116,14 +126,14 @@ class Refiner:
 
     def update_bbox_with_mask(self, mask, bbox):
         """
-            ?
-            
+            세그먼트 마스크를 사용하여 바운딩 박스 좌표를 업데이트합니다.
+
             Args
-                - mask (?): ?
-                - bbox (?): ?
+                - mask (np.ndarray): 세그먼트화된 객체의 마스크.
+                - bbox (list): 원래 바운딩 박스 좌표 [x_min, y_min, width, height].
 
             Return
-                - updated_bbox (?): ?
+                - updated_bbox (list): 업데이트된 바운딩 박스 좌표 [x_min, y_min, width, height].
         """
 
         updated_bbox = self._get_horizontal_bbox_from_mask(mask[0], bbox)
@@ -131,14 +141,14 @@ class Refiner:
 
     def _do_seg(self, bgr_img, boxes):
         """
-            ?
+            주어진 이미지와 바운딩 박스에 대해 세그먼트화를 수행합니다.
 
             Args
-                - bgr_img (?): ?
-                - boxes (list): ?
+                - bgr_img (np.ndarray): 세그먼트화할 이미지.
+                - boxes (list): 세그먼트화할 영역의 바운딩 박스 좌표 목록.
 
             Return
-                - ? (?): ?
+                - masks (np.ndarray): 계산된 세그먼트 마스크.
         """
 
         self.rgb_img = cv2.cvtColor(bgr_img, cv2.COLOR_BGR2RGB)
@@ -163,12 +173,15 @@ class Refiner:
 
     def show_mask(self, masks, random_color=False, save=None):
         """
-            ?
+            세그먼트 마스크를 이미지 위에 표시합니다.
 
             Args
-                - mask (?): ?
-                - random_color (bool): 색상 랜덤 여부
-                - save (bool): mask 저장 여부
+                - masks (np.ndarray): 표시할 마스크.
+                - random_color (bool): 마스크에 적용할 색상을 무작위로 선택할지 여부.
+                - save (str): 결과 이미지를 저장할 파일 경로 (저장하지 않을 경우 None).
+
+            Note
+                - 이미지는 `self.rgb_img`에 저장되어 있어야 합니다.
         """
 
         plt.imshow(np.array(self.rgb_img))
@@ -185,14 +198,17 @@ class Refiner:
 
     def show_mask_bbox(self, masks, old_bboxes, new_bboxes, random_color=False, save=None):
         """
-            ?
+            세그먼트 마스크와 바운딩 박스를 이미지 위에 표시합니다.
 
             Args
-                - mask (list): ?
-                - old_bboxes (list): ?
-                - new_bboxes (list): ?
-                - random_color (bool): 색상 랜덤 여부
-                - save (bool): mask 저장 여부
+                - masks (list): 표시할 세그먼트 마스크 목록.
+                - old_bboxes (list): 원래 바운딩 박스 좌표 목록.
+                - new_bboxes (list): 업데이트된 바운딩 박스 좌표 목록.
+                - random_color (bool): 마스크에 적용할 색상을 무작위로 선택할지 여부.
+                - save (str): 결과 이미지를 저장할 파일 경로 (저장하지 않을 경우 None).
+
+            Note
+                - 이미지는 `self.rgb_img`에 저장되어 있어야 합니다.
         """
 
         for bbox in old_bboxes:
@@ -205,13 +221,13 @@ class Refiner:
 
     def convert_to_xyxy(self, bbox):
         """
-            ?
+            COCO 형식의 바운딩 박스 좌표를 [x_min, y_min, x_max, y_max] 형식으로 변환합니다.
 
             Args
-                - bbox (list): [x_min, y_min, width, height]
+                - bbox (list): COCO 형식의 바운딩 박스 좌표 [x_min, y_min, width, height].
 
             Return
-                - bbox (list): [x_min, y_min, x_min + width, y_min + height]
+                - bbox (list): 변환된 바운딩 박스 좌표 [x_min, y_min, x_max, y_max].
         """
 
         x_min, y_min, width, height = bbox
@@ -239,13 +255,13 @@ class Refiner:
     @staticmethod
     def calculate_length_along_major_axis(mask):
         """
-            ?
+            주축을 따라 마스크의 길이를 계산하는 정적 메소드입니다.
 
             Args
-                - mask (?): ?
+                - mask (np.ndarray): 길이를 계산할 마스크입니다.
 
             Return
-                - length (float): ?
+                - length (float): 계산된 길이입니다.
         """
 
         mask_2d = mask[0, 0, :, :].numpy()  # 첫 번째 채널을 2차원 배열로 변환
@@ -266,15 +282,15 @@ class Refiner:
     @staticmethod
     def find_rotated_bounding_box_and_max_length(mask):
         """
-            ?
+            마스크를 기반으로 회전된 바운딩 박스와 그 박스의 가장 긴 변의 길이를 찾는 정적 메소드입니다.
 
             Args
-                - mask (?): ?
+                - mask (np.ndarray): 객체의 세그먼트 마스크를 나타내는 2차원 배열.
 
             Return
-                - max_length (?): ?
-                - box (?): ?
-                - longest_edge_points (tuple): ?
+                - max_length (float): 마스크에서 가장 긴 변의 길이.
+                - box (np.ndarray): 마스크에 대한 회전된 최소 영역 바운딩 박스의 꼭짓점.
+                - longest_edge_points (tuple): 가장 긴 변을 이루는 두 꼭짓점의 좌표.
         """
 
         mask_np = mask.numpy().astype(np.uint8)
@@ -288,7 +304,6 @@ class Refiner:
         box = cv2.boxPoints(rect)
         box = np.int0(box)
 
-        # 가장 긴 변의 길이와 해당 변을 이루는 두 포인트를 찾습니다.
         max_length = 0
         longest_edge_points = None
 

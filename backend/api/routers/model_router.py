@@ -12,58 +12,6 @@ router = APIRouter(tags=["model"])
 
 
 @router.post(
-    "/inference",
-    status_code=status.HTTP_200_OK,
-    summary="AI model run",
-)
-async def model_inference(body: ModelRequest):
-    """
-        AI 모델(객체탐지, 이상탐지, 객체추적)을 구동 후 생성된 bbox 파일 경로를 반환합니다.
-
-        Args
-            - body
-                - body.frame_path (str): 원본 프레임이 저장된 경로
-                - body.detection_save_path (str): 객체탐지 결과가 저장된 경로
-                - body.sliced_path (str): 원본 프레임이 슬라이싱 된 경로
-                - body.use_anomaly (bool): 이상 탐지 결과를 사용할지 여부
-
-        Raise
-            - fastapi.HTTPException: 모델 구동 중 에러가 발생할 경우 서버 에러(500)를 발생
-        
-        Return
-            - result_path (str): 모델 구동 결과로 생성된 bbox의 파일 경로
-    """
-
-    try:
-        # Detection
-        print(body.frame_path, body.detection_save_path, body.sliced_path)
-        img_path, csv_path, sliced_path = inference_detection(
-            body.frame_path, body.detection_save_path, body.sliced_path
-        )
-        
-        # Bbox merge
-        os.makedirs(body.output_merge_path, exist_ok=True)
-        anomaly_detection_output = read_csv_file(csv_path) if body.use_anomaly else None
-        detection_output = read_csv_file(csv_path)
-        detection_save_path = os.path.join(body.output_merge_path, "result.txt")
-        output = match_and_ensemble(
-            anomaly_detection_output,
-            detection_output,
-            use_anomaly=body.use_anomaly,
-            output_file=detection_save_path,
-        )
-        
-        # Tracking
-        tracking_save_path = os.path.join("test", "model", "tracking", "result.txt")
-        os.makedirs(os.path.dirname(tracking_save_path), exist_ok=True)
-        result_path = inference_tracking(detection_save_path, tracking_save_path)
-        return result_path
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-
-@router.post(
     "/inference/detection",
     status_code=status.HTTP_200_OK,
     summary="sahi + yolo inference",
@@ -101,7 +49,7 @@ async def inference_detection(img_path, csv_path, sliced_path):
                 - sliced_path (str): 원본 프레임이 슬라이싱된 경로
             )
     """
-    print("test")
+
     url = "http://localhost:8002/sahi/inference"
     headers = {
         "accept": "application/json",

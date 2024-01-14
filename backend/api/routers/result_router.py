@@ -141,12 +141,18 @@ async def get_all_gsd(body: VisRequestBev):
 )
 async def export_origin():
     """
-        ?
+        GET 요청을 처리하여 원본 비디오를 내보냅니다.
+
+        이 함수는 "/export/origin" 경로에 대한 GET 요청에 응답합니다.
+        호출되면, 서버 저장소의 특정 비디오 파일을 포함하는 FileResponse 객체를 반환합니다.
 
         Return
-            - fastapi.responses.FileResponse: 시각화가 적용된 영상을 반환합니다.
-    """
+            - FileResponse: 이 경로에 접근할 때, 서버의 지정된 경로에 위치한 특정 비디오 파일의 다운로드를 시작하는 응답 객체입니다.
 
+        Note
+            - 비디오 파일 경로는 현재 서버 파일 시스템 내의 특정 위치로 하드코딩되어 있습니다.
+            - 프로덕션 환경에서는 더 동적이거나 안전한 경로로 설정되어야 합니다.
+    """
     video_storage_path = "/home/dva4/DVA_LAB/backend/test/visualize.mp4"
     return FileResponse(video_storage_path)
 
