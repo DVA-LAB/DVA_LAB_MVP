@@ -302,8 +302,7 @@ def main(args):
     frame_count = 0
     previous_centers = {}
     max_ship_speed = 0
-    # boat_speed = pd.DataFrame(columns=["frame_id", "track_id", "speed", "max_speed"])
-
+    
     # About Text
     font_color = (0, 0, 0) if violation else (0, 0, 255)
     text_positions = [(30, 30), (30, 80), (30, 130), (30, 180), (30, 230), (30, 280), (30, 330)]
@@ -423,7 +422,7 @@ def main(args):
                         ship_speeds[track_id] = speed_kmh
                         max_ship_speed = max(max_ship_speed, speed_kmh)
                         # 중심점 업데이트
-                        previous_centers[track_id] = (center_x, center_y)
+                        previous_centers[track_id] = (bev_center_x_dg, bev_center_y_dg)
 
                         bev_draw.text((bev_center_x, bev_center_y), str(speed_kmh), font=font, fill=font_color)
                         draw.text((center_x, center_y), str(speed_kmh), font=font, fill=font_color)

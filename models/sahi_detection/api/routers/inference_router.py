@@ -12,16 +12,24 @@ from loguru import logger
 from interface.request import SahiRequest
 from typing import List
 
-from models.sahi_detection.api.services import preproc
-from models.sahi_detection.api.services import get_exp
-from models.sahi_detection.api.services import fuse_model, get_model_info, postprocess
-from models.sahi_detection.api.services import plot_tracking
-from models.sahi_detection.api.services import Timer
-from models.sahi_detection.api.services import YoloxDetectionModel
-from models.sahi_detection.api.services import get_sliced_prediction
-from models.sahi_detection.api.services import AutoDetectionModel
-from models.sahi_detection.api.services import config as cfg
-
+# from models.sahi_detection.api.services import preproc
+# from models.sahi_detection.api.services import get_exp
+# from models.sahi_detection.api.services import fuse_model, get_model_info, postprocess
+# from models.sahi_detection.api.services import plot_tracking
+# from models.sahi_detection.api.services import Timer
+# from models.sahi_detection.api.services import YoloxDetectionModel
+# from models.sahi_detection.api.services import get_sliced_prediction
+# from models.sahi_detection.api.services import AutoDetectionModel
+# from models.sahi_detection.api.services import config as cfg
+from ..services import preproc
+from ..services import get_exp
+from ..services import fuse_model, get_model_info, postprocess
+from ..services import plot_tracking
+from ..services import Timer
+from ..services import YoloxDetectionModel
+from ..services import get_sliced_prediction
+from ..services import AutoDetectionModel
+from ..services import config as cfg
 IMAGE_EXT = [".jpg", ".jpeg", ".webp", ".bmp", ".png"]
 
 
@@ -287,7 +295,7 @@ async def inference(request: SahiRequest.SahiRequest):
             - csv_path (str): SAHI가 적용된 객체탐지 결과를 저장할 csv 파일 이름입니다.
             - sliced_path (str): SAHI에 의해 슬라이싱 된 패치가 저장된 디렉터리 경로입니다.
     """
-
+    print(request.img_path)
     img_path = request.img_path
     csv_path = request.csv_path
     os.makedirs(os.path.dirname(csv_path), exist_ok=True)
