@@ -12,6 +12,8 @@ from fastapi import (APIRouter, Depends, FastAPI, File, Form, HTTPException, Upl
 from fastapi.responses import FileResponse, JSONResponse
 from interface.request import VisRequest, VisRequestBev
 from utils.visualizing import visualize
+import asyncio
+import aiofiles
 
 router = APIRouter(tags=["result"])
 
@@ -52,8 +54,7 @@ async def model_inference(body: VisRequest):
     )
 
     # Call show_result with the created args object
-    # show_result(args)
-    visualize.main(args)
+    asyncio.run(visualize.main(args))
 
 
 

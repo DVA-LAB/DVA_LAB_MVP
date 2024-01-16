@@ -5,12 +5,29 @@ import os
 import cv2
 import math
 import argparse
-from tqdm import tqdm
 from models.BEV.api.services.Orthophoto_Maps.main_dg import *
 import numpy as np
 import pandas as pd
 from PIL import Image, ImageDraw, ImageFont
+import asyncio
+import aiofiles
 
+async def save_frame_async(frame_path, frame):
+    """
+    이미지를 비동기적으로 저장합니다.
+    
+    Args:
+        frame_path (str): 저장할 이미지 경로.
+        frame (np.array): 저장할 이미지 데이터.
+    """
+    try:
+        # 이미지를 메모리에 인코딩
+        _, encoded_image = cv2.imencode('.jpg', frame)
+        # 비동기 파일 쓰기
+        async with aiofiles.open(frame_path, 'wb') as f:
+            await f.write(encoded_image.tobytes())
+    except Exception as e:
+        print(f"Exception in save_frame_async: {e}")  # 예외 발생 시 로그
 
 def createDirectory(directory):
     try:
@@ -265,7 +282,7 @@ def make_video(image_paths, video_name, fps=30, max_resolution=(3840, 2160)):
     os.system(f"rm {video_name.split('.')[0]}_temp.mp4")
 
 
-def main(args):
+async def main(args):
     """
         BirdEyeView (BEV) 시각화를 수행 후 비디오를 생성합니다.
 
@@ -281,7 +298,6 @@ def main(args):
     start_time = time.time()
     frame_rate=30
     image_paths = get_image_paths(args.input_dir)
-    violation = False
 
     createDirectory(args.output_dir)
     createDirectory(args.output_bev_dir)
@@ -304,10 +320,14 @@ def main(args):
     max_ship_speed = 0
     
     # About Text
-    font_color = (0, 0, 0) if violation else (0, 0, 255)
     text_positions = [(30, 30), (30, 80), (30, 130), (30, 180), (30, 230), (30, 280), (30, 330)]
-    
-    for image_path in tqdm(image_paths):
+
+    for image_path in image_paths:
+        # 이미지 저장 작업을 비동기로 실행
+        tasks = []
+        violation = False
+        font_color = (0, 0, 0) if violation else (0, 0, 255)
+
         frame = cv2.imread(image_path)
         date = logs['datetime'][frame_count]
         frame_bboxes = bbox_data.get(frame_count, [])
@@ -325,7 +345,7 @@ def main(args):
         center_x, center_y = None, None
         bev_center_x, bev_center_y = None, None
         dolphin_present = False
-
+        
         roll = get_params_from_csv(args.log_path, frame_count)["R"]
         pitch = get_params_from_csv(args.log_path, frame_count)["P"]
         if (roll > -5 and pitch >-30) or (roll > -30 and pitch > -5) or ((-5 > roll > -30)&(-5 > pitch > -30)) :
@@ -352,8 +372,16 @@ def main(args):
             # 결과 이미지 저장
             output_bev_frame_path = os.path.join(args.output_bev_dir, f'frame_{str(frame_count).zfill(6)}.jpg')
             output_frame_path = os.path.join(args.output_dir, f'frame_{str(frame_count).zfill(6)}.jpg')
-            cv2.imwrite(output_bev_frame_path, img)
-            cv2.imwrite(output_frame_path, img)
+            
+            # 이미지 저장 작업을 스레드로 실행
+            task = asyncio.create_task(save_frame_async(output_bev_frame_path, img))
+            tasks.append(task)
+            task = asyncio.create_task(save_frame_async(output_frame_path, img))
+            tasks.append(task)
+
+            # 모든 태스크가 완료될 때까지 기다림
+            await asyncio.gather(*tasks)
+            
             frame_count += 1
             continue
 
@@ -432,7 +460,7 @@ def main(args):
                         draw_radius_circles(bev_draw, bev_merged_dolphin_center, [(50/gsd, "black"), (300/gsd, "yellow")], font, gsd)
                         bev_draw.rectangle(xy=(bev_x1, bev_y1, bev_x2, bev_y2), width=5, outline=(0, 0, 255))
 
-                        draw_radius_circles(draw, merged_dolphin_center, [(50/pixel_size, "black"), (300/pixel_size, "yellow")], font, pixel_size)
+                        draw_radius_circles(draw, merged_dolphin_center, [(50/gsd, "black"), (300/gsd, "yellow")], font, gsd)
                         draw.rectangle(xy=(x1, y1, x2, y2), width=5, outline=(0, 0, 255))
 
                     # 모든 bbox 중심점들 사이에 선을 그리고 거리를 표시합니다.
@@ -507,7 +535,7 @@ def main(args):
         bev_img = np.array(bev_image)
 
         # 이미지 Size 제한 
-        output_bev_frame_path = os.path.join(args.output_dir, f'frame_{str(frame_count).zfill(6)}.jpg')
+        output_bev_frame_path = os.path.join(args.output_bev_dir, f'frame_{str(frame_count).zfill(6)}.jpg')
         output_frame_path = os.path.join(args.output_dir, f'frame_{str(frame_count).zfill(6)}.jpg')
         if min(bev_img.shape[:2]) > 6000: 
             if bev_img.shape[0] > bev_img.shape[1] : # Height > Width 
@@ -521,9 +549,15 @@ def main(args):
             
             bev_img = cv2.resize(bev_img, dsize, interpolation=cv2.INTER_AREA)
         
-        # 결과 이미지 저장
-        cv2.imwrite(output_bev_frame_path, bev_img)
-        cv2.imwrite(output_frame_path, img)
+        # 이미지 저장 작업을 스레드로 실행
+        task = asyncio.create_task(save_frame_async(output_bev_frame_path, bev_img))
+        tasks.append(task)
+        task = asyncio.create_task(save_frame_async(output_frame_path, img))
+        tasks.append(task)
+
+        # 모든 태스크가 완료될 때까지 기다림
+        await asyncio.gather(*tasks)
+
         frame_count += 1
 
     make_video(get_image_paths(args.output_dir), args.output_video)
@@ -541,8 +575,8 @@ if __name__ == "__main__":
     parser.add_argument('--output_video', type=str, default='/home/dva4/DVA_LAB/backend/test/visualize.mp4')
     parser.add_argument('--output_bev_video', type=str, default='/home/dva4/DVA_LAB/backend/test/visualize_bev.mp4')
     parser.add_argument('--input_dir', type=str, default='/home/dva4/DVA_LAB/backend/test/frame_origin')
-    parser.add_argument('--output_dir', type=str, default='/home/dva4/DVA_LAB/backend/test_saved/frame_infer')
-    parser.add_argument('--output_bev_dir', type=str, default='/home/dva4/DVA_LAB/backend/test_saved/frame_bev_infer')
+    parser.add_argument('--output_dir', type=str, default='/home/dva4/DVA_LAB/backend/test/frame_infer')
+    parser.add_argument('--output_bev_dir', type=str, default='/home/dva4/DVA_LAB/backend/test/frame_bev_infer')
     parser.add_argument('--GSD_path', type=str, default='/home/dva4/DVA_LAB/backend/test/GSD_total.txt')
     args = parser.parse_args()
-    main(args)
+    asyncio.run(main(args))
