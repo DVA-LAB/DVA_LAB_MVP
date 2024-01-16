@@ -10,7 +10,6 @@ Welcome to DVA Lab's documentation!
    :maxdepth: 2
    :caption: Getting Started:
 
-
 .. toctree::
    :maxdepth: 2
    :caption: backend

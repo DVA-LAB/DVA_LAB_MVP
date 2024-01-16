@@ -1,6 +1,11 @@
 models.efficientAD.interface package
 ====================================
 
+.. automodule:: models.efficientAD.interface
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Subpackages
 -----------
 
@@ -8,11 +13,3 @@ Subpackages
    :maxdepth: 4
 
    models.efficientAD.interface.request
-
-Module contents
----------------
-
-.. automodule:: models.efficientAD.interface
-   :members:
-   :undoc-members:
-   :show-inheritance:

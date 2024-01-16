@@ -1,6 +1,11 @@
 models.efficientAD package
 ==========================
 
+.. automodule:: models.efficientAD
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Subpackages
 -----------
 
@@ -13,18 +18,7 @@ Subpackages
 Submodules
 ----------
 
-models.efficientAD.app module
------------------------------
+.. toctree::
+   :maxdepth: 4
 
-.. automodule:: models.efficientAD.app
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-Module contents
----------------
-
-.. automodule:: models.efficientAD
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   models.efficientAD.app

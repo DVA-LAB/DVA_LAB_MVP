@@ -220,16 +220,15 @@ def BEV_Points(image_shape, boundary, boundary_rows, boundary_cols, gsd, eo, R, 
 
         Args
             - image_shape (tuple): 이미지의 가로 세로
-            - boundary (?): ? 
-            - boundary_rows (?): ?
-            - boundary_cols (?): ? 
+            - boundary (np.ndarray) :  BEV 이미지의 최외각 Bounding Box [Xmin, Xmax, Ymin, Ymax]
+            - boundary_rows (int): # of rows 
+            - boundary_cols (ing): # of cols 
             - gsd (float): GSD 값
-            - eo (?): ?
-            - R (?): BEV 변환에 활용되는 회전행렬
-            - focal_length (float): ?
-            - pixel_size (float): unit: m/px
-            - obj_points (list): ?
-
+            - eo (list): drone meta information [longitude, latitude, altitude, roll, pitch, yaw]
+            - R (np.ndarray): BEV 변환에 활용되는 회전행렬
+            - focal_length (float): 초점 거리
+            - pixel_size (float): sensor_width / image cols # unit: mm/px
+            - obj_points (list): detected objects bounding box  [x1, y1, x2, y2] // 배의 경우 [x + 1, y + 1, x, y]
         Return
             - rectify_points (list): BEV 상의 bbox로 변환된 bbox
     """
@@ -316,19 +315,19 @@ def BEV_FullFrame(frame_num, frame_path, csv_path, gsd, dst_dir='./', DEV = Fals
             - csv_path (str): csv 파일 경로
             - gsd (float): gsd 값
             - dst_dir (str): BEV가 적용된 프레임이 저장될 디렉터리 경로
-            - DEV (bool): ?
+            - DEV (bool): Debug Mode. Visualization 
     
         Return
             - rst (int): 0: Success, 1: rectify fail, 2: fail to calculate gsd
             - transformed_img (np.ndarray): BEV로 변환된 이미지
-            - bbox (?): ?
-            - boundary_rows (?): ?
-            - boundary_cols (?): ?
+            - bbox (np.ndarray): BEV 이미지의 최외각 Bounding Box [Xmin, Xmax, Ymin, Ymax]
+            - boundary_rows (int): # of rows 
+            - boundary_cols (ing): # of cols 
             - gsd (float): gsd 값입니다.
-            - eo (?): ?
-            - R (?): BEV 변환에 활용되는 회전행렬
+            - eo (list): drone meta information [longitude, latitude, altitude, roll, pitch, yaw]
+            - R (np.ndarray): BEV 변환에 활용되는 회전행렬
             - focal_length (float): 초점 거리
-            - pixel_size (?): ?
+            - pixel_size (float): sensor_width / image cols # unit: mm/px
     """
 
     # Step 0 : Meta Info.

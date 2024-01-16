@@ -1,6 +1,11 @@
 backend.interface package
 =========================
 
+.. automodule:: backend.interface
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Subpackages
 -----------
 
@@ -8,11 +13,3 @@ Subpackages
    :maxdepth: 4
 
    backend.interface.request
-
-Module contents
----------------
-
-.. automodule:: backend.interface
-   :members:
-   :undoc-members:
-   :show-inheritance:

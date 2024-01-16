@@ -1,6 +1,11 @@
 models.bytetrack package
 ========================
 
+.. automodule:: models.bytetrack
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Subpackages
 -----------
 
@@ -12,18 +17,7 @@ Subpackages
 Submodules
 ----------
 
-models.bytetrack.app module
----------------------------
+.. toctree::
+   :maxdepth: 4
 
-.. automodule:: models.bytetrack.app
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-Module contents
----------------
-
-.. automodule:: models.bytetrack
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   models.bytetrack.app
