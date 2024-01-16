@@ -92,7 +92,7 @@ async def inference(request_body: ShipRequest):
                     x for x in frames if frame_no == int(x.split("_")[-1].split(".")[0])
                 ][0]
                 bbox_xyxy = refiner.convert_to_xyxy(result[3:7])
-                mask = refiner._do_seg(cv2.imread(frame), [bbox_xyxy])
+                mask = refiner._do_seg_fast(cv2.imread(frame), [bbox_xyxy])
                 _, _, point = refiner.find_rotated_bounding_box_and_max_length(mask)
                 ships_info.append(
                     [frame_no, point[0][0], point[0][1], point[1][0], point[1][1]]
