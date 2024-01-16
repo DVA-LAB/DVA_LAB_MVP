@@ -232,7 +232,9 @@ class Refiner:
             plt.savefig(save, dpi=600)
         plt.show()
 
-    def show_mask_bbox(self, masks, old_bboxes, new_bboxes, random_color=False, save=None):
+    def show_mask_bbox(
+        self, masks, old_bboxes, new_bboxes, random_color=False, save=None
+    ):
         """
             세그먼트 마스크와 바운딩 박스를 이미지 위에 표시합니다.
 
