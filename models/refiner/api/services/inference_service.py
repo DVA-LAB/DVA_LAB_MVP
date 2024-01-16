@@ -8,9 +8,11 @@ import torch
 import tqdm
 from transformers import SamModel, SamProcessor
 
+from .FastSAM.fastsam import FastSAM, FastSAMPrompt
+
 
 class Refiner:
-    def __init__(self, device):
+    def __init__(self, device, fastsam=False):
         """
             SAM (Segmentation-Aware Model)을 사용하여 이미지의 객체를 세그먼트화하는 Refiner 클래스의 생성자입니다.
 
@@ -23,11 +25,14 @@ class Refiner:
         """
         self.device = device
         self.rgb_img = None
-        # TODO: refiner-HQ 옵션 추가 (https://drive.google.com/file/d/1qobFYrI4eyIANfBSmYcGuWRaSIXfMOQ8/view?usp=sharing)
-        self.model = SamModel.from_pretrained(
-            pretrained_model_name_or_path="facebook/sam-vit-huge"
-        ).to(self.device)
-        self.processor = SamProcessor.from_pretrained("facebook/sam-vit-huge")
+
+        if fastsam:
+            self.model = FastSAM("./FastSAM-x.pt")
+        else:
+            self.model = SamModel.from_pretrained(
+                pretrained_model_name_or_path="facebook/sam-vit-huge"
+            ).to(self.device)
+            self.processor = SamProcessor.from_pretrained("facebook/sam-vit-huge")
 
     def _get_loader(self, json_path, image_folder):
         """
@@ -171,6 +176,37 @@ class Refiner:
         else:
             return None
 
+    def _do_seg_fast(self, bgr_img, boxes):
+        """
+        주어진 이미지와 바운딩 박스에 대해 세그먼트화를 수행합니다.
+
+        Args
+            - bgr_img (np.ndarray): 세그먼트화할 이미지.
+            - boxes (list): 세그먼트화할 영역의 바운딩 박스 좌표 목록.
+
+        Return
+            - masks (np.ndarray): 계산된 세그먼트 마스크.
+        """
+        self.rgb_img = cv2.cvtColor(bgr_img, cv2.COLOR_BGR2RGB)
+        try:
+            with torch.no_grad():
+                everything_results = self.model(
+                    self.rgb_img,
+                    device=self.device,
+                    retina_masks=True,
+                    imgsz=1024,
+                    conf=0.4,
+                    iou=0.9,
+                )
+                prompt_process = FastSAMPrompt(
+                    self.rgb_img, everything_results, device=self.device
+                )
+                ann = prompt_process.box_prompt(bboxes=boxes)
+            return ann
+        except Exception as e:
+            print(e)
+            return None
+
     def show_mask(self, masks, random_color=False, save=None):
         """
             세그먼트 마스크를 이미지 위에 표시합니다.
@@ -196,7 +232,9 @@ class Refiner:
             plt.savefig(save, dpi=600)
         plt.show()
 
-    def show_mask_bbox(self, masks, old_bboxes, new_bboxes, random_color=False, save=None):
+    def show_mask_bbox(
+        self, masks, old_bboxes, new_bboxes, random_color=False, save=None
+    ):
         """
             세그먼트 마스크와 바운딩 박스를 이미지 위에 표시합니다.
 
@@ -292,8 +330,10 @@ class Refiner:
                 - box (np.ndarray): 마스크에 대한 회전된 최소 영역 바운딩 박스의 꼭짓점.
                 - longest_edge_points (tuple): 가장 긴 변을 이루는 두 꼭짓점의 좌표.
         """
-
-        mask_np = mask.numpy().astype(np.uint8)
+        try:
+            mask_np = mask.numpy().astype(np.uint8)
+        except:
+            mask_np = mask.astype(np.uint8)
         mask_np = mask_np.squeeze()
 
         contours, _ = cv2.findContours(
