@@ -166,7 +166,9 @@ async def inference_merge(output_merge_path, csv_path, anomaly_detection_output,
     try:
         os.makedirs(output_merge_path, exist_ok=True)
         # delete_files_in_folder(output_merge_path)
-        anomaly_detection_output = read_csv_file(csv_path)
+        anomaly_detection_output = None
+        if use_anomaly:
+            anomaly_detection_output = read_csv_file(csv_path)
         detection_output = read_csv_file(csv_path)
         detection_save_path = os.path.join(output_merge_path, "result.txt")
         match_and_ensemble(

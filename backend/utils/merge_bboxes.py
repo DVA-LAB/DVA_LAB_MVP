@@ -17,9 +17,10 @@ def plot_detections(anomaly_detections, yolo_detections, output_detections, imag
 
     # Convert lists into dictionaries grouped by frame
     grouped_anomaly_outputs = {}
-    for det in anomaly_detections:
-        frame = int(det[0])
-        grouped_anomaly_outputs.setdefault(frame, []).append(det)
+    if anomaly_detections is not None:
+        for det in anomaly_detections:
+            frame = int(det[0])
+            grouped_anomaly_outputs.setdefault(frame, []).append(det)
 
     grouped_detection_outputs = {}
     for det in yolo_detections:
@@ -60,7 +61,7 @@ def plot_detections(anomaly_detections, yolo_detections, output_detections, imag
             ax.add_patch(rect)
 
         plt.show()
-
+        plt.close(fig)  # Close the figure to free up memory
 
 def calculate_distance(box1, box2):
     """
@@ -96,14 +97,15 @@ def match_and_ensemble(anomaly_outputs, detection_outputs, use_anomaly, output_f
 
     output = []
     confidence_threshold = 0.7
-    grouped_anomaly_outputs = {}
     grouped_detection_outputs = {}
+    grouped_anomaly_outputs = {}
+    
+    if use_anomaly and anomaly_outputs is not None:
+        for det in anomaly_outputs:
+            frame = int(det[0])
+            grouped_anomaly_outputs.setdefault(frame, []).append(det)
 
-    # Group by frame number
-    for det in anomaly_outputs:
-        frame = int(det[0])
-        grouped_anomaly_outputs.setdefault(frame, []).append(det)
-
+    # Group YOLO detections by frame number
     for det in detection_outputs:
         frame = int(det[0])
         grouped_detection_outputs.setdefault(frame, []).append(det)
@@ -115,13 +117,13 @@ def match_and_ensemble(anomaly_outputs, detection_outputs, use_anomaly, output_f
 
         processed_yolo_indices = set()
         
-        # Process YOLO detections first
+        # Process YOLO detections
         for idx, yl_output in enumerate(yolo_dets):
             output.append([yl_output[0], yl_output[2], yl_output[3], yl_output[2]+yl_output[4], yl_output[3]+yl_output[5], yl_output[6], yl_output[1]])
             processed_yolo_indices.add(idx)
 
-        # Process anomaly detections if YOLO detections are not sufficient
-        if use_anomaly and not processed_yolo_indices:
+        # Process anomaly detections if use_anomaly is True
+        if use_anomaly:
             for a_output in anomaly_dets:
                 if a_output[6] >= confidence_threshold:            
                     output.append([a_output[0], a_output[2], a_output[3], a_output[2]+a_output[4], a_output[3]+a_output[5], a_output[6], a_output[1]])
@@ -130,7 +132,9 @@ def match_and_ensemble(anomaly_outputs, detection_outputs, use_anomaly, output_f
     with open(output_file, 'w') as file:
         for detection in output:
             file.write(','.join(map(str, detection)) + '\n')
-    file.close()
+
+    return output
+
 
 def read_file(file_path):
     """
@@ -170,17 +174,17 @@ def read_csv_file(file_path):
 
 # Test the final function with new criteria
 if __name__ == "__main__":
-    use_anomaly = True
+    use_anomaly = False
     # Define file paths
-    anomaly_file_path = '/Users/seowoo/Desktop/Development/DVA_LAB/in/anomaly.csv'
-    detection_file_path = '/Users/seowoo/Desktop/Development/DVA_LAB/in/detection.csv'
-    output_file_path = '/Users/seowoo/Desktop/Development/DVA_LAB/out/output.txt'
+    anomaly_file_path = ''
+    # anomaly_file_path = '/Users/seowoo/Desktop/Development/DVA_LAB/in/anomaly.csv'
+    detection_file_path = '/home/dva4/DVA_LAB/backend/test/model/detection/result.csv'
+    output_file_path = '/home/dva4/DVA_LAB/backend/test/model/output.txt'
 
     # Read inputs from files
-    anomaly_detection_output = read_file(anomaly_file_path)
-    detection_output = read_file(detection_file_path)
-
-    
+    anomaly_detection_output = read_csv_file(anomaly_file_path) if use_anomaly else None
+    detection_output = read_csv_file(detection_file_path)
+        
     # Call the modified function with the new output file path
     output = match_and_ensemble(anomaly_detection_output, detection_output, use_anomaly=True, output_file=output_file_path)
     plot_detections(anomaly_detection_output, detection_output, output)

@@ -6,12 +6,14 @@ from argparse import Namespace
 
 import pandas as pd
 import requests
+
 from autologging import logged
 from fastapi import (APIRouter, Depends, FastAPI, File, Form, HTTPException, UploadFile, status)
 from fastapi.responses import FileResponse, JSONResponse
 from interface.request import VisRequest, VisRequestBev
-from utils.visualizing import visualize_bev
-from utils.visualizing.visualize import show_result
+from utils.visualizing import visualize
+import asyncio
+import aiofiles
 
 router = APIRouter(tags=["result"])
 
@@ -34,23 +36,27 @@ async def model_inference(body: VisRequest):
         Return
             - body.output_video (str): 결과 영상이 저장된 경로를 반환합니다.
     """
+    print(len(glob.glob(os.path.join(body.log_path, "*.csv"))))
 
     log_file_path = glob.glob(os.path.join(body.log_path, "*.csv"))[0]
 
     os.makedirs(os.path.dirname(body.output_video), exist_ok=True)
     delete_files_in_folder(os.path.dirname(body.output_video))
     args = Namespace(
-        log_path=log_file_path,
-        input_dir=body.input_dir,
-        output_video=body.output_video,
-        bbox_path=body.bbox_path,
-        GSD_path=os.path.abspath(os.path.join("test", "GSD_total.txt")),
+        log_path='/home/dva4/DVA_LAB/backend/test/sync_csv/sync_log.csv',
+        bbox_path='/home/dva4/DVA_LAB/backend/utils/visualizing/bev_points.csv',
+        output_video='/home/dva4/DVA_LAB/backend/test/visualize.mp4',
+        output_bev_video='/home/dva4/DVA_LAB/backend/test_saved/frame_bev_infer',
+        input_dir='/home/dva4/DVA_LAB/backend/test/frame_origin',
+        output_dir = '/home/dva4/DVA_LAB/backend/test_saved/frame_infer',
+        output_bev_dir='/home/dva4/DVA_LAB/backend/test_saved/frame_bev_infer',
+        GSD_path='/home/dva4/DVA_LAB/backend/test/GSD_total.txt',
     )
 
     # Call show_result with the created args object
-    show_result(args)
+    asyncio.run(visualize.main(args))
 
-    visualize_bev()
+
 
     return body.output_video
 
