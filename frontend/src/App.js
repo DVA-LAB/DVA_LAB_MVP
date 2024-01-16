@@ -34,6 +34,7 @@ class App extends Component {
       allFillUpload: false,
       aiModelActive: false,
       isLoading: false,
+      isVisualizing: false,
       exportOptionsVisible: false,
       isDownloadModalOpen: false, // 모달 열림/닫힘 상태 추가
       bevImageSrc : null, //BEV image 경로 추가
@@ -55,6 +56,7 @@ class App extends Component {
       syncCompleted: false,
       preprocessChecked: false,
       infoAdded: false,
+      inferenceCompleted: false,
     };
 
     this.videoRef = React.createRef();
@@ -560,7 +562,7 @@ loadVideo = () => {
         // Additional data can be included here if necessary
     }
     console.log(payload);
-    if (!showBEV && this.state.infoAdded) {
+    if (this.state.infoAdded) {
       this.setState({ isLoading: true });
   
       try {
@@ -568,7 +570,7 @@ loadVideo = () => {
     
         if (response.status===200) {
             console.log('BEV successful')
-            this.setState({ isLoading: false });
+            this.setState({ isLoading: false, showBEV: true });
         } else {
             console.error("BEV conversion failed");
             this.setState({ isLoading: false });
@@ -577,14 +579,15 @@ loadVideo = () => {
         console.error("Error during API call:", error);
         this.setState({ isLoading: false });
     }
-    } else {
-      this.setState({
-        showBEV: false,
-        videoSrc: `${API_URL}/video/`
-      }, () => {
-        this.loadVideo();
-      });
-    }
+    } 
+    // else {
+    //   this.setState({
+    //     showBEV: false,
+    //     videoSrc: `${API_URL}/video/`
+    //   }, () => {
+    //     this.loadVideo();
+    //   });
+    // }
 
     // Your existing axios post request and other logic...
 };
@@ -804,47 +807,102 @@ drawLabel = (startPoint, endPoint, text) => {
   runAIModel = async () => {
     this.setState({aiModelActive:true, showProgressBar: true, showControlButtons: true });
 
-    setTimeout(()=>{
-      this.setState({ showProgressBar: false });
-    }, 30000)
+    // setTimeout(()=>{
+    //   this.setState({ showProgressBar: false });
+    // }, 30000)
 
     // Prepare the payload for the API request
     const payload = {
-        frame_path: "/home/dva4/DVA_LAB/backend/test/frame_origin"/* path to the frame images */,
-        detection_save_path:"/home/dva4/DVA_LAB/backend/test/model/detection/result" /* path where detection results should be saved */,
-        sliced_path: "/home/dva4/DVA_LAB/backend/test/model/sliced"/* path for sliced images, if applicable */,
-        output_merge_path: "/home/dva4/DVA_LAB/backend/test/model/merged"/* path for merged output */,
-        // ... include other necessary fields based on your API's requirements
+        "img_path": "/home/dva4/DVA_LAB/backend/test/frame_origin",
+        "csv_path": "/home/dva4/DVA_LAB/backend/test/model/detection/result.csv",
+        "sliced_path": "/home/dva4/DVA_LAB/backend/test/model/sliced"
     };
 
     //완성되면 아래 코드로 inference 연결하기!
 
-    // try {
-    //     // Make the API call
-    //     const response = await axios.post(`${API_URL}/inference`, payload);
+    try {
+      // Make the detection API call
+      const detQueryParams = `img_path=${encodeURIComponent("/home/dva4/DVA_LAB/backend/test/frame_origin")}&csv_path=${encodeURIComponent("/home/dva4/DVA_LAB/backend/test/model/detection/result.csv")}&sliced_path=${encodeURIComponent("/home/dva4/DVA_LAB/backend/test/model/sliced")}`;
+      const detResponse = await axios.post(`${API_URL}/inference/detection?${detQueryParams}`);
+  
+      if (detResponse.status !== 200) {
+          throw new Error(`Detection inference failed with status: ${detResponse.status}`);
+      }
+  
+      console.log("Detection inference successful:", detResponse.data);
 
-    //     if (response.status === 200) {
-    //         // Handle successful response
-    //         console.log("Model inference successful:", response.data);
-    //         this.setState({aiModelActive: false, showResults: true})
+      const anomalyQueryParams = `img_path=${"/home/dva4/DVA_LAB/backend/test/frame_origin/DJI_0149_00900.jpg"}&output_path=${"/home/dva4/DVA_LAB/backend/test/model/segment/DJI_0149_00900.jpg"}&sliced_path=${"/home/dva4/DVA_LAB/backend/test/model/sliced/"}
+      &patch_size=${1024}&overlap_ratio=${0.2}`;
+      const anomalyResponse = await axios.post(`${API_URL}/inference/segmentation?${anomalyQueryParams}`);
 
-    //         // Update your application state as necessary
-    //         // For example, if response contains a path to a result file, update the state to reflect this
-    //     } else {
-    //         // Handle non-successful responses
-    //         console.error("Model inference failed with status:", response.status);
-    //         // Update your application state as necessary
-    //     }
-    // } catch (error) {
-    //     console.error("Error during model inference:", error);
-    //     // Update your application state to reflect the error
-    // } finally {
-    //     // Update state to indicate that the AI model has finished running
-    //     this.setState({aiModelActive: false, showProgressBar: false});
-    // }
+      if (anomalyResponse.status !== 200) {
+        throw new Error(`Segmentation inference failed with status: ${anomalyResponse.status}`);
+      }
+
+      console.log("Segmentation inference successful:", anomalyResponse.data);
+
+      const mergeQueryParams = 
+      `output_merge_path=${encodeURIComponent("/home/dva4/DVA_LAB/backend/test/model/merged")}
+      &csv_path=${encodeURIComponent("/home/dva4/DVA_LAB/backend/test/model/detection/result.csv")}
+      &anomaly_detection_output=${encodeURIComponent("/home/dva4/DVA_LAB/backend/test/model/detection/result.csv")}`;
+      
+      const mergeResponse = await axios.post(`${API_URL}/inference/merge?${mergeQueryParams}`);
+
+
+      if (mergeResponse.status !== 200) {
+        throw new Error(`Merging inference failed with status: ${mergeResponse.status}`);
+      }
+
+      console.log("Merging inference successful:", mergeResponse.data);
+
+      // Make the tracking API call
+      const trackQueryParams = `detection_path=${encodeURIComponent("/home/dva4/DVA_LAB/backend/test/model/merged/result.txt")}&save_path=${encodeURIComponent("/home/dva4/DVA_LAB/backend/test/model/tracking/result.txt")}`;
+      const trackResponse = await axios.post(`${API_URL}/inference/tracking?${trackQueryParams}`);
+  
+      if (trackResponse.status !== 200) {
+          throw new Error(`Tracking inference failed with status: ${trackResponse.status}`);
+      }
+  
+      console.log("Tracking inference successful:", trackResponse.data);
+  
+      // Set state after successful responses
+      this.setState({ aiModelActive: false, showProgressBar: false, inferenceCompleted: true, });
+  } catch (error) {
+      console.error("Error during model inference:", error);
+      // Update your application state to reflect the error
+      this.setState({ showProgressBar: false });
+  }
+  
   
     
   };
+
+  
+  handleDownload = () => {
+    const apiUrl = API_URL + '/export/origin'; // Assuming API_URL is defined elsewhere
+
+    // Fetch the video data
+    fetch(apiUrl)
+        .then(response => response.blob())
+        .then(blob => {
+            // Create a URL for the blob object
+            const blobUrl = window.URL.createObjectURL(blob);
+
+            // Create a temporary link element
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.setAttribute('download', 'video.mp4'); // Set the download file name
+
+            // Append to the document, trigger download, and remove the element
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            // Revoke the blob URL after the download
+            window.URL.revokeObjectURL(blobUrl);
+        })
+        .catch(error => console.error('Download failed:', error));
+};
 
 
   
@@ -937,14 +995,16 @@ drawLabel = (startPoint, endPoint, text) => {
 
   seeResults = async () => {
 
+    this.setState({isVisualizing: true})
+
     const formData = {
       // 서버에 연결할때는 위에꺼 쓰기
-      "log_path": "/home/dva4/dva/backend/test/sync_csv",
-      "input_dir": "/home/dva4/dva/backend/test/frame_origin",
-      "output_video": "/home/dva4/dva/backend/test/result/result.mp4",
-      "bbox_path": "/home/dva4/dva/backend/test/model/tracking/result.txt",
-      "set_merged_dolphin_center": false,
-      "video_path": "/home/dva4/dva/backend/test/video_origin",
+      "log_path": "/home/dva4/DVA_LAB/backend/test/sync_csv",
+      "input_dir": "/home/dva4/DVA_LAB/backend/test/frame_origin",
+      "output_video": "/home/dva4/DVA_LAB/backend/test/result/result.mp4",
+      "bbox_path": "/home/dva4/DVA_LAB/backend/test/model/tracking/result.txt",
+      "set_merged_dolphin_center": true,
+      "video_path": "/home/dva4/DVA_LAB/backend/test/video_origin",
       // "log_path": "/Users/dongwookim/DVA_LAB/backend/test/sync_csv",
       // "input_dir": "/Users/dongwookim/DVA_LAB/backend/test/frame_origin",
       // "output_video": "/Users/dongwookim/DVA_LAB/backend/test/result/result.mp4",
@@ -953,21 +1013,24 @@ drawLabel = (startPoint, endPoint, text) => {
       // "video_path": "/Users/dongwookim/DVA_LAB/backend/test/video_origin"
     }
     
-    // const response = await axios.post(`${API_URL}/visualize/`, formData);
-
+    const response = await axios.post(`${API_URL}/visualize/`, formData);
+    if(response.status===200){
+      console.log(response);
+    }
     
-    // this.setState({ 
-    //   showResults: true,
-    //   videoSrc: `${API_URL}/export/origin`,
-    //  },()=>{
-    //   this.loadVideo();
-    //  });
-    //  console.log(this.state.videoSrc)
-
-    this.setState({
-      isLoading: true,
+    this.setState({ 
+      isVisualizing: false,
       showResults: true,
-  });
+      videoSrc: `${API_URL}/export/origin`,
+     },()=>{
+      this.loadVideo();
+     });
+     console.log(this.state.videoSrc)
+
+  //   this.setState({
+  //     isLoading: true,
+  //     showResults: true,
+  // });
      try {
       const response = await axios.get(`${API_URL}/export/origin`, { responseType: 'blob' });
       if (response.data) {
@@ -1020,8 +1083,9 @@ drawLabel = (startPoint, endPoint, text) => {
 
     const canSeeResults = this.state.points.length / 2 === this.state.pointDistances.length &&
                           this.state.points.length >= 2;
+    
 
-    const { logFile, srtFile, videoSrc, videoPlaying, frameNumber, addingInfo, isLoading, applyFlag, allFillUpload, aiModelActive, showBEV, showDrawLineButton, points, showResults, uploadStatus, syncCompleted } = this.state;
+    const { logFile, srtFile, videoSrc, videoPlaying, frameNumber, addingInfo, isLoading, applyFlag, allFillUpload, aiModelActive, showBEV, showDrawLineButton, points, showResults, uploadStatus, syncCompleted, inferenceCompleted } = this.state;
 
     if (showResults) {
       return (
@@ -1095,13 +1159,17 @@ drawLabel = (startPoint, endPoint, text) => {
               <Button onClick={this.skipBackward} icon={<FastBackwardOutlined />} />
               <Button onClick={this.togglePlayPause} icon={videoPlaying ? <PauseCircleOutlined /> : <PlayCircleOutlined />} />
               <Button onClick={this.skipForward} icon={<FastForwardOutlined />} />
-            </Space>)}
+            </Space>
+            )}
           </Space> 
           </div>
           ) : (
             <img src="result.png" alt="Results" style={{ ...videoStyle, objectFit: 'contain' }} />
           )}
           </Space>
+          <form action={API_URL + '/export/origin'} method="get">
+          <button type="submit">결과 영상 다운로드하기!</button>
+        </form>
         </div>
         
       );
@@ -1149,7 +1217,10 @@ drawLabel = (startPoint, endPoint, text) => {
               </div>
             )}
             
-            {!showBEV&&(<video
+            {
+            // !showBEV&&
+            (
+            <video
               ref={this.videoRef}
               crossOrigin='anonymous'
               src={this.state.videoSrc} // Set the src attribute to use videoSrc from the state
@@ -1174,14 +1245,14 @@ drawLabel = (startPoint, endPoint, text) => {
       )}
 
               
-          {showBEV && (
-                  <img
+          {/* {showBEV && ( */}
+                  {/* <img
                     src={this.state.bevImageSrc}
                     alt="Bird's Eye View"
                     ref={this.imageRef}
                     style={{ width: '100%', height: '100%' }}
-                  />
-                )}
+                  /> */}
+                {/* )} */}
             
 
 
@@ -1222,13 +1293,15 @@ drawLabel = (startPoint, endPoint, text) => {
             )} */}
           <Space style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <Space style={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
-            {syncCompleted && !showBEV && !this.state.aiModelActive && (
+            {
+            syncCompleted && !showBEV && !this.state.aiModelActive &&
+             (
               <div>
                 <Button style={{ backgroundColor: 'red', color: 'white' }} onClick={this.runAIModel}>
                   AI 모델 실행
                 </Button>
               </div>
-            )}
+             )} 
             {/* {!showBEV && !this.state.aiModelActive && (
               <div>
                 <Button style={{ backgroundColor: 'red', color: 'white' }} onClick={this.runAIModel}>
@@ -1251,7 +1324,7 @@ drawLabel = (startPoint, endPoint, text) => {
             </Space>
             <div>
             {/* ... existing JSX elements */}
-            {uploadStatus === ''&& !this.state.aiModelActive && (
+            {!this.state.isVisualizing && uploadStatus === ''&& !this.state.aiModelActive && (
             <div>
             <input
               type="checkbox"
@@ -1269,7 +1342,7 @@ drawLabel = (startPoint, endPoint, text) => {
 
 
             {/* Control Buttons */}
-            {this.state.showControlButtons && !showBEV && (
+            {!this.state.isVisualizing &&this.state.showControlButtons && !showBEV && (
             <Space direction="vertical" style={{ alignItems: 'center' }}>
               <div style={{ fontSize: '30px' }}>
                 {videoSrc && <p>Frame: {frameNumber}</p>}
@@ -1296,7 +1369,12 @@ drawLabel = (startPoint, endPoint, text) => {
               <Button type="primary" onClick={this.handleMouseDown}>Draw Line</Button>
               )
             } */}
-            {!showBEV && this.state.syncCompleted&& aiModelActive && !videoPlaying && videoSrc && (
+            {!showBEV 
+            && this.state.syncCompleted
+            && aiModelActive 
+            && !videoPlaying 
+            && videoSrc 
+            && (
               <Button onClick={this.toggleAddingInfo}>{addingInfo ? '거리 정보 추가 마치기' : '거리 정보 추가하기'}</Button>
             )}
             {/* {
@@ -1314,7 +1392,8 @@ drawLabel = (startPoint, endPoint, text) => {
                 />
                 )} */}
           </div>
-          {!showResults && !aiModelActive && (<Space direction="vertical">
+          {!this.state.isVisualizing &&!showResults && !aiModelActive && 
+          (<Space direction="vertical">
             <Space>
               {/* Conditional rendering of status messages */}
               
@@ -1349,16 +1428,25 @@ drawLabel = (startPoint, endPoint, text) => {
             
             
           </Space>)}
-          {/* <div>
-          {(
-          <Button type="primary" onClick={this.seeResults}>
-            결과 확인하러 가기!
-          </Button>
-        )}
-          </div> */}
+          <div>
+        
+
+{this.state.isVisualizing && (
+              <div style={{
+                position: 'absolute', 
+                top: '50%', 
+                left: '50%', 
+                transform: 'translate(-50%, -50%)', 
+                textAlign: 'center'
+              }}>
+                <div className="loader" style={{ margin: '0 auto' }}></div>
+                { <div style={{ marginTop: '20px' }}>결과물을 시각화 하는 중입니다.<br/>시간이 오래 걸릴 수 있습니다.</div>}
+              </div>
+            )}
+          </div>
           {/* /* <div> */}
           <div>
-          {aiModelActive && (
+          {!this.state.isVisualizing && inferenceCompleted && showBEV&& (
           <Button type="primary" onClick={this.seeResults}>
             결과 확인하러 가기!
           </Button>
@@ -1369,6 +1457,20 @@ drawLabel = (startPoint, endPoint, text) => {
               <p key={index}>Distance {index + 1}: {distance.meters} meters ({distance.pixels.toFixed(3)} pixels)</p>
             ))}
           </div> */}
+          {/* <Button
+  type="primary"
+  onClick={this.handleDownload}
+  style={{ 
+    fontSize: '1rem', 
+    fontWeight: 'bold',
+    margin: '10px 0',
+    // Other styling as needed
+  }}
+>
+  결과 영상 다운로드 하기
+</Button> */}
+        
+
         </Space>
       </div>
     );
