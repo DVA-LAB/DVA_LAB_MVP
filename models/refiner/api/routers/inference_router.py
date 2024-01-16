@@ -62,7 +62,8 @@ async def inference(request_body: ShipRequest):
             - ships_info (list): N x [frame_no, point[0][0], point[0][1], point[1][0], point[1][0]]
     """
 
-    refiner = Refiner("cuda")
+    refiner = Refiner("cuda", fastsam=True)
+    # refiner = Refiner("cuda")
 
     # TODO@jh: user가 여러대의 선박에 대한 입력을 저장할 경우 처리 필요
     user_frame_no, mean_x, mean_y = check_user_input(request_body.user_input)
