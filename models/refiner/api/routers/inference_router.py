@@ -21,15 +21,17 @@ router = APIRouter(tags=["data"])
 )
 async def inference(request_body: DataRequest):
     """
-        ?
+        SAM을 이용하여 COCO 형식의 BBox 레이블을 객체에 더 fit하게 세그먼트 마스크로 세밀화하는 함수입니다.
 
-        Args
-            - request_body
-                - request_body.img_path (str): ?
-                - request_body.json_file (str): ?
+        이 API는 주어진 이미지 경로와 JSON 파일을 사용하여 BBox 레이블을 개선합니다. 개선된 데이터는 세그먼트 마스크로서 더 정확하게 객체를 표현합니다.
 
-        Return
-            - updated_date (json): ?
+        Args:
+            - request_body (DataRequest): 요청 본문, 아래의 필드를 포함합니다.
+                - img_path (str): 세그먼트 마스크를 적용할 이미지의 경로입니다.
+                - json_file (str): COCO 형식의 BBox 레이블이 포함된 JSON 파일의 경로입니다.
+
+        Returns:
+            - updated_data (json): 세그먼트 마스크로 세밀화된 레이블이 포함된 JSON 데이터입니다.
     """
 
     refiner = Refiner("cuda")
@@ -38,7 +40,6 @@ async def inference(request_body: DataRequest):
     json_path = request_body.json_file
 
     updated_data = refiner.do_refine(json_path, imgs_path)
-    # refiner.save_update(updated_data, "refined_train.json")
     return updated_data
 
 
@@ -61,13 +62,11 @@ async def inference(request_body: ShipRequest):
             - ships_info (list): N x [frame_no, point[0][0], point[0][1], point[1][0], point[1][0]]
     """
 
-    refiner = Refiner("cuda")
+    refiner = Refiner("cuda", fastsam=True)
+    # refiner = Refiner("cuda")
 
     # TODO@jh: user가 여러대의 선박에 대한 입력을 저장할 경우 처리 필요
     user_frame_no, mean_x, mean_y = check_user_input(request_body.user_input)
-
-    # TODO@jh: user_input이 올바르게 저장되어 있지 않아서 임의로 가장 가까운 5의 배수로 수정함 -> 주석처리함
-    # user_frame_no = round(user_frame_no / 5) * 5
 
     frames = glob.glob(os.path.join(request_body.frame_path, "*.jpg"))
     tracking_result = request_body.tracking_result
@@ -88,16 +87,15 @@ async def inference(request_body: ShipRequest):
         for idx, result in enumerate(target_results):
             try:
                 frame_no = result[0]
-                # TODO@jh: 서버에 저장된 tracking 결과가 5의 배수로 inference한 결과가 아니라서 별도 처리함 (추후 수정 필요)
                 # TODO@jh: 매번 찾지 않고, 네이밍 규칙으로 읽도록 수정 필요
                 frame = [
                     x for x in frames if frame_no == int(x.split("_")[-1].split(".")[0])
                 ][0]
                 bbox_xyxy = refiner.convert_to_xyxy(result[3:7])
-                mask = refiner._do_seg(cv2.imread(frame), [bbox_xyxy])
+                mask = refiner._do_seg_fast(cv2.imread(frame), [bbox_xyxy])
                 _, _, point = refiner.find_rotated_bounding_box_and_max_length(mask)
                 ships_info.append(
-                    [frame_no, point[0][0], point[0][1], point[1][0], point[1][1]] # 마지막은 point[1][1]이 되어야 하는 것이 아닌지 재검증 필요 (By HE)
+                    [frame_no, point[0][0], point[0][1], point[1][0], point[1][1]]
                 )
             except Exception as e:
                 # TODO@jh: 이미지가 읽히지 않는 프레임이 있는 것 같음. 추후 확인 필요

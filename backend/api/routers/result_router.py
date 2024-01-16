@@ -6,12 +6,14 @@ from argparse import Namespace
 
 import pandas as pd
 import requests
+
 from autologging import logged
 from fastapi import (APIRouter, Depends, FastAPI, File, Form, HTTPException, UploadFile, status)
 from fastapi.responses import FileResponse, JSONResponse
 from interface.request import VisRequest, VisRequestBev
-from utils.visualizing import visualize_bev
-from utils.visualizing.visualize import show_result
+from utils.visualizing import visualize
+import asyncio
+import aiofiles
 
 router = APIRouter(tags=["result"])
 
@@ -34,23 +36,27 @@ async def model_inference(body: VisRequest):
         Return
             - body.output_video (str): 결과 영상이 저장된 경로를 반환합니다.
     """
+    print(len(glob.glob(os.path.join(body.log_path, "*.csv"))))
 
     log_file_path = glob.glob(os.path.join(body.log_path, "*.csv"))[0]
 
     os.makedirs(os.path.dirname(body.output_video), exist_ok=True)
     delete_files_in_folder(os.path.dirname(body.output_video))
     args = Namespace(
-        log_path=log_file_path,
-        input_dir=body.input_dir,
-        output_video=body.output_video,
-        bbox_path=body.bbox_path,
-        GSD_path=os.path.abspath(os.path.join("test", "GSD_total.txt")),
+        log_path='/home/dva4/DVA_LAB/backend/test/sync_csv/sync_log.csv',
+        bbox_path='/home/dva4/DVA_LAB/backend/utils/visualizing/bev_points.csv',
+        output_video='/home/dva4/DVA_LAB/backend/test/visualize.mp4',
+        output_bev_video='/home/dva4/DVA_LAB/backend/test_saved/frame_bev_infer',
+        input_dir='/home/dva4/DVA_LAB/backend/test/frame_origin',
+        output_dir = '/home/dva4/DVA_LAB/backend/test_saved/frame_infer',
+        output_bev_dir='/home/dva4/DVA_LAB/backend/test_saved/frame_bev_infer',
+        GSD_path='/home/dva4/DVA_LAB/backend/test/GSD_total.txt',
     )
 
     # Call show_result with the created args object
-    show_result(args)
+    asyncio.run(visualize.main(args))
 
-    visualize_bev()
+
 
     return body.output_video
 
@@ -136,12 +142,18 @@ async def get_all_gsd(body: VisRequestBev):
 )
 async def export_origin():
     """
-        ?
+        GET 요청을 처리하여 원본 비디오를 내보냅니다.
+
+        이 함수는 "/export/origin" 경로에 대한 GET 요청에 응답합니다.
+        호출되면, 서버 저장소의 특정 비디오 파일을 포함하는 FileResponse 객체를 반환합니다.
 
         Return
-            - fastapi.responses.FileResponse: 시각화가 적용된 영상을 반환합니다.
-    """
+            - FileResponse: 이 경로에 접근할 때, 서버의 지정된 경로에 위치한 특정 비디오 파일의 다운로드를 시작하는 응답 객체입니다.
 
+        Note
+            - 비디오 파일 경로는 현재 서버 파일 시스템 내의 특정 위치로 하드코딩되어 있습니다.
+            - 프로덕션 환경에서는 더 동적이거나 안전한 경로로 설정되어야 합니다.
+    """
     video_storage_path = "/home/dva4/DVA_LAB/backend/test/visualize.mp4"
     return FileResponse(video_storage_path)
 
