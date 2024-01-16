@@ -5,8 +5,8 @@ import os
 import requests
 from autologging import logged
 from fastapi import APIRouter, Depends, HTTPException, status
-from backend.interface.request import ModelRequest
-from backend.utils.merge_bboxes import (match_and_ensemble, plot_detections, read_csv_file, read_file)
+from interface.request import ModelRequest
+from utils.merge_bboxes import (match_and_ensemble, plot_detections, read_csv_file, read_file)
 
 router = APIRouter(tags=["model"])
 

@@ -21,7 +21,7 @@ from anomalib.utils import slicing, merge_tensors_max  # 추가
 from anomalib.utils.callbacks import get_callbacks
 from autologging import logged
 from fastapi import APIRouter, Depends, status
-from models.efficientAD.interface.request import SegRequest
+from interface.request import SegRequest
 from PIL import Image
 from pytorch_lightning import Trainer
 from torch.utils.data import DataLoader

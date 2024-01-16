@@ -9,6 +9,9 @@
 import os
 import sys
 sys.path.insert(0, os.path.abspath('..'))
+sys.path.insert(0, os.path.abspath('../backend'))
+sys.path.insert(0, os.path.abspath('../models'))
+sys.path.insert(0, os.path.abspath('../dataset'))
 
 project = 'DVA Lab'
 copyright = '2023, DVA Lab'
@@ -21,6 +24,7 @@ extensions = ['recommonmark',
               'sphinx.ext.todo',
               'sphinx.ext.viewcode',
               'sphinx.ext.autodoc',
+              'sphinx.ext.intersphinx'
               ]
 
 source_suffix = {
@@ -38,9 +42,7 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'pull_request_template.m
 
 language = 'ko'
 
-
-add_module_names = False
-
+add_module_names = True
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
