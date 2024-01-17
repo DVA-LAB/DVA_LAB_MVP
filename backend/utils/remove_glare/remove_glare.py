@@ -102,7 +102,7 @@ class RGLARE:
             GPU를 사용해 빛반사가 제거된 비디오를 생성합니다.
         """
 
-        with tqdm.tqdm(total=self.total_frame, desc="GPU Remove Light") as pbar:
+        for _ in range(self.total_frame):
             while self.frame_count < self.total_frame+self.queue_len:
                 ret, frame = self.cap.read()
 
@@ -149,7 +149,6 @@ class RGLARE:
                 out_frame = cv2.cvtColor(out_frame, cv2.COLOR_HSV2BGR)
                 out_frame = cv2.resize(out_frame, self.frame_size)
                 self.out.write(out_frame)
-                pbar.update()
                 self.frame_count+=1
         self.cap.release()
         self.out.release()
@@ -203,7 +202,7 @@ class RGLARE:
 
     def video_cpu(self):
         ''' CPU를 사용해 빛반사가 제거된 비디오를 생성합니다. '''
-        with tqdm.tqdm(total=self.total_frame, desc="Remove Light") as pbar:
+        for _ in range(self.total_frame):
             while self.frame_count < self.total_frame+self.queue_len:
                 ret, frame = self.cap.read()
                 if not ret:
@@ -237,7 +236,6 @@ class RGLARE:
                         self.queue_full=True
                     continue
                 self.out.write(out_frame)
-                pbar.update()
         self.cap.release()
         self.out.release()
 

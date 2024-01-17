@@ -15,7 +15,7 @@ from utils.log_sync.adjust_log import do_sync
 from utils.remove_glare import remove_glare
 
 router = APIRouter(tags=["data"])
-
+os.makedirs('test', exist_ok=True)
 video_path = os.path.abspath(os.path.join("test", "video_origin"))
 processed_video_path = os.path.abspath(os.path.join("test", "video_origin_remove"))
 frame_path = os.path.abspath(os.path.join("test", "frame_origin"))
@@ -57,7 +57,7 @@ async def upload_video(file: UploadFile = File(...), preprocess: bool = Form(...
             print(f"GPU for removing glare: {is_cuda_available}")
             process_s_time = time.time()
             os.makedirs(processed_video_path, exist_ok=True)
-            # delete_files_in_folder(processed_video_path)
+            delete_files_in_folder(processed_video_path)
             save_path = os.path.join(
                 processed_video_path, lowercase_extensions(file.filename)
             )
@@ -240,13 +240,17 @@ async def save_input(request: UserInput):
         for x in glob.glob(os.path.join(frame_path, "*.jpg"))
         if int(x.split("_")[-1].split(".")[0]) == frame_number
     ][0]
+    # print(point_distances)
     try:
         gsds = []
         pixelsizes = []
         inputs = []
         for pd in point_distances:
+            # print(pd)
             inputs.append(f'{frame_number} {pd.point1.x} {pd.point1.y} {pd.point2.x} {pd.point2.y} {pd.distance}')
+            # print(inputs)
             gsd, pixelsize = get_gsd(frame_number, frame_file, pd.point1.x, pd.point1.y, pd.point2.x, pd.point2.y, pd.distance)
+            print(gsd, pixelsize)
             if gsd != 0:
                 gsds.append(gsd)
                 pixelsizes.append(pixelsize)

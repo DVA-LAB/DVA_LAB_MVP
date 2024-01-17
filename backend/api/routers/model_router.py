@@ -1,6 +1,7 @@
 import glob
 import json
 import os
+from typing import Optional
 
 import requests
 from autologging import logged
@@ -134,17 +135,22 @@ async def inference_segmentation(frame_path, slices_path, output_path, patch_siz
     status_code=status.HTTP_200_OK,
     summary="detection - segmentation bbox merge",
     description="""\
-이 엔드포인트는 detection과 segmentation 모델에서 나온 bbox 결과를 병합 합니다. \
-객체 탐지 결과 csv_path (`csv_path`)와 segmentation bbox 결과 (`anomaly_detection_output`) \
-그리고 병합한 결과를 저장할 (`output_merge_path`)를 입력 받습니다..
+    이 엔드포인트는 detection과 segmentation 모델에서 나온 bbox 결과를 병합 합니다. \
+    객체 탐지 결과 csv_path (`csv_path`)와 segmentation bbox 결과 (`anomaly_detection_output`) \
+    그리고 병합한 결과를 저장할 (`output_merge_path`)를 입력 받습니다.. \
 
-### 예시
-- `output_merge_path`: /home/dva4/DVA_LAB/backend/test/model/merged
-- `csv_path`: /home/dva4/DVA_LAB/backend/test/model/detection/result.csv
-- `anomaly_detection_output`: /home/dva4/DVA_LAB/backend/test/model/detection/result.csv -> 임시로 detection csv를 받게 함
-""",
+    ### 예시
+    - `output_merge_path`: /home/dva4/DVA_LAB/backend/test/model/merged
+    - `csv_path`: /home/dva4/DVA_LAB/backend/test/model/detection/result.csv
+    - `anomaly_detection_output`: /home/dva4/DVA_LAB/backend/test/model/detection/result.csv -> 임시로 detection csv를 받게 함
+    """,
 )
-async def inference_merge(output_merge_path, csv_path, anomaly_detection_output, use_anomaly: bool = True):
+async def inference_merge(
+    output_merge_path: str, 
+    csv_path: str, 
+    anomaly_detection_output: Optional[str] = None, # Change here
+    use_anomaly: bool = True
+):
     """
         객체 탐지 결과와 이상 탐지 결과를 병합한 파일을 생성합니다. 
 
@@ -153,7 +159,7 @@ async def inference_merge(output_merge_path, csv_path, anomaly_detection_output,
         Args
             - output_merge_path (str): 객체 탐지 bbox와 이상 탐지 bbox를 병합한 결과 bbox를 저장할 경로
             - csv_path (str): 객체 탐지 결과 bbox 파일 경로
-            - anomaly_detection_output (str): 이상 탐지 결과 bbox 파일 경로
+            - anomaly_detection_output (str, optional): 이상 탐지 결과 bbox 파일 경로. Optional.
             - use_anomaly (bool): 이상 탐지의 결과 bbox와의 병합 여부
 
         Raise
@@ -163,12 +169,13 @@ async def inference_merge(output_merge_path, csv_path, anomaly_detection_output,
             - 파일이 특정 경로에 저장되었다는 메세지 스트링 (str)
     """
 
+
     try:
         os.makedirs(output_merge_path, exist_ok=True)
         # delete_files_in_folder(output_merge_path)
         anomaly_detection_output = None
         if use_anomaly:
-            anomaly_detection_output = read_csv_file(csv_path)
+            anomaly_detection_output = read_csv_file(anomaly_detection_output)
         detection_output = read_csv_file(csv_path)
         detection_save_path = os.path.join(output_merge_path, "result.txt")
         match_and_ensemble(
