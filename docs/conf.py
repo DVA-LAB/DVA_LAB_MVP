@@ -11,7 +11,6 @@ import sys
 sys.path.insert(0, os.path.abspath('..'))
 sys.path.insert(0, os.path.abspath('../backend'))
 sys.path.insert(0, os.path.abspath('../models'))
-sys.path.insert(0, os.path.abspath('../dataset'))
 
 project = 'DVA Lab'
 copyright = '2023, DVA Lab'
@@ -24,8 +23,7 @@ extensions = ['recommonmark',
               'sphinx.ext.todo',
               'sphinx.ext.viewcode',
               'sphinx.ext.autodoc',
-              'sphinx.ext.intersphinx'
-              ]
+              'sphinx.ext.intersphinx']
 
 source_suffix = {
     '.rst': 'restructuredtext',
@@ -35,11 +33,10 @@ source_suffix = {
 master_doc = 'index'
 
 templates_path = ['_templates']
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'pull_request_template.md',
-                    '**models/sahi_detection**',
-                    '**models/bytetrack/api/services**'
-                    ]
-
+exclude_patterns = ['_build', 
+                    'Thumbs.db', 
+                    '.DS_Store', 
+                    'pull_request_template.md']
 language = 'ko'
 
 add_module_names = True

@@ -5,5 +5,4 @@ DVA_LAB
    :maxdepth: 4
 
    backend
-   dataset
    models

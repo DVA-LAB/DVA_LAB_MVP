@@ -27,13 +27,6 @@ Welcome to DVA Lab's documentation!
    models.refiner.rst
 
 
-.. toctree::
-   :maxdepth: 2
-   :caption: dataset
-
-   dataset.rst
-   
-
 Indices and tables
 ==================
 
