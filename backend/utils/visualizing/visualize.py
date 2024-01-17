@@ -246,7 +246,7 @@ def get_max_dimensions(image_paths):
     return max_width, max_height
 
 
-def make_video(image_paths, video_name, fps=30, max_resolution=(3840, 2160)):
+def make_video(image_paths, video_name, fps=5, max_resolution=(3840, 2160)): # fps=30
     """
         BirdEyeView (BEV)로 시각화된 비디오를 생성합니다.
 
@@ -296,7 +296,7 @@ async def main(args):
     """
 
     start_time = time.time()
-    frame_rate=30
+    frame_rate = 5 # 30
     image_paths = get_image_paths(args.input_dir)
 
     createDirectory(args.output_dir)
@@ -382,7 +382,7 @@ async def main(args):
             # 모든 태스크가 완료될 때까지 기다림
             await asyncio.gather(*tasks)
             
-            frame_count += 1
+            frame_count += frame_rate # frame_count += 1
             continue
 
         rst, transformed_img, bbox, boundary_rows, boundary_cols, gsd_bev, eo, R, focal_length, pixel_size = BEV_FullFrame(frame_count, image_path, args.log_path, gsd, args.output_dir, DEV = False)
@@ -558,7 +558,7 @@ async def main(args):
         # 모든 태스크가 완료될 때까지 기다림
         await asyncio.gather(*tasks)
 
-        frame_count += 1
+        frame_count += frame_rate # frame_count += 1
 
     make_video(get_image_paths(args.output_dir), args.output_video)
     make_video(get_image_paths(args.output_bev_dir), args.output_bev_video)
