@@ -51,8 +51,8 @@ def get_world_coordinate(boundary, gsd, col, row):
             xgeo : 실제세계 x좌표
             ygeo : 실제세계 y좌표
     """
-    xgeo = boundary[0] + gsd * row
-    ygeo = boundary[3] + (-gsd) * col
+    xgeo = boundary[0] + gsd * col
+    ygeo = boundary[3] + (-gsd) * row
 
     return xgeo, ygeo
 
@@ -105,22 +105,20 @@ def calculate_nearest_distance(dolphin_present, merged_dolphin_center, centers, 
     return distances
 
 
-def calculate_speed(center1_dg, center2_dg, frame_rate):
+def calculate_speed(center1_dg, center2_dg, time_interval):
     """
         두 중심점과 프레임 속도를 기반으로 선박의 속도를 계산합니다.
 
         Args:
             - center1_dg (list): 첫 번째 중심점이며 [x_dg, y_dg]로 구성됩니다.
             - center2_dg (list): 두 번째 중심점이며 [x_dg, y_dg]로 구성됩니다.
-            - frame_rate (float): 프레임 레이트입니다.
+            - time_interval (float): 프레임 간 시간 간격입니다.
 
         Return:
             - speed_kmh (float): 선박의 km/h 속도입니다.
     """
     # 실제 거리
     real_distance = math.sqrt((center2_dg[0] - center1_dg[0]) ** 2 + (center2_dg[1] - center1_dg[1]) ** 2)
-    # 시간 간격 (초 단위)
-    time_interval = 1 / frame_rate
     # 속도 (미터/초)
     speed = real_distance / time_interval
     # 속도를 km/h 단위로 변환
@@ -443,14 +441,15 @@ async def main(args):
                     
                     # 실제세계 좌표 기준 중심점 저장
                     if track_id not in previous_centers:
-                        previous_centers[track_id] = (bev_center_x_dg, bev_center_y_dg)
+                        previous_centers[track_id] = (bev_center_x_dg, bev_center_y_dg, frame_count)
                     else:
                         # 속도 계산
-                        speed_kmh = calculate_speed(previous_centers[track_id], (bev_center_x_dg, bev_center_y_dg), frame_rate)
+                        time_interval = (frame_count - previous_centers[track_id][2]) / frame_rate
+                        speed_kmh = calculate_speed(previous_centers[track_id][:2], (bev_center_x_dg, bev_center_y_dg), time_interval)
                         ship_speeds[track_id] = speed_kmh
                         max_ship_speed = max(max_ship_speed, speed_kmh)
                         # 중심점 업데이트
-                        previous_centers[track_id] = (bev_center_x_dg, bev_center_y_dg)
+                        previous_centers[track_id] = (bev_center_x_dg, bev_center_y_dg, frame_count)
 
                         bev_draw.text((bev_center_x, bev_center_y), str(speed_kmh), font=font, fill=font_color)
                         draw.text((center_x, center_y), str(speed_kmh), font=font, fill=font_color)
