@@ -8,8 +8,7 @@ from typing import List
 import requests
 import torch
 from api.services.data_service import parse_videos_multithreaded
-from fastapi import (APIRouter, Depends, FastAPI, File, Form, HTTPException,
-                     UploadFile, status)
+from fastapi import (APIRouter, Depends, FastAPI, File, Form, HTTPException, UploadFile, status)
 from fastapi.responses import FileResponse, JSONResponse
 from interface.request.user_input_request import UserInput
 from utils.log_sync.adjust_log import do_sync

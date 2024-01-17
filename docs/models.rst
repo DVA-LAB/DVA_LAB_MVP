@@ -1,6 +1,11 @@
 models package
 ==============
 
+.. automodule:: models
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Subpackages
 -----------
 
@@ -12,11 +17,3 @@ Subpackages
    models.bytetrack
    models.efficientAD
    models.refiner
-
-Module contents
----------------
-
-.. automodule:: models
-   :members:
-   :undoc-members:
-   :show-inheritance:

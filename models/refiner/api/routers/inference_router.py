@@ -62,13 +62,11 @@ async def inference(request_body: ShipRequest):
             - ships_info (list): N x [frame_no, point[0][0], point[0][1], point[1][0], point[1][0]]
     """
 
-    refiner = Refiner("cuda")
+    refiner = Refiner("cuda", fastsam=True)
+    # refiner = Refiner("cuda")
 
     # TODO@jh: user가 여러대의 선박에 대한 입력을 저장할 경우 처리 필요
     user_frame_no, mean_x, mean_y = check_user_input(request_body.user_input)
-
-    # TODO@jh: user_input이 올바르게 저장되어 있지 않아서 임의로 가장 가까운 5의 배수로 수정함 -> 주석처리함
-    # user_frame_no = round(user_frame_no / 5) * 5
 
     frames = glob.glob(os.path.join(request_body.frame_path, "*.jpg"))
     tracking_result = request_body.tracking_result
@@ -89,16 +87,15 @@ async def inference(request_body: ShipRequest):
         for idx, result in enumerate(target_results):
             try:
                 frame_no = result[0]
-                # TODO@jh: 서버에 저장된 tracking 결과가 5의 배수로 inference한 결과가 아니라서 별도 처리함 (추후 수정 필요)
                 # TODO@jh: 매번 찾지 않고, 네이밍 규칙으로 읽도록 수정 필요
                 frame = [
                     x for x in frames if frame_no == int(x.split("_")[-1].split(".")[0])
                 ][0]
                 bbox_xyxy = refiner.convert_to_xyxy(result[3:7])
-                mask = refiner._do_seg(cv2.imread(frame), [bbox_xyxy])
+                mask = refiner._do_seg_fast(cv2.imread(frame), [bbox_xyxy])
                 _, _, point = refiner.find_rotated_bounding_box_and_max_length(mask)
                 ships_info.append(
-                    [frame_no, point[0][0], point[0][1], point[1][0], point[1][1]] # 마지막은 point[1][1]이 되어야 하는 것이 아닌지 재검증 필요 (By HE)
+                    [frame_no, point[0][0], point[0][1], point[1][0], point[1][1]]
                 )
             except Exception as e:
                 # TODO@jh: 이미지가 읽히지 않는 프레임이 있는 것 같음. 추후 확인 필요

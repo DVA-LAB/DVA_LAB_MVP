@@ -1,6 +1,11 @@
 backend.api package
 ===================
 
+.. automodule:: backend.api
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Subpackages
 -----------
 
@@ -9,11 +14,3 @@ Subpackages
 
    backend.api.routers
    backend.api.services
-
-Module contents
----------------
-
-.. automodule:: backend.api
-   :members:
-   :undoc-members:
-   :show-inheritance:

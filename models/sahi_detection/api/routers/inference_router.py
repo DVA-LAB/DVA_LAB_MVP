@@ -12,6 +12,7 @@ from loguru import logger
 from interface.request import SahiRequest
 from typing import List
 
+
 from ..services import preproc
 from ..services import get_exp
 from ..services import fuse_model, get_model_info, postprocess

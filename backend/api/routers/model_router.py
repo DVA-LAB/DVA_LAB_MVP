@@ -47,7 +47,7 @@ async def inference_detection(img_path, csv_path, sliced_path):
                 - img_path (str): 원본 프레임 경로
                 - csv_path (str): 객체인식 결과파일 저장경로
                 - sliced_path (str): 원본 프레임이 슬라이싱된 경로
-            )
+            )     
     """
 
     url = "http://localhost:8002/sahi/inference"
