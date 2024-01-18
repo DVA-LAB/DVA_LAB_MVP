@@ -439,42 +439,6 @@ loadVideo = () => {
     }));
   };
   
-
-//   captureAndSendFrame = async () => {
-//     const { lastVideoFilename } = this.state;
-//     const video = this.videoRef.current;
-
-//     // Capture the current frame of the video
-//     const canvas = document.createElement('canvas');
-//     canvas.width = video.videoWidth;
-//     canvas.height = video.videoHeight;
-//     const ctx = canvas.getContext('2d');
-//     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-//     // Convert canvas to Blob
-//     const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg'));
-//     const file = new File([blob], `frame-${Date.now()}.jpg`, { type: 'image/jpeg' });
-
-//     const formData = new FormData();
-//     formData.append('file', file);
-
-//     try {
-//         const response = await axios.post(`http://localhost:8000/bev/${lastVideoFilename}`, formData, {
-//             headers: {
-//                 'Content-Type': 'multipart/form-data',
-//             },
-//         });
-//         if (response.data && response.data.framePath) {
-//             const framePath = response.data.framePath.split('/').pop();
-//             const getImageUrl = `http://localhost:8000/extracted_frames/${framePath}`;
-//             console.log(getImageUrl);
-//             return getImageUrl;
-//         }
-//     } catch (error) {
-//         console.error('Error sending frame for BEV conversion:', error);
-//     }
-// };
-
   captureAndSendFrame = async () => {
     const { frameNumber } = this.state; // Assuming frameNumber is stored in state
 
@@ -490,54 +454,6 @@ loadVideo = () => {
       console.error('Error fetching frame:', error);
     }
   };
-
-
-  // toggleBEVView = async () => {
-  //   const { showBEV, frameNumber} = this.state;
-  //   // const parts = videoFileName.split('.');
-  
-  //   // Remove the last part (the extension)
-  //   // const fileNameWithoutExtension = parts.slice(0, -1).join('.');
-  //   // const frameNumberPadded = frameNumber.toString().padStart(5, '0'); // Pad frame number with leading zeros
-  //   // const framePath = `/home/dva4/dva/backend/test/frame_origin/${fileNameWithoutExtension}_${frameNumberPadded}.jpg`; 
-  //   // const csvPath = `/home/dva4/dva/backend/test/sync_csv/sync_log.csv`;
-  //   // const dstDir = "api/services/Orthophoto_Maps/Data/result"; // Destination directory
-
-  //   const formatObjectsArray = (lastEntry) => {
-  //     if (!lastEntry) return null;
-  
-  //     const { point1, point2 } = lastEntry;
-  //     return [null, null, null, point1.x, point1.y, point2.x, point2.y, null, -1, -1, -1];
-  //   };
-  
-  //   const lastEntry = this.state.pointDistances[this.state.pointDistances.length - 1];
-  //   const objects = formatObjectsArray(lastEntry); 
-  
-  //   if (!objects) {
-  //     console.error("No point distances available for BEV conversion");
-  //     this.setState({ isLoading: false });
-  //     return;
-  //   }
-  
-  //   const payload = {
-  //     frame_number: frameNumber,
-  //     point_distances:[
-  //       {
-  //         point1: {x: this.point1.x, y: this.point1.y},
-  //         point2: {x: this.point2.x, y: this.point2.y},
-  //         distance: lastEntry.distance
-  //       }
-  //     ],
-  //     // frame_path: framePath,
-  //     // csv_path: csvPath,
-  //     // objects: objects,
-  //     // realdistance: lastEntry.distance,
-  //     // dst_dir: dstDir,
-  //   }
-  //   console.log(payload);
-  
-    
-  // };
   
   toggleBEVView = async () => {
     const { showBEV, frameNumber, pointDistances } = this.state;
@@ -560,7 +476,16 @@ loadVideo = () => {
             }
         ],
         // Additional data can be included here if necessary
-    }
+    };
+
+    const gsdPayload = {
+      user_input: "/home/dva4/DVA_LAB/backend/test/input/user_input.txt",
+      frame_path: "/home/dva4/DVA_LAB/backend/test/frame_origin",
+      tracking_result: "/home/dva4/DVA_LAB/backend/test/model/tracking/result.txt",
+      GSD_path: "/home/dva4/DVA_LAB/backend/test/GSD.txt",
+      GSD_save_path: "/home/dva4/DVA_LAB/backend/test/GSD_total.txt"
+  };
+
     console.log(payload);
     if (this.state.infoAdded) {
       this.setState({ isLoading: true });
@@ -569,8 +494,22 @@ loadVideo = () => {
         const response = await axios.post(`${API_URL}/user_input/`, payload);
     
         if (response.status===200) {
-            console.log('BEV successful')
-            this.setState({ isLoading: false, showBEV: true });
+            console.log('BEV1 successful')
+            try {
+              const gsdResponse = await axios.post(`${API_URL}/total_gsd`, gsdPayload);
+      
+              if (gsdResponse.status === 200) {
+                  console.log('Total GSD calculation successful', gsdResponse.data);
+                  this.setState({ isLoading: false, showBEV: true });
+              } else {
+                  console.error("Total GSD calculation failed");
+                  this.setState({ isLoading: false });
+              }
+            } catch (error) {
+              console.error("Error during total GSD API call:", error);
+              this.setState({ isLoading: false });
+            }
+            
         } else {
             console.error("BEV conversion failed");
             this.setState({ isLoading: false });
@@ -580,16 +519,7 @@ loadVideo = () => {
         this.setState({ isLoading: false });
     }
     } 
-    // else {
-    //   this.setState({
-    //     showBEV: false,
-    //     videoSrc: `${API_URL}/video/`
-    //   }, () => {
-    //     this.loadVideo();
-    //   });
-    // }
 
-    // Your existing axios post request and other logic...
 };
 
   
@@ -827,9 +757,9 @@ drawLabel = (startPoint, endPoint, text) => {
   
       if (detResponse.status !== 200) {
           throw new Error(`Detection inference failed with status: ${detResponse.status}`);
+      } else if(detResponse.status===200){
+        console.log("Detection inference successful:", detResponse.data);
       }
-  
-      console.log("Detection inference successful:", detResponse.data);
 
       const anomalyQueryParams = `img_path=${"/home/dva4/DVA_LAB/backend/test/frame_origin/DJI_0149_00900.jpg"}&output_path=${"/home/dva4/DVA_LAB/backend/test/model/segment/DJI_0149_00900.jpg"}&sliced_path=${"/home/dva4/DVA_LAB/backend/test/model/sliced/"}
       &patch_size=${1024}&overlap_ratio=${0.2}`;
@@ -840,11 +770,14 @@ drawLabel = (startPoint, endPoint, text) => {
       }
 
       console.log("Segmentation inference successful:", anomalyResponse.data);
+      
 
+      // MERGE INFERENCE
       const mergeQueryParams = 
-      `output_merge_path=${encodeURIComponent("/home/dva4/DVA_LAB/backend/test/model/merged")}
-      &csv_path=${encodeURIComponent("/home/dva4/DVA_LAB/backend/test/model/detection/result.csv")}
-      &anomaly_detection_output=${encodeURIComponent("/home/dva4/DVA_LAB/backend/test/model/detection/result.csv")}`;
+      `output_merge_path="/home/dva4/DVA_LAB/backend/test/model/merged"
+      &csv_path="/home/dva4/DVA_LAB/backend/test/model/detection/result.csv"
+      &anomaly_detection_output="/home/dva4/DVA_LAB/backend/test/model/detection/result.csv"
+      &use_anomaly=${false}`;
       
       const mergeResponse = await axios.post(`${API_URL}/inference/merge?${mergeQueryParams}`);
 
@@ -853,9 +786,9 @@ drawLabel = (startPoint, endPoint, text) => {
         throw new Error(`Merging inference failed with status: ${mergeResponse.status}`);
       }
 
-      console.log("Merging inference successful:", mergeResponse.data);
+      // console.log("Merging inference successful:", mergeResponse.data);
 
-      // Make the tracking API call
+      // TRACK INFERENCE
       const trackQueryParams = `detection_path=${encodeURIComponent("/home/dva4/DVA_LAB/backend/test/model/merged/result.txt")}&save_path=${encodeURIComponent("/home/dva4/DVA_LAB/backend/test/model/tracking/result.txt")}`;
       const trackResponse = await axios.post(`${API_URL}/inference/tracking?${trackQueryParams}`);
   
@@ -1105,7 +1038,7 @@ drawLabel = (startPoint, endPoint, text) => {
               background: 'none'
             }}
           >
-            Drone Video Analysis for MARC
+            See Sea TV(See Sea Tracker Voyager)
           </Button>
 
          
@@ -1197,7 +1130,7 @@ drawLabel = (startPoint, endPoint, text) => {
               background: 'none'
             }}
           >
-            Drone Video Analysis for MARC
+            See Sea TV(See Sea Tracker Voyager)
           </Button>
          
           <div className='video-bev-container' style={{ position: 'relative', ...videoStyle }}>
@@ -1361,7 +1294,7 @@ drawLabel = (startPoint, endPoint, text) => {
           <div>
             {this.state.infoAdded && !videoPlaying && videoSrc &&  this.state.showControlButtons && (
             <Button type="primary" onClick={this.toggleBEVView}>
-              {showBEV ? '동영상으로 돌아가기' : '항공 사진 전환'}
+              {showBEV ? '동영상으로 돌아가기' : '실측 거리 계산하기!'}
             </Button>
             )}
 
