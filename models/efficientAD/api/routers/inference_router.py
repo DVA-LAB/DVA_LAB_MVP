@@ -17,7 +17,7 @@ from anomalib.data.inference import InferenceDataset
 from anomalib.data.utils import InputNormalizationMethod, get_transforms
 from anomalib.models import get_model
 
-from anomalib.utils import slicing, merge_tensors_max  # 추가
+from anomalib.utils import slicing, merge_tensors_max 
 from anomalib.utils.callbacks import get_callbacks
 from autologging import logged
 from fastapi import APIRouter, Depends, status
@@ -26,6 +26,7 @@ from PIL import Image
 from pytorch_lightning import Trainer
 from torch.utils.data import DataLoader
 from skimage.segmentation import mark_boundaries
+from skimage import morphology
 
 router = APIRouter(tags=["anomaly"])
 
@@ -44,15 +45,12 @@ async def anomaly_inference(request_body: SegRequest):
                 - request_body.frame_path (str): 이상탐지를 수행할 프레임 파일경로
                 - request_body.slices_path (str): 이상탐지를 수행할 프레임 파일이 슬라이싱된 패치 디렉터리 경로
                 - request_body.output_path (str): 이상탐지 결과가 저장될 파일경로
-
         Return
-            - output_img (np.ndarray): 이상탐지를 수행한 결과 이미지
-            - output_mask (np.ndarray): 이상탐지 결과 마스크
-            - output_list (list): N x [frame_number, class_id, x1, y1, w1, h1, anomaly_score]
+            - result_path (str): 이상탐지 결과가 저장된 파일 경로
     """
 
-    output_img, output_mask, output_list = ad_slice_inference(request_body.frame_path, request_body.slices_path, request_body.output_path, request_body.patch_size, request_body.overlap_ratio) # 설정 필요
-    return output_img, output_mask, output_list
+    result_path = ad_slice_inference(request_body.frame_path, request_body.slices_path, request_body.output_path, request_body.patch_size, request_body.overlap_ratio) 
+    return result_path
 
 def ad_slice_inference(frame_path, slices_path, output_path, patch_size, overlap_ratio):
     """
@@ -64,9 +62,7 @@ def ad_slice_inference(frame_path, slices_path, output_path, patch_size, overlap
             - output_path (str): 이상탐지 결과가 저장될 파일경로
 
         Return
-            - output_img (np.ndarray): 이상탐지를 수행한 결과 이미지
-            - output_mask (np.ndarray): 이상탐지 결과 마스크
-            - output_list (list): N x [frame_number, class_id, x1, y1, w1, h1, anomaly_score]
+            - result_path (str): 이상탐지 결과가 저장된 파일 경로
     """
     
     config = get_configurable_parameters("efficient_ad")
@@ -94,10 +90,12 @@ def ad_slice_inference(frame_path, slices_path, output_path, patch_size, overlap
         normalization=normalization,
     )
 
-    frame = frame_path
-    frame_img = cv2.imread(frame)
-    
+    # original frame path에서 1개 파일 임의로 가져오도록 수정; image size(h, w) 추출
+    frame = os.listdir(frame_path)
+    first_file = os.path.join(frame_path, frame[0])
+    frame_img = cv2.imread(first_file)
     h, w = frame_img.shape[:2]
+
     # Replace local variable(request body input value)
     patch_size = patch_size
     overlap = overlap_ratio
@@ -155,7 +153,7 @@ def ad_slice_inference(frame_path, slices_path, output_path, patch_size, overlap
             output_bbox.append((frame_number, class_id, x1, y1, w1, h1, anomaly_score))
         output_list.append(output_bbox) 
 
-        ''' visualization '''    # 정상구동 확인용
+        ''' visualization  '''   # 정상구동 확인용
         background_image = np.zeros_like(output_mask)
         background_image[output_mask == 255] = 128
         for bbox in output_bbox:
@@ -166,15 +164,18 @@ def ad_slice_inference(frame_path, slices_path, output_path, patch_size, overlap
         v = mark_boundaries(frame_img, mask, color=(1, 0, 0), mode="thick")
         output_img = (v * 255).astype(np.uint8)    # -> numpy.ndarray
         #cv2.imwrite(f"results/output_img_{frame_number}.jpg", output_img)
+        
 
     ''' save output '''
-    save_path = output_path
+    save_path = os.path.join(output_path, 'anomaly.csv')
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
     with open(save_path, 'w') as f:
         for j in output_list[0]:
             frame_number, class_id, xx, yy, ww, hh, anomaly_score = j
             f.write(f"{frame_number},{class_id},{xx},{yy},{ww},{hh},{anomaly_score}\n")
 
+    f.close()
 
-    return output_img, output_mask, output_list
+    return save_path
 
 
