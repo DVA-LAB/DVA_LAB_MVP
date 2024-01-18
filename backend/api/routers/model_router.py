@@ -78,9 +78,9 @@ async def inference_detection(img_path, csv_path, sliced_path):
 그리고 결과를 저장할 경로(`output_path`)를 입력 받습니다.
 
 ### 예시
-- `frame_path`: /home/dva4/DVA_LAB/backend/test/frame_origin/DJI_0119_30_00000.jpg
+- `frame_path`: /home/dva4/DVA_LAB/backend/test/frame_origin
 - `slices_path`: /home/dva4/DVA_LAB/backend/test/model/sliced
-- `output_path`: /home/dva4/DVA_LAB/backend/test/model/segment/DJI_0119_30_00000.jpg
+- `output_path`: /home/dva4/DVA_LAB/backend/test/model/segment
 - `patch_size` : 1024
 - `overlap_ratio` : 0.2
 """,
@@ -135,20 +135,20 @@ async def inference_segmentation(frame_path, slices_path, output_path, patch_siz
     status_code=status.HTTP_200_OK,
     summary="detection - segmentation bbox merge",
     description="""\
-    이 엔드포인트는 detection과 segmentation 모델에서 나온 bbox 결과를 병합 합니다. \
-    객체 탐지 결과 csv_path (`csv_path`)와 segmentation bbox 결과 (`anomaly_detection_output`) \
-    그리고 병합한 결과를 저장할 (`output_merge_path`)를 입력 받습니다.. \
+이 엔드포인트는 detection과 segmentation 모델에서 나온 bbox 결과를 병합 합니다. \
+객체 탐지 결과 csv_path (`csv_path`)와 segmentation bbox 결과 (`anomaly_detection_output`) \
+그리고 병합한 결과를 저장할 (`output_merge_path`)를 입력 받습니다. 
 
-    ### 예시
-    - `output_merge_path`: /home/dva4/DVA_LAB/backend/test/model/merged
-    - `csv_path`: /home/dva4/DVA_LAB/backend/test/model/detection/result.csv
-    - `anomaly_detection_output`: /home/dva4/DVA_LAB/backend/test/model/detection/result.csv -> 임시로 detection csv를 받게 함
-    """,
+### 예시
+- `output_merge_path`: /home/dva4/DVA_LAB/backend/test/model/merged
+- `csv_path`: /home/dva4/DVA_LAB/backend/test/model/detection/result.csv
+- `anomaly_detection_output`: /home/dva4/DVA_LAB/backend/test/model/segment/anomaly.csv
+""",
 )
 async def inference_merge(
     output_merge_path: str, 
     csv_path: str, 
-    anomaly_detection_output: Optional[str] = None, # Change here
+    anomaly_detection_output: Optional[str] = None,
     use_anomaly: bool = True
 ):
     """
