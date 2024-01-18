@@ -26,7 +26,7 @@ curl -X POST "http://112.216.237.124:8001/sahi/inference" -H "Content-Type: appl
 * Model Output : frame_number, class_id, x, y, w, h, confi_score
 
 ## Benchmark
-| Model | Size | mAP<br/>0.5 | FPS<br/>(original) | FPS<br/>(tensorrt) | Params<br/><sup> (M)|
+| Model | Size | mAP 0.5 | FPS<br/>(original) | FPS<br/>(tensorrt) | Params<br/><sup> (M)|
 | :----------------------------------------------------------- | ---- | :----------------------- | --------------------------------------- | ---------------------------------------- | -------------------- |
 | **YOLOv8-s** | 1024  |    84.99  | 1.6 | 0      | 11.2    | 
 | **YOLOv8-m** | 1024  |   86.75    | 0.87       | 0     | 25.9     |
