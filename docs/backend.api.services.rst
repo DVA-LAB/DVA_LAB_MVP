@@ -13,4 +13,3 @@ Submodules
    :maxdepth: 4
 
    backend.api.services.data_service
-   backend.api.services.model_service
