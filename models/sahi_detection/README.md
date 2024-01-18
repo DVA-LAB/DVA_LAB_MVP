@@ -17,3 +17,8 @@ curl -X POST "http://112.216.237.124:8001/sahi/inference" -H "Content-Type: appl
 
 # No save mode
 curl -X POST "http://112.216.237.124:8001/sahi/inference" -H "Content-Type: application/json" -d '{"det_result_path": "/home/dva3/API/DVA_LAB/models/bytetrack_jy/example.txt", "result_path": "./test.txt"}'
+
+## 기능
+* 돌고래 / 선박 탐지 및 추적
+* sahi slicing에 의한 small object 탐지 성능 향상
+ 
