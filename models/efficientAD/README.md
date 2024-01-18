@@ -28,11 +28,15 @@ import requests
 import json
 
 # API 엔드포인트 설정
-url = "http://localhost:8000/anomaly/inference"  # 'localhost:8000' 부분은 실제 서버 주소로 변경해야 합니다.
+url = "http://localhost:8003/anomaly/inference"
 
 # SegRequest에 맞게 데이터 준비
 data = {
-    "frame_path": "your_frame_path_here"  # 'your_frame_path_here'를 실제 프레임 경로로 대체하세요.
+    "frame_path": frame_path,
+    "slices_path": slices_path,
+    "output_path": output_path,
+    "patch_size": patch_size,
+    "overlap_ratio":overlap_ratio
 }
 
 # POST 요청 보내기
@@ -44,4 +48,4 @@ print("Response Body:", response.json())
 ```
 
 ## 예시 결과
-frame_number, class_id, x, y, w, h, anomaly_score
+/home/dva4/DVA_LAB/backend/test/model/segment/anomaly.csv
