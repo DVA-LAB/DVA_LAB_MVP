@@ -10,7 +10,7 @@
 * 함수: anomaly_inference
 * 설명: 제공된 프레임 경로를 처리하여 이상을 감지하고 세그먼트합니다.
 * 입력: request_body: 분석할 프레임 경로를 포함한 SegRequest 인스턴스.
-* 출력 (TBA): res_img, res_boxes, res_scores
+* 출력: result_path
 
 
 ## 사용 예시
@@ -22,7 +22,7 @@
 1) api/services/ 경로에서 pip install -e . 명령어를 실행합니다. 
 2) 추가로 필요한 requirements.txt로 설치합니다.
 3) SegRequest 인스턴스로 anomaly_inference 함수를 호출합니다.
-4) 반환된 res_img, res_boxes, res_scores를 필요에 따라 처리합니다.
+4) 반환된 result_path를 필요에 맞게 처리합니다.
 ```python
 import requests
 import json
@@ -44,4 +44,4 @@ print("Response Body:", response.json())
 ```
 
 ## 예시 결과
-TBA
+frame_number, class_id, x, y, w, h, anomaly_score
