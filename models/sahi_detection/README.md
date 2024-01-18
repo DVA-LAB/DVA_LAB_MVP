@@ -7,7 +7,7 @@
 
 ## 메인 모델
 
-- yolov5 
+- yolov8 
 
 ```markdown
 ```bash
