@@ -7,7 +7,7 @@
 
 ## 메인 모델
 
-- yolov5 
+- yolov8 
 
 ```markdown
 ```bash
@@ -17,3 +17,18 @@ curl -X POST "http://112.216.237.124:8001/sahi/inference" -H "Content-Type: appl
 
 # No save mode
 curl -X POST "http://112.216.237.124:8001/sahi/inference" -H "Content-Type: application/json" -d '{"det_result_path": "/home/dva3/API/DVA_LAB/models/bytetrack_jy/example.txt", "result_path": "./test.txt"}'
+```
+
+## 기능
+* 돌고래 / 선박 탐지 및 추적
+* sahi slicing에 의한 small object 탐지 성능 향상
+* Model Input : 1024 size로 slicing 된 frame( 30 / 5 ) 경로
+* Model Output : frame_number, class_id, x, y, w, h, confi_score
+
+## Benchmark
+| Model | Size | mAP 0.5 | FPS<br/>(original) | FPS<br/>(tensorrt) | Params<br/><sup> (M)|
+| :----------------------------------------------------------- | ---- | :----------------------- | --------------------------------------- | ---------------------------------------- | -------------------- |
+| **YOLOv8-s** | 1024  |   84.99  | 1.6 |  0 |  11.2 | 
+| **YOLOv8-m** | 1024  |   86.75  | 0.87 |  0 |  25.9  |
+| **YOLOv8-l** | 1024  |   87.74  | 0.45 |  0  |  43.7 | 
+ 
