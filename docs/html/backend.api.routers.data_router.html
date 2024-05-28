@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="ko">
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>backend.api.routers.data_router module &mdash; DVA Lab  문서</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+        <script src="_static/translations.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="색인" href="genindex.html" />
+    <link rel="search" title="검색" href="search.html" />
+    <link rel="next" title="backend.api.routers.model_router module" href="backend.api.routers.model_router.html" />
+    <link rel="prev" title="backend.api.routers package" href="backend.api.routers.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            DVA Lab
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">backend</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="backend.api.html">backend.api package</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="backend.api.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="backend.api.routers.html">backend.api.routers package</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="backend.api.routers.html#submodules">Submodules</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="backend.api.services.html">backend.api.services package</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="backend.interface.html">backend.interface package</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">models</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="models.BEV.html">models.BEV package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.bytetrack.html">models.bytetrack package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.efficientAD.html">models.efficientAD package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.refiner.html">models.refiner package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">DVA Lab</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="backend.api.html">backend.api package</a></li>
+          <li class="breadcrumb-item"><a href="backend.api.routers.html">backend.api.routers package</a></li>
+      <li class="breadcrumb-item active">backend.api.routers.data_router module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/backend.api.routers.data_router.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-backend.api.routers.data_router">
+<span id="backend-api-routers-data-router-module"></span><h1>backend.api.routers.data_router module<a class="headerlink" href="#module-backend.api.routers.data_router" title="이 제목에 대한 퍼머링크"></a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="backend.api.routers.data_router.calculate_average_distance">
+<span class="sig-prename descclassname"><span class="pre">backend.api.routers.data_router.</span></span><span class="sig-name descname"><span class="pre">calculate_average_distance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">distances</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/api/routers/data_router.html#calculate_average_distance"><span class="viewcode-link"><span class="pre">[소스]</span></span></a><a class="headerlink" href="#backend.api.routers.data_router.calculate_average_distance" title="이 정의에 대한 퍼머링크"></a></dt>
+<dd><p>거리들의 평균 값을 반환합니다.</p>
+<dl class="simple">
+<dt>Args</dt><dd><ul class="simple">
+<li><p>distances (list): 거리 배열</p></li>
+</ul>
+</dd>
+<dt>Return</dt><dd><ul class="simple">
+<li><p>distnaces 배열 변수의 평균값 (float)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="backend.api.routers.data_router.calculate_pixel_distance">
+<span class="sig-prename descclassname"><span class="pre">backend.api.routers.data_router.</span></span><span class="sig-name descname"><span class="pre">calculate_pixel_distance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">point1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">point2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/api/routers/data_router.html#calculate_pixel_distance"><span class="viewcode-link"><span class="pre">[소스]</span></span></a><a class="headerlink" href="#backend.api.routers.data_router.calculate_pixel_distance" title="이 정의에 대한 퍼머링크"></a></dt>
+<dd><p>두 픽셀 좌표 간의 유클리드 거리를 계산한 값을 반환합니다.</p>
+<p>두 점의 (x, y) 좌표는 다음과 같이 가져옵니다.</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>point1.x, point1.y</p></li>
+<li><p>point2.x, point2.y</p></li>
+</ul>
+</div></blockquote>
+<dl class="simple">
+<dt>Args</dt><dd><ul class="simple">
+<li><p>point1(Point): 이미지의 픽셀 상의 한 점</p></li>
+<li><p>point2(Point): 이미지의 픽셀 상의 한 점</p></li>
+</ul>
+</dd>
+<dt>Return</dt><dd><ul class="simple">
+<li><p>두 픽셀 좌표 간 유클리드 거리 (float)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="backend.api.routers.data_router.delete_files_in_folder">
+<span class="sig-prename descclassname"><span class="pre">backend.api.routers.data_router.</span></span><span class="sig-name descname"><span class="pre">delete_files_in_folder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">folder_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/api/routers/data_router.html#delete_files_in_folder"><span class="viewcode-link"><span class="pre">[소스]</span></span></a><a class="headerlink" href="#backend.api.routers.data_router.delete_files_in_folder" title="이 정의에 대한 퍼머링크"></a></dt>
+<dd><p>인자에 해당하는 경로의 모든 파일을 제거합니다.</p>
+<dl class="simple">
+<dt>Args</dt><dd><ul class="simple">
+<li><p>folder_path (str): 폴더 경로</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="backend.api.routers.data_router.get_frame">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">backend.api.routers.data_router.</span></span><span class="sig-name descname"><span class="pre">get_frame</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frame_number</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/api/routers/data_router.html#get_frame"><span class="viewcode-link"><span class="pre">[소스]</span></span></a><a class="headerlink" href="#backend.api.routers.data_router.get_frame" title="이 정의에 대한 퍼머링크"></a></dt>
+<dd><p>사용자로부터 입력받은 프레임 번호에 해당하는 이미지를 반환합니다.</p>
+<dl class="simple">
+<dt>Args</dt><dd><ul class="simple">
+<li><p>frame_number (int): 프레임 번호</p></li>
+</ul>
+</dd>
+<dt>Raise</dt><dd><ul class="simple">
+<li><p>fastapi.HTTPException: 프레임 번호에 해당하는 이미지를 찾지 못하는 경우 서버 에러(500)을 발생</p></li>
+</ul>
+</dd>
+<dt>Return</dt><dd><ul class="simple">
+<li><p>fastapi.responses.FileResponse: 프레임 번호에 해당하는 이미지</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="backend.api.routers.data_router.get_gsd">
+<span class="sig-prename descclassname"><span class="pre">backend.api.routers.data_router.</span></span><span class="sig-name descname"><span class="pre">get_gsd</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frame_number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m_distance</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/api/routers/data_router.html#get_gsd"><span class="viewcode-link"><span class="pre">[소스]</span></span></a><a class="headerlink" href="#backend.api.routers.data_router.get_gsd" title="이 정의에 대한 퍼머링크"></a></dt>
+<dd><p>사용자 입력 값을 기반으로 <a class="reference external" href="http://localhost">http://localhost</a>/bev1로 POST를 요청한 뒤 GSD 값과 픽셀거리 값을 가져옵니다.</p>
+<dl class="simple">
+<dt>Args</dt><dd><ul class="simple">
+<li><p>frame_number (int): 프레임 파일 번호</p></li>
+<li><p>frame_file (str): 프레임 파일 경로</p></li>
+<li><p>x1 (float): point1의 x좌표</p></li>
+<li><p>y1 (float): point1의 y좌표</p></li>
+<li><p>x2 (float): point2의 x좌표</p></li>
+<li><p>y2 (float): point2의 y좌표</p></li>
+<li><p>m_distance (float): point1과 point2 간 거리</p></li>
+</ul>
+</dd>
+<dt>Return</dt><dd><ul class="simple">
+<li><p>gsd (float): GSD 값</p></li>
+<li><p>pixel_size (float): 픽셀 크기 값</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="backend.api.routers.data_router.get_video">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">backend.api.routers.data_router.</span></span><span class="sig-name descname"><span class="pre">get_video</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/api/routers/data_router.html#get_video"><span class="viewcode-link"><span class="pre">[소스]</span></span></a><a class="headerlink" href="#backend.api.routers.data_router.get_video" title="이 정의에 대한 퍼머링크"></a></dt>
+<dd><p>서버에 저장된 비디오 파일을 가져와 클라이언트에게 반환합니다.</p>
+<dl class="simple">
+<dt>Raise</dt><dd><ul class="simple">
+<li><p>fastapi.HTTPException: 비디오 파일이 저장된 경로에서 비디오 목록 읽기에 실패한 경우 서버 에러(500)를 발생</p></li>
+</ul>
+</dd>
+<dt>Return</dt><dd><ul class="simple">
+<li><p>fastapi.responses.FileResponse: 비디오 파일을 읽어 사용자에게 반환</p></li>
+<li><p>fastapi.responses.JSONResponse: 비디오 파일이 없거나 여러 개의 파일이 있을 경우 사용자에게 json 형태의 에러 메시지와 404 에러 반환</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="backend.api.routers.data_router.lowercase_extensions">
+<span class="sig-prename descclassname"><span class="pre">backend.api.routers.data_router.</span></span><span class="sig-name descname"><span class="pre">lowercase_extensions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/api/routers/data_router.html#lowercase_extensions"><span class="viewcode-link"><span class="pre">[소스]</span></span></a><a class="headerlink" href="#backend.api.routers.data_router.lowercase_extensions" title="이 정의에 대한 퍼머링크"></a></dt>
+<dd><p>파일명의 확장자를 소문자로 변환한 파일명을 반환합니다.</p>
+<dl class="simple">
+<dt>Args</dt><dd><ul class="simple">
+<li><p>file_name (str): 확장자를 소문자로 변환할 파일명</p></li>
+</ul>
+</dd>
+<dt>Return</dt><dd><ul class="simple">
+<li><p>new_file_name (str): 확장자를 소문자로 변환한 파일명</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="backend.api.routers.data_router.save_input">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">backend.api.routers.data_router.</span></span><span class="sig-name descname"><span class="pre">save_input</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="backend.interface.request.user_input_request.html#backend.interface.request.user_input_request.UserInput" title="backend.interface.request.user_input_request.UserInput"><span class="pre">UserInput</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/api/routers/data_router.html#save_input"><span class="viewcode-link"><span class="pre">[소스]</span></span></a><a class="headerlink" href="#backend.api.routers.data_router.save_input" title="이 정의에 대한 퍼머링크"></a></dt>
+<dd><p>사용자로부터 받은 프레임과 점 간 거리 정보를 통해 픽셀 사이즈와 GSD 값을 계산한 다음 파일 두 파일로 저장합니다.</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>user_input.txt: frame_number point1.x point1.y point2.x point2.y distance</p></li>
+<li><p>GSD.txt:        frame_number gsd_mean pixelsize_mean</p></li>
+</ul>
+</div></blockquote>
+<dl class="simple">
+<dt>Args</dt><dd><ul class="simple">
+<li><dl class="simple">
+<dt>request</dt><dd><ul>
+<li><p>request.frame_number (int): 사용자가 선택한 프레임의 번호</p></li>
+<li><p>request.points_distances (float): 사용자가 선택한 프레임에서 찍은 두 점의 (x, y) 좌표 리스트와 두 점간 거리</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+<dt>Raise</dt><dd><ul class="simple">
+<li><p>fastapi.HTTPException: 픽셀 사이즈, GSD를 계산하는 과정에서 에러가 발생할 경우 서버 에러(500)를 발생</p></li>
+</ul>
+</dd>
+<dt>Return</dt><dd><ul class="simple">
+<li><p>GSD 값이 저장된 파일의 절대경로를 포함한 단순 메시지 스트링</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="backend.api.routers.data_router.sync_log">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">backend.api.routers.data_router.</span></span><span class="sig-name descname"><span class="pre">sync_log</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/api/routers/data_router.html#sync_log"><span class="viewcode-link"><span class="pre">[소스]</span></span></a><a class="headerlink" href="#backend.api.routers.data_router.sync_log" title="이 정의에 대한 퍼머링크"></a></dt>
+<dd><p>사용자가 업로드한 csv 파일과 srt 파일을 간의 동기화를 수행합니다.</p>
+<dl class="simple">
+<dt>Raise</dt><dd><ul class="simple">
+<li><p>fastapi.HTTPException: csv, srt 파일 간 동기화에 실패할 경우 서버 에러(500)를 발생</p></li>
+</ul>
+</dd>
+<dt>Return</dt><dd><ul class="simple">
+<li><p>동기화 성공 메시지를 담은 “message” 필드를 포함하는 json</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="backend.api.routers.data_router.upload_csv">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">backend.api.routers.data_router.</span></span><span class="sig-name descname"><span class="pre">upload_csv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">UploadFile</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">File(PydanticUndefined)</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/api/routers/data_router.html#upload_csv"><span class="viewcode-link"><span class="pre">[소스]</span></span></a><a class="headerlink" href="#backend.api.routers.data_router.upload_csv" title="이 정의에 대한 퍼머링크"></a></dt>
+<dd><p>사용자가 업로드한 csv 로그 파일을 저장하고 그 결과 메시지를 json 형식으로 반환합니다.</p>
+<dl class="simple">
+<dt>Args</dt><dd><ul class="simple">
+<li><p>file (fastapi.UploadFile): 사용자로부터 입력받는 csv 로그 파일</p></li>
+</ul>
+</dd>
+<dt>Raise</dt><dd><ul class="simple">
+<li><p>fastapi.HTTPException: 파일 저장과정에서 에러가 발생한 경우 서버 에러(500)를 발생</p></li>
+</ul>
+</dd>
+<dt>Return</dt><dd><ul class="simple">
+<li><p>파일 저장 성공 메시지를 담은 “message” 필드와 파일명이 담긴 “filename” 필드를 포함하는 json</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="backend.api.routers.data_router.upload_srt">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">backend.api.routers.data_router.</span></span><span class="sig-name descname"><span class="pre">upload_srt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">UploadFile</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">File(PydanticUndefined)</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/api/routers/data_router.html#upload_srt"><span class="viewcode-link"><span class="pre">[소스]</span></span></a><a class="headerlink" href="#backend.api.routers.data_router.upload_srt" title="이 정의에 대한 퍼머링크"></a></dt>
+<dd><p>사용자가 업로드한 srt 파일을 저장합니다.</p>
+<dl class="simple">
+<dt>Args</dt><dd><ul class="simple">
+<li><p>file (fastapi.UploadFile): 사용자로부터 입력받는 srt 파일</p></li>
+</ul>
+</dd>
+<dt>Raise</dt><dd><ul class="simple">
+<li><p>fastapi.HTTPException: 파일을 저장하는 과정에서 에러가 발생할 경우 서버 에러(500)를 발생</p></li>
+</ul>
+</dd>
+<dt>Return</dt><dd><ul class="simple">
+<li><p>파일 저장 성공 메시지를 담은 “message” 필드와 파일명이 담긴 “filename” 필드를 포함하는 json</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="backend.api.routers.data_router.upload_video">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">backend.api.routers.data_router.</span></span><span class="sig-name descname"><span class="pre">upload_video</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">UploadFile</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">File(PydanticUndefined)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">preprocess</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">Form(PydanticUndefined)</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/api/routers/data_router.html#upload_video"><span class="viewcode-link"><span class="pre">[소스]</span></span></a><a class="headerlink" href="#backend.api.routers.data_router.upload_video" title="이 정의에 대한 퍼머링크"></a></dt>
+<dd><p>사용자가 업로드한 비디오를 저장합니다.</p>
+<dl class="simple">
+<dt>Args</dt><dd><ul class="simple">
+<li><p>file (fastapi.UploadFile): 사용자로부터 업로드되는 파일</p></li>
+<li><p>preprocess (bool): 빛반사 제거와 같은 전처리 기능 사용 여부</p></li>
+</ul>
+</dd>
+<dt>Raise</dt><dd><ul class="simple">
+<li><p>fastapi.HTTPException: 비디오 전처리 또는 저장과정에서 에러가 발생할 경우 서버 에러(500) 발생</p></li>
+</ul>
+</dd>
+<dt>Return</dt><dd><ul class="simple">
+<li><p>json 형식의 파일 업로드 성공 메시지</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="backend.api.routers.html" class="btn btn-neutral float-left" title="backend.api.routers package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="backend.api.routers.model_router.html" class="btn btn-neutral float-right" title="backend.api.routers.model_router module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; 저작권 2023, DVA Lab.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

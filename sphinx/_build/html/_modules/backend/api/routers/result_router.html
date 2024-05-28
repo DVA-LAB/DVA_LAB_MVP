@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>backend.api.routers.result_router &mdash; DVA Lab  문서</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/sphinx_highlight.js"></script>
+        <script src="../../../../_static/translations.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="색인" href="../../../../genindex.html" />
+    <link rel="search" title="검색" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            DVA Lab
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">backend</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../backend.api.html">backend.api package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../backend.interface.html">backend.interface package</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">models</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../models.BEV.html">models.BEV package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../models.bytetrack.html">models.bytetrack package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../models.efficientAD.html">models.efficientAD package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../models.refiner.html">models.refiner package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">DVA Lab</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">모듈 코드</a></li>
+      <li class="breadcrumb-item active">backend.api.routers.result_router</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>backend.api.routers.result_router의 소스 코드</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">glob</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">argparse</span> <span class="kn">import</span> <span class="n">Namespace</span>
+
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">requests</span>
+
+<span class="kn">from</span> <span class="nn">autologging</span> <span class="kn">import</span> <span class="n">logged</span>
+<span class="kn">from</span> <span class="nn">fastapi</span> <span class="kn">import</span> <span class="p">(</span><span class="n">APIRouter</span><span class="p">,</span> <span class="n">Depends</span><span class="p">,</span> <span class="n">FastAPI</span><span class="p">,</span> <span class="n">File</span><span class="p">,</span> <span class="n">Form</span><span class="p">,</span> <span class="n">HTTPException</span><span class="p">,</span> <span class="n">UploadFile</span><span class="p">,</span> <span class="n">status</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">fastapi.responses</span> <span class="kn">import</span> <span class="n">FileResponse</span><span class="p">,</span> <span class="n">JSONResponse</span>
+<span class="kn">from</span> <span class="nn">interface.request</span> <span class="kn">import</span> <span class="n">VisRequest</span><span class="p">,</span> <span class="n">VisRequestBev</span>
+<span class="kn">from</span> <span class="nn">utils.visualizing</span> <span class="kn">import</span> <span class="n">visualize</span>
+<span class="kn">import</span> <span class="nn">asyncio</span>
+<span class="kn">import</span> <span class="nn">aiofiles</span>
+
+<span class="n">router</span> <span class="o">=</span> <span class="n">APIRouter</span><span class="p">(</span><span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;result&quot;</span><span class="p">])</span>
+
+
+<div class="viewcode-block" id="model_inference"><a class="viewcode-back" href="../../../../backend.api.routers.result_router.html#backend.api.routers.result_router.model_inference">[문서]</a><span class="nd">@router</span><span class="o">.</span><span class="n">post</span><span class="p">(</span>
+    <span class="s2">&quot;/visualize&quot;</span><span class="p">,</span>
+    <span class="n">status_code</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">HTTP_200_OK</span><span class="p">,</span>
+    <span class="n">summary</span><span class="o">=</span><span class="s2">&quot;visualizing result&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span> <span class="nf">model_inference</span><span class="p">(</span><span class="n">body</span><span class="p">:</span> <span class="n">VisRequest</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        시각화 결과 영상을 저장하고 저장된 영상(.mp4) 파일 경로를 반환합니다.</span>
+<span class="sd">    </span>
+<span class="sd">        Args</span>
+<span class="sd">            - body</span>
+<span class="sd">                - body.input_dir (str): 시각화를 적용할 원본 프레임이 위치한 경로</span>
+<span class="sd">                - body.output_video (str): 결과 영상으로 저장할 파일 경로</span>
+<span class="sd">                - body.log_path (str): 동기화 된 로그 파일 경로</span>
+<span class="sd">                - body.bbox_path (str): 결과 bounding box 파일이 위치한 경로</span>
+<span class="sd">        Return</span>
+<span class="sd">            - body.output_video (str): 결과 영상이 저장된 경로를 반환합니다.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">body</span><span class="o">.</span><span class="n">log_path</span><span class="p">,</span> <span class="s2">&quot;*.csv&quot;</span><span class="p">))))</span>
+
+    <span class="n">log_file_path</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">body</span><span class="o">.</span><span class="n">log_path</span><span class="p">,</span> <span class="s2">&quot;*.csv&quot;</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">body</span><span class="o">.</span><span class="n">output_video</span><span class="p">),</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">delete_files_in_folder</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">body</span><span class="o">.</span><span class="n">output_video</span><span class="p">))</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">Namespace</span><span class="p">(</span>
+        <span class="n">log_path</span><span class="o">=</span><span class="s1">&#39;/home/dva4/DVA_LAB/backend/test/sync_csv/sync_log.csv&#39;</span><span class="p">,</span>
+        <span class="n">bbox_path</span><span class="o">=</span><span class="s1">&#39;/home/dva4/DVA_LAB/backend/utils/visualizing/bev_points.csv&#39;</span><span class="p">,</span>
+        <span class="n">output_video</span><span class="o">=</span><span class="s1">&#39;/home/dva4/DVA_LAB/backend/test/visualize.mp4&#39;</span><span class="p">,</span>
+        <span class="n">output_bev_video</span><span class="o">=</span><span class="s1">&#39;/home/dva4/DVA_LAB/backend/test_saved/frame_bev_infer&#39;</span><span class="p">,</span>
+        <span class="n">input_dir</span><span class="o">=</span><span class="s1">&#39;/home/dva4/DVA_LAB/backend/test/frame_origin&#39;</span><span class="p">,</span>
+        <span class="n">output_dir</span> <span class="o">=</span> <span class="s1">&#39;/home/dva4/DVA_LAB/backend/test_saved/frame_infer&#39;</span><span class="p">,</span>
+        <span class="n">output_bev_dir</span><span class="o">=</span><span class="s1">&#39;/home/dva4/DVA_LAB/backend/test_saved/frame_bev_infer&#39;</span><span class="p">,</span>
+        <span class="n">GSD_path</span><span class="o">=</span><span class="s1">&#39;/home/dva4/DVA_LAB/backend/test/GSD_total.txt&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Call show_result with the created args object</span>
+    <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">visualize</span><span class="o">.</span><span class="n">main</span><span class="p">(</span><span class="n">args</span><span class="p">))</span>
+
+
+
+    <span class="k">return</span> <span class="n">body</span><span class="o">.</span><span class="n">output_video</span></div>
+
+
+<div class="viewcode-block" id="get_all_gsd"><a class="viewcode-back" href="../../../../backend.api.routers.result_router.html#backend.api.routers.result_router.get_all_gsd">[문서]</a><span class="nd">@router</span><span class="o">.</span><span class="n">post</span><span class="p">(</span>
+    <span class="s2">&quot;/total_gsd&quot;</span><span class="p">,</span>
+    <span class="n">status_code</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">HTTP_200_OK</span><span class="p">,</span>
+    <span class="n">summary</span><span class="o">=</span><span class="s2">&quot;구할 수 있는 모든 gsd를 구합니다.&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span> <span class="nf">get_all_gsd</span><span class="p">(</span><span class="n">body</span><span class="p">:</span> <span class="n">VisRequestBev</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Args</span>
+<span class="sd">            - body</span>
+<span class="sd">                - body.user_input (str): 사용자 입력이 담긴 파일 경로</span>
+<span class="sd">                - body.frame_path (str): 원본 프레임이 담긴 경로</span>
+<span class="sd">                - tracking_result (str): 객체추적 결과 파일이 담긴 경로</span>
+<span class="sd">                - GSD_path (str): GSD 파일 경로</span>
+<span class="sd">                - GSD_save_path (str): 모든 GSD가 담긴 파일 경로</span>
+
+<span class="sd">        Return</span>
+<span class="sd">            - 결과 메시지 스트링을 반환합니다.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">s_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="n">gsds</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">body</span><span class="o">.</span><span class="n">GSD_path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">initial_frame</span><span class="p">,</span> <span class="n">initial_gsd</span><span class="p">,</span> <span class="n">initial_p_size</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)</span>
+
+    <span class="c1"># TODO@jh: user_input이 올바르게 저장되어 있지 않아서 임의로 가장 가까운 5의 배수로 수정함</span>
+    <span class="n">gsds</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">initial_frame</span><span class="p">)]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">initial_gsd</span><span class="p">),</span> <span class="nb">float</span><span class="p">(</span><span class="n">initial_p_size</span><span class="p">)]</span>
+
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">body</span><span class="o">.</span><span class="n">user_input</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">distance</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="n">r_s_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="n">ships_size</span> <span class="o">=</span> <span class="n">get_ship_size</span><span class="p">(</span><span class="n">body</span><span class="o">.</span><span class="n">user_input</span><span class="p">,</span> <span class="n">body</span><span class="o">.</span><span class="n">frame_path</span><span class="p">,</span> <span class="n">body</span><span class="o">.</span><span class="n">tracking_result</span><span class="p">)</span>
+    <span class="n">r_f_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="n">frame_nos</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">body</span><span class="o">.</span><span class="n">frame_path</span><span class="p">,</span> <span class="s2">&quot;*.jpg&quot;</span><span class="p">))</span>
+    <span class="p">]</span>
+
+    <span class="n">g_s_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="k">for</span> <span class="p">(</span>
+        <span class="n">ship_size</span>
+    <span class="p">)</span> <span class="ow">in</span> <span class="n">ships_size</span><span class="p">:</span>  <span class="c1"># [frame_no, point[0][0], point[0][1], point[1][0], point[1][0]]</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">frame</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">ship_size</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">y2</span> <span class="o">=</span> <span class="n">ship_size</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+            <span class="n">frame_file</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">x</span>
+                <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">body</span><span class="o">.</span><span class="n">frame_path</span><span class="p">,</span> <span class="s2">&quot;*.jpg&quot;</span><span class="p">))</span>
+                <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span> <span class="o">==</span> <span class="nb">int</span><span class="p">(</span><span class="n">frame</span><span class="p">)</span>
+            <span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">gsd</span><span class="p">,</span> <span class="n">pixelsize</span> <span class="o">=</span> <span class="n">get_gsd</span><span class="p">(</span><span class="n">frame</span><span class="p">,</span> <span class="n">frame_file</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">y2</span><span class="p">,</span> <span class="n">distance</span><span class="p">)</span>
+            <span class="n">gsds</span><span class="p">[</span><span class="n">frame</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">gsd</span><span class="p">,</span> <span class="n">pixelsize</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+    <span class="n">g_f_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">body</span><span class="o">.</span><span class="n">GSD_save_path</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">frame_no</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">frame_nos</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">frame_no</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">gsds</span><span class="p">[</span><span class="n">frame_no</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">gsds</span><span class="p">[</span><span class="n">frame_no</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">frame_no</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="mi">0</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="mi">0</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">result</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;새로 계산한 GSD: </span><span class="si">{</span><span class="n">body</span><span class="o">.</span><span class="n">GSD_save_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="sa">f</span><span class="s2">&quot;소요시간: </span><span class="si">{</span><span class="nb">round</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">s_time</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="si">}</span><span class="s2"> sec&quot;</span><span class="p">,</span>
+        <span class="sa">f</span><span class="s2">&quot;refiner 모듈이 계산한 선박 개수: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">ships_size</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="sa">f</span><span class="s2">&quot;refiner 계산에 소요된 시간: </span><span class="si">{</span><span class="nb">round</span><span class="p">(</span><span class="n">r_f_time</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">r_s_time</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="si">}</span><span class="s2"> sec&quot;</span><span class="p">,</span>
+        <span class="sa">f</span><span class="s2">&quot;추가 gsd 계산에 소요된 시간: </span><span class="si">{</span><span class="nb">round</span><span class="p">(</span><span class="n">g_f_time</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">g_s_time</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="si">}</span><span class="s2"> sec&quot;</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="export_origin"><a class="viewcode-back" href="../../../../backend.api.routers.result_router.html#backend.api.routers.result_router.export_origin">[문서]</a><span class="nd">@router</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+    <span class="s2">&quot;/export/origin&quot;</span><span class="p">,</span>
+    <span class="n">status_code</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">HTTP_200_OK</span><span class="p">,</span>
+    <span class="n">summary</span><span class="o">=</span><span class="s2">&quot;export origin video&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span> <span class="nf">export_origin</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        GET 요청을 처리하여 원본 비디오를 내보냅니다.</span>
+
+<span class="sd">        이 함수는 &quot;/export/origin&quot; 경로에 대한 GET 요청에 응답합니다.</span>
+<span class="sd">        호출되면, 서버 저장소의 특정 비디오 파일을 포함하는 FileResponse 객체를 반환합니다.</span>
+
+<span class="sd">        Return</span>
+<span class="sd">            - FileResponse: 이 경로에 접근할 때, 서버의 지정된 경로에 위치한 특정 비디오 파일의 다운로드를 시작하는 응답 객체입니다.</span>
+
+<span class="sd">        Note</span>
+<span class="sd">            - 비디오 파일 경로는 현재 서버 파일 시스템 내의 특정 위치로 하드코딩되어 있습니다.</span>
+<span class="sd">            - 프로덕션 환경에서는 더 동적이거나 안전한 경로로 설정되어야 합니다.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">video_storage_path</span> <span class="o">=</span> <span class="s2">&quot;/home/dva4/DVA_LAB/backend/test/visualize.mp4&quot;</span>
+    <span class="k">return</span> <span class="n">FileResponse</span><span class="p">(</span><span class="n">video_storage_path</span><span class="p">)</span></div>
+
+
+<span class="c1"># TODO@jh: 공통 유틸로 빼기</span>
+<div class="viewcode-block" id="delete_files_in_folder"><a class="viewcode-back" href="../../../../backend.api.routers.result_router.html#backend.api.routers.result_router.delete_files_in_folder">[문서]</a><span class="k">def</span> <span class="nf">delete_files_in_folder</span><span class="p">(</span><span class="n">folder_path</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        입력받은 폴더 경로에 존재하는 모든 파일을 삭제합니다.</span>
+<span class="sd">    </span>
+<span class="sd">        Args</span>
+<span class="sd">            - folder_path (str): 폴더 경로</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">files</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">folder_path</span><span class="p">,</span> <span class="s2">&quot;*&quot;</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">file</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">file</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_ship_size"><a class="viewcode-back" href="../../../../backend.api.routers.result_router.html#backend.api.routers.result_router.get_ship_size">[문서]</a><span class="k">def</span> <span class="nf">get_ship_size</span><span class="p">(</span><span class="n">user_input</span><span class="p">,</span> <span class="n">frame_path</span><span class="p">,</span> <span class="n">tracking_result</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        선박의 길이를 구하기 위해 프레임 번호와 선박의 두 좌표 정보를 반환합니다.</span>
+
+<span class="sd">        요청 URL: http://localhost:8005/ship_size</span>
+
+<span class="sd">        Args</span>
+<span class="sd">            - user_input (str): 사용자 입력이 담긴 파일 경로</span>
+<span class="sd">            - frame_path (str): 선박이 담긴 프레임의 경로</span>
+<span class="sd">            - tracking_result (str): 객체 추적 결과 파일 경로</span>
+
+<span class="sd">        Return</span>
+<span class="sd">            - 선박 정보를 담은 list를 json 형식으로 반환합니다. ex) N x [frame_num, point[0][0], point[0][1], point[1][0], point[1][1]]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">url</span> <span class="o">=</span> <span class="s2">&quot;http://112.216.237.124:8005/ship_size&quot;</span>
+    <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;accept&quot;</span><span class="p">:</span> <span class="s2">&quot;application/json&quot;</span><span class="p">,</span> <span class="s2">&quot;Content-Type&quot;</span><span class="p">:</span> <span class="s2">&quot;application/json&quot;</span><span class="p">}</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;user_input&quot;</span><span class="p">:</span> <span class="n">user_input</span><span class="p">,</span>
+        <span class="s2">&quot;frame_path&quot;</span><span class="p">:</span> <span class="n">frame_path</span><span class="p">,</span>
+        <span class="s2">&quot;tracking_result&quot;</span><span class="p">:</span> <span class="n">tracking_result</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+    <span class="n">response_data</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">response_data</span></div>
+
+
+<div class="viewcode-block" id="get_gsd"><a class="viewcode-back" href="../../../../backend.api.routers.result_router.html#backend.api.routers.result_router.get_gsd">[문서]</a><span class="k">def</span> <span class="nf">get_gsd</span><span class="p">(</span><span class="n">frame_number</span><span class="p">,</span> <span class="n">frame_file</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">y2</span><span class="p">,</span> <span class="n">m_distance</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        특정 프레임에서의 GSD 값을 계산 후 반환합니다.</span>
+
+<span class="sd">        요청 URL: http://localhost:8001/bev1</span>
+
+<span class="sd">        Args</span>
+<span class="sd">            - frame_number (int): GSD 값을 계산할 프레임 번호</span>
+<span class="sd">            - frame_file (str): frame_number번째 프레임이 위치하는 경로</span>
+<span class="sd">            - x1 (float): 첫 번째 점의 x값</span>
+<span class="sd">            - y1 (float): 첫 번째 점의 y값</span>
+<span class="sd">            - x2 (float): 두 번째 점의 x값</span>
+<span class="sd">            - y2 (float): 두 번째 점의 y값</span>
+<span class="sd">            - m_distance (float): 실제 거리</span>
+
+<span class="sd">        Return</span>
+<span class="sd">            - gsd (float): GSD 값</span>
+<span class="sd">            - pixel_size (float): 픽셀 크기</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="n">url</span> <span class="o">=</span> <span class="s2">&quot;http://112.216.237.124:8001/bev1&quot;</span>
+    <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;accept&quot;</span><span class="p">:</span> <span class="s2">&quot;application/json&quot;</span><span class="p">,</span> <span class="s2">&quot;Content-Type&quot;</span><span class="p">:</span> <span class="s2">&quot;application/json&quot;</span><span class="p">}</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;frame_num&quot;</span><span class="p">:</span> <span class="n">frame_number</span><span class="p">,</span>
+        <span class="s2">&quot;frame_path&quot;</span><span class="p">:</span> <span class="n">frame_file</span><span class="p">,</span>
+        <span class="s2">&quot;csv_path&quot;</span><span class="p">:</span> <span class="s2">&quot;/home/dva4/DVA_LAB/backend/test/sync_csv/sync_log.csv&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;objects&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="kc">None</span><span class="p">,</span>
+            <span class="kc">None</span><span class="p">,</span>
+            <span class="kc">None</span><span class="p">,</span>
+            <span class="n">x1</span><span class="p">,</span>
+            <span class="n">y1</span><span class="p">,</span>
+            <span class="n">x2</span><span class="p">,</span>
+            <span class="n">y2</span><span class="p">,</span>
+            <span class="kc">None</span><span class="p">,</span>
+            <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+            <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+            <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;realdistance&quot;</span><span class="p">:</span> <span class="n">m_distance</span><span class="p">,</span>
+        <span class="s2">&quot;dst_dir&quot;</span><span class="p">:</span> <span class="s2">&quot;/home/dva4/DVA_LAB/backend/test/frame_bev&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">result</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">result</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; 저작권 2023, DVA Lab.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

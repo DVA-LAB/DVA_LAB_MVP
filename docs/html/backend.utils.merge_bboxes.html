@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="ko">
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>backend.utils.merge_bboxes module &mdash; DVA Lab  문서</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+        <script src="_static/translations.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="색인" href="genindex.html" />
+    <link rel="search" title="검색" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            DVA Lab
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">backend</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="backend.api.html">backend.api package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="backend.interface.html">backend.interface package</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">models</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="models.BEV.html">models.BEV package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.bytetrack.html">models.bytetrack package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.efficientAD.html">models.efficientAD package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.refiner.html">models.refiner package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">DVA Lab</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">backend.utils.merge_bboxes module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/backend.utils.merge_bboxes.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-backend.utils.merge_bboxes">
+<span id="backend-utils-merge-bboxes-module"></span><h1>backend.utils.merge_bboxes module<a class="headerlink" href="#module-backend.utils.merge_bboxes" title="이 제목에 대한 퍼머링크"></a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="backend.utils.merge_bboxes.calculate_distance">
+<span class="sig-prename descclassname"><span class="pre">backend.utils.merge_bboxes.</span></span><span class="sig-name descname"><span class="pre">calculate_distance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">box1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">box2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/utils/merge_bboxes.html#calculate_distance"><span class="viewcode-link"><span class="pre">[소스]</span></span></a><a class="headerlink" href="#backend.utils.merge_bboxes.calculate_distance" title="이 정의에 대한 퍼머링크"></a></dt>
+<dd><p>두 box의 중심점 간의 유클리드 거리를 계산합니다.</p>
+<dl class="simple">
+<dt>Args</dt><dd><ul class="simple">
+<li><p>box1 (list): 첫 번째 box (x, y, w, h)</p></li>
+<li><p>box2 (list): 두 번째 box (x, y, w, h)</p></li>
+</ul>
+</dd>
+<dt>Return</dt><dd><ul class="simple">
+<li><p>distance (float): 두 box의 중심점 간의 거리</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="backend.utils.merge_bboxes.match_and_ensemble">
+<span class="sig-prename descclassname"><span class="pre">backend.utils.merge_bboxes.</span></span><span class="sig-name descname"><span class="pre">match_and_ensemble</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">anomaly_outputs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detection_outputs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_anomaly</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_file</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/utils/merge_bboxes.html#match_and_ensemble"><span class="viewcode-link"><span class="pre">[소스]</span></span></a><a class="headerlink" href="#backend.utils.merge_bboxes.match_and_ensemble" title="이 정의에 대한 퍼머링크"></a></dt>
+<dd><p>이상 탐지의 결과와 객체 탐지의 결과를 앙상블 합니다.</p>
+<dl class="simple">
+<dt>Args</dt><dd><ul class="simple">
+<li><p>anomaly_outputs (list): 이상 탐지 결과 리스트</p></li>
+<li><p>detection_outputs (list): 객체 탐지 결과 리스트</p></li>
+<li><p>use_anomaly (bool): anomaly 적용 여부</p></li>
+<li><p>output_file (str): 이상 탐지 &amp; 객체 탐지 앙상블 결과 파일 저장경로</p></li>
+</ul>
+</dd>
+<dt>Return</dt><dd><ul class="simple">
+<li><p>output (list): 이상 탐지 결과와 객체 탐지 결과가 앙상블된 bbox</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="backend.utils.merge_bboxes.plot_detections">
+<span class="sig-prename descclassname"><span class="pre">backend.utils.merge_bboxes.</span></span><span class="sig-name descname"><span class="pre">plot_detections</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">anomaly_detections</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yolo_detections</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_detections</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">image_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(4000,</span> <span class="pre">3000)</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/utils/merge_bboxes.html#plot_detections"><span class="viewcode-link"><span class="pre">[소스]</span></span></a><a class="headerlink" href="#backend.utils.merge_bboxes.plot_detections" title="이 정의에 대한 퍼머링크"></a></dt>
+<dd><p>Plots detections from anomaly detection, YOLO, and final detections on a black background image.
+Anomaly detections, YOLO detections, and final detections are plotted in red, blue, and green, respectively.
+Detections format: [frame, x, y, x+w, y+h, …]</p>
+<dl class="simple">
+<dt>Args</dt><dd><ul class="simple">
+<li><p>anomaly_detections (list): 이상 탐지 결과 bbox</p></li>
+<li><p>yolo_detections (list): 객체 탐지 결과 bbox</p></li>
+<li><p>output_detections (list): 결과 bbox</p></li>
+<li><p>image_size (tuple): 이미지 가로, 세로 크기</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="backend.utils.merge_bboxes.read_csv_file">
+<span class="sig-prename descclassname"><span class="pre">backend.utils.merge_bboxes.</span></span><span class="sig-name descname"><span class="pre">read_csv_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/utils/merge_bboxes.html#read_csv_file"><span class="viewcode-link"><span class="pre">[소스]</span></span></a><a class="headerlink" href="#backend.utils.merge_bboxes.read_csv_file" title="이 정의에 대한 퍼머링크"></a></dt>
+<dd><p>csv 파일을 행단위로 읽어 리스트를 만든 2차원 리스트를 반환합니다.</p>
+<dl class="simple">
+<dt>Args</dt><dd><ul class="simple">
+<li><p>file_path (str): csv 파일 경로</p></li>
+</ul>
+</dd>
+<dt>Return</dt><dd><ul class="simple">
+<li><p>detections (list): csv 파일 행단위 별 리스트가 담긴 2차원 리스트</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="backend.utils.merge_bboxes.read_file">
+<span class="sig-prename descclassname"><span class="pre">backend.utils.merge_bboxes.</span></span><span class="sig-name descname"><span class="pre">read_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/utils/merge_bboxes.html#read_file"><span class="viewcode-link"><span class="pre">[소스]</span></span></a><a class="headerlink" href="#backend.utils.merge_bboxes.read_file" title="이 정의에 대한 퍼머링크"></a></dt>
+<dd><p>탐지 결과 파일을 라인 별로 읽고 라인 별로 리스트를 만든 2차원 리스트를 반환합니다.</p>
+<dl class="simple">
+<dt>Args</dt><dd><ul class="simple">
+<li><p>file_path (str): 탐지 결과 파일 경로</p></li>
+</ul>
+</dd>
+<dt>Return</dt><dd><ul class="simple">
+<li><p>detections (list): 라인 별 탐지 결과가 담긴 2차원 리스트</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; 저작권 2023, DVA Lab.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

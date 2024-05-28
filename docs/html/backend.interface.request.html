@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="ko">
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>backend.interface.request package &mdash; DVA Lab  문서</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+        <script src="_static/translations.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="색인" href="genindex.html" />
+    <link rel="search" title="검색" href="search.html" />
+    <link rel="next" title="backend.interface.request.model_request module" href="backend.interface.request.model_request.html" />
+    <link rel="prev" title="backend.interface package" href="backend.interface.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            DVA Lab
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">backend</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="backend.api.html">backend.api package</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="backend.interface.html">backend.interface package</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="backend.interface.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">backend.interface.request package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#submodules">Submodules</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">models</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="models.html">models package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.BEV.api.html">models.BEV.api package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.BEV.api.routers.html">models.BEV.api.routers package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.BEV.api.services.html">models.BEV.api.services package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.BEV.app.html">models.BEV.app module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.bytetrack.api.html">models.bytetrack.api package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.bytetrack.api.routers.html">models.bytetrack.api.routers package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.bytetrack.app.html">models.bytetrack.app module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.efficientAD.api.html">models.efficientAD.api package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.efficientAD.api.routers.html">models.efficientAD.api.routers package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.efficientAD.app.html">models.efficientAD.app module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.refiner.api.html">models.refiner.api package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.refiner.api.routers.html">models.refiner.api.routers package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.refiner.api.services.html">models.refiner.api.services package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.refiner.app.html">models.refiner.app module</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">DVA Lab</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="backend.interface.html">backend.interface package</a></li>
+      <li class="breadcrumb-item active">backend.interface.request package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/backend.interface.request.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-backend.interface.request">
+<span id="backend-interface-request-package"></span><h1>backend.interface.request package<a class="headerlink" href="#module-backend.interface.request" title="이 제목에 대한 퍼머링크"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="이 제목에 대한 퍼머링크"></a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="backend.interface.request.model_request.html">backend.interface.request.model_request module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="backend.interface.request.model_request.html#backend.interface.request.model_request.ModelRequest"><code class="docutils literal notranslate"><span class="pre">ModelRequest</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="backend.interface.request.model_request.html#backend.interface.request.model_request.ModelRequest.Config"><code class="docutils literal notranslate"><span class="pre">ModelRequest.Config</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="backend.interface.request.model_request.html#backend.interface.request.model_request.ModelRequest.Config.schema_extra"><code class="docutils literal notranslate"><span class="pre">ModelRequest.Config.schema_extra</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="backend.interface.request.model_request.html#backend.interface.request.model_request.ModelRequest.detection_save_path"><code class="docutils literal notranslate"><span class="pre">ModelRequest.detection_save_path</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="backend.interface.request.model_request.html#backend.interface.request.model_request.ModelRequest.frame_path"><code class="docutils literal notranslate"><span class="pre">ModelRequest.frame_path</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="backend.interface.request.model_request.html#backend.interface.request.model_request.ModelRequest.model_config"><code class="docutils literal notranslate"><span class="pre">ModelRequest.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="backend.interface.request.model_request.html#backend.interface.request.model_request.ModelRequest.model_fields"><code class="docutils literal notranslate"><span class="pre">ModelRequest.model_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="backend.interface.request.model_request.html#backend.interface.request.model_request.ModelRequest.output_merge_path"><code class="docutils literal notranslate"><span class="pre">ModelRequest.output_merge_path</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="backend.interface.request.model_request.html#backend.interface.request.model_request.ModelRequest.sliced_path"><code class="docutils literal notranslate"><span class="pre">ModelRequest.sliced_path</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="backend.interface.request.result_request.html">backend.interface.request.result_request module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="backend.interface.request.result_request.html#backend.interface.request.result_request.VisRequest"><code class="docutils literal notranslate"><span class="pre">VisRequest</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="backend.interface.request.result_request.html#backend.interface.request.result_request.VisRequest.Config"><code class="docutils literal notranslate"><span class="pre">VisRequest.Config</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="backend.interface.request.result_request.html#backend.interface.request.result_request.VisRequest.Config.schema_extra"><code class="docutils literal notranslate"><span class="pre">VisRequest.Config.schema_extra</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="backend.interface.request.result_request.html#backend.interface.request.result_request.VisRequest.bbox_path"><code class="docutils literal notranslate"><span class="pre">VisRequest.bbox_path</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="backend.interface.request.result_request.html#backend.interface.request.result_request.VisRequest.input_dir"><code class="docutils literal notranslate"><span class="pre">VisRequest.input_dir</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="backend.interface.request.result_request.html#backend.interface.request.result_request.VisRequest.log_path"><code class="docutils literal notranslate"><span class="pre">VisRequest.log_path</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="backend.interface.request.result_request.html#backend.interface.request.result_request.VisRequest.model_config"><code class="docutils literal notranslate"><span class="pre">VisRequest.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="backend.interface.request.result_request.html#backend.interface.request.result_request.VisRequest.model_fields"><code class="docutils literal notranslate"><span class="pre">VisRequest.model_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="backend.interface.request.result_request.html#backend.interface.request.result_request.VisRequest.output_video"><code class="docutils literal notranslate"><span class="pre">VisRequest.output_video</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="backend.interface.request.result_request.html#backend.interface.request.result_request.VisRequest.set_merged_dolphin_center"><code class="docutils literal notranslate"><span class="pre">VisRequest.set_merged_dolphin_center</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="backend.interface.request.result_request.html#backend.interface.request.result_request.VisRequestBev"><code class="docutils literal notranslate"><span class="pre">VisRequestBev</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="backend.interface.request.result_request.html#backend.interface.request.result_request.VisRequestBev.Config"><code class="docutils literal notranslate"><span class="pre">VisRequestBev.Config</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="backend.interface.request.result_request.html#backend.interface.request.result_request.VisRequestBev.Config.schema_extra"><code class="docutils literal notranslate"><span class="pre">VisRequestBev.Config.schema_extra</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="backend.interface.request.result_request.html#backend.interface.request.result_request.VisRequestBev.GSD_path"><code class="docutils literal notranslate"><span class="pre">VisRequestBev.GSD_path</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="backend.interface.request.result_request.html#backend.interface.request.result_request.VisRequestBev.GSD_save_path"><code class="docutils literal notranslate"><span class="pre">VisRequestBev.GSD_save_path</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="backend.interface.request.result_request.html#backend.interface.request.result_request.VisRequestBev.frame_path"><code class="docutils literal notranslate"><span class="pre">VisRequestBev.frame_path</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="backend.interface.request.result_request.html#backend.interface.request.result_request.VisRequestBev.model_config"><code class="docutils literal notranslate"><span class="pre">VisRequestBev.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="backend.interface.request.result_request.html#backend.interface.request.result_request.VisRequestBev.model_fields"><code class="docutils literal notranslate"><span class="pre">VisRequestBev.model_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="backend.interface.request.result_request.html#backend.interface.request.result_request.VisRequestBev.tracking_result"><code class="docutils literal notranslate"><span class="pre">VisRequestBev.tracking_result</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="backend.interface.request.result_request.html#backend.interface.request.result_request.VisRequestBev.user_input"><code class="docutils literal notranslate"><span class="pre">VisRequestBev.user_input</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="backend.interface.request.user_input_request.html">backend.interface.request.user_input_request module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="backend.interface.request.user_input_request.html#backend.interface.request.user_input_request.UserInput"><code class="docutils literal notranslate"><span class="pre">UserInput</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="backend.interface.request.user_input_request.html#backend.interface.request.user_input_request.UserInput.Config"><code class="docutils literal notranslate"><span class="pre">UserInput.Config</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="backend.interface.request.user_input_request.html#backend.interface.request.user_input_request.UserInput.Config.schema_extra"><code class="docutils literal notranslate"><span class="pre">UserInput.Config.schema_extra</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="backend.interface.request.user_input_request.html#backend.interface.request.user_input_request.UserInput.frame_number"><code class="docutils literal notranslate"><span class="pre">UserInput.frame_number</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="backend.interface.request.user_input_request.html#backend.interface.request.user_input_request.UserInput.model_config"><code class="docutils literal notranslate"><span class="pre">UserInput.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="backend.interface.request.user_input_request.html#backend.interface.request.user_input_request.UserInput.model_fields"><code class="docutils literal notranslate"><span class="pre">UserInput.model_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="backend.interface.request.user_input_request.html#backend.interface.request.user_input_request.UserInput.point_distances"><code class="docutils literal notranslate"><span class="pre">UserInput.point_distances</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="backend.interface.html" class="btn btn-neutral float-left" title="backend.interface package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="backend.interface.request.model_request.html" class="btn btn-neutral float-right" title="backend.interface.request.model_request module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; 저작권 2023, DVA Lab.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
