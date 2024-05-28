@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>backend.interface.request.result_request &mdash; DVA Lab  문서</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/sphinx_highlight.js"></script>
+        <script src="../../../../_static/translations.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="색인" href="../../../../genindex.html" />
+    <link rel="search" title="검색" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            DVA Lab
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">backend</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../backend.api.html">backend.api package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../backend.interface.html">backend.interface package</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">models</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../models.html">models package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../models.BEV.api.html">models.BEV.api package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../models.BEV.api.routers.html">models.BEV.api.routers package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../models.BEV.api.services.html">models.BEV.api.services package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../models.BEV.app.html">models.BEV.app module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../models.bytetrack.api.html">models.bytetrack.api package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../models.bytetrack.api.routers.html">models.bytetrack.api.routers package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../models.bytetrack.app.html">models.bytetrack.app module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../models.efficientAD.api.html">models.efficientAD.api package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../models.efficientAD.api.routers.html">models.efficientAD.api.routers package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../models.efficientAD.app.html">models.efficientAD.app module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../models.refiner.api.html">models.refiner.api package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../models.refiner.api.routers.html">models.refiner.api.routers package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../models.refiner.api.services.html">models.refiner.api.services package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../models.refiner.app.html">models.refiner.app module</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">DVA Lab</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">모듈 코드</a></li>
+      <li class="breadcrumb-item active">backend.interface.request.result_request</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>backend.interface.request.result_request의 소스 코드</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">autologging</span> <span class="kn">import</span> <span class="n">logged</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;VisRequest&quot;</span><span class="p">,</span> <span class="s2">&quot;VisRequestBev&quot;</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="VisRequest"><a class="viewcode-back" href="../../../../backend.interface.request.result_request.html#backend.interface.request.result_request.VisRequest">[문서]</a><span class="nd">@logged</span>
+<span class="k">class</span> <span class="nc">VisRequest</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        영상 시각화에 필요한 요청 수행을 위한 변수를 포함하는 클래스입니다.</span>
+
+<span class="sd">        Attributes</span>
+<span class="sd">            - log_path (str): 로그 파일 경로</span>
+<span class="sd">            - input_dir (str): 시각화가 적용될 원본 파일의 폴더 경로</span>
+<span class="sd">            - output_video (str): 시각화가 적용된 출력 비디오가 생성될 파일 경로</span>
+<span class="sd">            - bbox_path (str): 객체 추적 결과 bbox 정보가 담긴 파일 경로</span>
+<span class="sd">            - set_merged_dolphin_center (bool): 돌고래 bbox를 병합하여 중심점을 설정할 것인가의 여부 (기본값: False)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">log_path</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">input_dir</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">output_video</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">bbox_path</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">set_merged_dolphin_center</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+
+<div class="viewcode-block" id="VisRequest.Config"><a class="viewcode-back" href="../../../../backend.interface.request.result_request.html#backend.interface.request.result_request.VisRequest.Config">[문서]</a>    <span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+        <span class="n">schema_extra</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;example&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;log_path&quot;</span><span class="p">:</span> <span class="s2">&quot;/home/dva4/DVA_LAB/backend/test/sync_csv&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;input_dir&quot;</span><span class="p">:</span> <span class="s2">&quot;/home/dva4/DVA_LAB/backend/test/frame_origin&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;output_video&quot;</span><span class="p">:</span> <span class="s2">&quot;/home/dva4/DVA_LAB/backend/test/result/result.mp4&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;bbox_path&quot;</span><span class="p">:</span> <span class="s2">&quot;/home/dva4/DVA_LAB/backend/test/model/tracking/result.txt&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;set_merged_dolphin_center&quot;</span><span class="p">:</span> <span class="kc">False</span>
+            <span class="p">}</span>
+        <span class="p">}</span></div></div>
+
+<div class="viewcode-block" id="VisRequestBev"><a class="viewcode-back" href="../../../../backend.interface.request.result_request.html#backend.interface.request.result_request.VisRequestBev">[문서]</a><span class="nd">@logged</span>
+<span class="k">class</span> <span class="nc">VisRequestBev</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        영상에 BEV 시각화에 필요한 요청 수행을 위해 필요한 변수를 담은 클래스입니다.</span>
+
+<span class="sd">        Attributes</span>
+<span class="sd">            - user_input (str): 사용자의 입력이 저장된 파일 경로입니다.</span>
+<span class="sd">            - frame_path (str): BEV 시각화를 적용할 프레임이 저장된 경로입니다.</span>
+<span class="sd">            - tracking_result (str): 객체 추적 결과 bbox가 담긴 파일 경로입니다.</span>
+<span class="sd">            - GSD_path (str): GSD 값이 저장된 파일 경로입니다.</span>
+<span class="sd">            - GSD_save_path (str): 전체 GSD 값이 저장된 파일 경로입니다.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">user_input</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;user_input_save file&quot;</span><span class="p">)</span>
+    <span class="n">frame_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;img_frame_save_path (folder)&quot;</span><span class="p">)</span>
+    <span class="n">tracking_result</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;detection_result file&quot;</span><span class="p">)</span>
+    <span class="n">GSD_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;original GSD file&quot;</span><span class="p">)</span>
+    <span class="n">GSD_save_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;saved GSD file&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="VisRequestBev.Config"><a class="viewcode-back" href="../../../../backend.interface.request.result_request.html#backend.interface.request.result_request.VisRequestBev.Config">[문서]</a>    <span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+        <span class="n">schema_extra</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;example&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;user_input&quot;</span><span class="p">:</span> <span class="s2">&quot;/home/dva4/DVA_LAB/backend/test/input/user_input.txt&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;frame_path&quot;</span><span class="p">:</span> <span class="s2">&quot;/home/dva4/DVA_LAB/backend/test/frame_origin&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;tracking_result&quot;</span><span class="p">:</span> <span class="s2">&quot;/home/dva4/DVA_LAB/backend/test/model/tracking/result.txt&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;GSD_path&quot;</span><span class="p">:</span> <span class="s2">&quot;/home/dva4/DVA_LAB/backend/test/GSD.txt&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;GSD_save_path&quot;</span><span class="p">:</span> <span class="s2">&quot;/home/dva4/DVA_LAB/backend/test/GSD_total.txt&quot;</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="p">}</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; 저작권 2023, DVA Lab.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
