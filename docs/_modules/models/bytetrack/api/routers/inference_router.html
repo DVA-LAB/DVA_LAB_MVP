@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>models.bytetrack.api.routers.inference_router &mdash; DVA Lab  문서</title>
+      <link rel="stylesheet" type="text/css" href="../../../../../_static/pygments.css" />
+      <link rel="stylesheet" type="text/css" href="../../../../../_static/css/theme.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../../../" id="documentation_options" src="../../../../../_static/documentation_options.js"></script>
+        <script src="../../../../../_static/jquery.js"></script>
+        <script src="../../../../../_static/underscore.js"></script>
+        <script src="../../../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../../../../_static/doctools.js"></script>
+        <script src="../../../../../_static/sphinx_highlight.js"></script>
+        <script src="../../../../../_static/translations.js"></script>
+    <script src="../../../../../_static/js/theme.js"></script>
+    <link rel="index" title="색인" href="../../../../../genindex.html" />
+    <link rel="search" title="검색" href="../../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../../index.html" class="icon icon-home">
+            DVA Lab
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">backend</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../backend.api.html">backend.api package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../backend.interface.html">backend.interface package</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">models</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../models.BEV.html">models.BEV package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../models.bytetrack.html">models.bytetrack package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../models.efficientAD.html">models.efficientAD package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../models.refiner.html">models.refiner package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../../index.html">DVA Lab</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../../index.html">모듈 코드</a></li>
+      <li class="breadcrumb-item active">models.bytetrack.api.routers.inference_router</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>models.bytetrack.api.routers.inference_router의 소스 코드</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">fastapi</span> <span class="kn">import</span> <span class="n">APIRouter</span><span class="p">,</span> <span class="n">Depends</span><span class="p">,</span> <span class="n">status</span><span class="p">,</span> <span class="n">Request</span>
+
+<span class="kn">import</span> <span class="nn">argparse</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">csv</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">from</span> <span class="nn">loguru</span> <span class="kn">import</span> <span class="n">logger</span>
+
+<span class="kn">from</span> <span class="nn">..services</span> <span class="kn">import</span> <span class="n">BYTETracker</span>
+<span class="kn">from</span> <span class="nn">..services</span> <span class="kn">import</span> <span class="n">Timer</span>
+<span class="kn">from</span> <span class="nn">models.bytetrack.interface.request</span> <span class="kn">import</span> <span class="n">TrackingRequest</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<div class="viewcode-block" id="make_parser"><a class="viewcode-back" href="../../../../../models.bytetrack.api.routers.inference_router.html#models.bytetrack.api.routers.inference_router.make_parser">[문서]</a><span class="k">def</span> <span class="nf">make_parser</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        객체추적에 사용할 사용자 옵션을 반환합니다.</span>
+
+<span class="sd">        Args</span>
+<span class="sd">            - fps (int): 초당 프레임 수</span>
+<span class="sd">            - track_thresh (float): tracking confidence treshold</span>
+<span class="sd">            - track_buffer (int): 트래킹이 끊긴 프레임을 보존할 버퍼 크기</span>
+<span class="sd">            - match_thresh (float): matching threshold for tracking</span>
+<span class="sd">            - min_box_area (float): 최소 bbox 넓이</span>
+<span class="sd">            - mot20 (bool): 데이터셋이 mot20 여부</span>
+
+<span class="sd">        Return</span>
+<span class="sd">            - parser (argparse.ArgumentParser()): 사용자 옵션 값</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="s2">&quot;ByteTrack&quot;</span><span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--fps&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;frame rate (fps)&quot;</span><span class="p">)</span>
+    <span class="c1"># tracking args</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--track_thresh&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;tracking confidence threshold&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--track_buffer&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;the frames for keep lost tracks&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--match_thresh&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;matching threshold for tracking&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--aspect_ratio_thresh&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">1.6</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;threshold for filtering out boxes of which aspect ratio are above the given value.&quot;</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--min_box_area&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;filter out tiny boxes&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--mot20&quot;</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s2">&quot;mot20&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;test mot20.&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">parser</span></div>
+
+<div class="viewcode-block" id="merge_bboxes"><a class="viewcode-back" href="../../../../../models.bytetrack.api.routers.inference_router.html#models.bytetrack.api.routers.inference_router.merge_bboxes">[문서]</a><span class="k">def</span> <span class="nf">merge_bboxes</span><span class="p">(</span><span class="n">track_results</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    여러 경계 상자들을 포함하는 하나의 큰 경계 상자를 계산합니다.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">global</span> <span class="n">merged_dolphin_center</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">track_results</span><span class="p">:</span>
+        <span class="n">merged_dolphin_center</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="c1"># 각 경계 상자의 최소 x, y 및 최대 x, y 좌표를 계산합니다.</span>
+    <span class="n">min_x</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">track_result</span><span class="o">.</span><span class="n">tlwh</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">track_result</span> <span class="ow">in</span> <span class="n">track_results</span><span class="p">)</span>
+    <span class="n">min_y</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">track_result</span><span class="o">.</span><span class="n">tlwh</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">track_result</span> <span class="ow">in</span> <span class="n">track_results</span><span class="p">)</span>
+    <span class="n">max_x</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">track_result</span><span class="o">.</span><span class="n">tlwh</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">track_result</span><span class="o">.</span><span class="n">tlwh</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="k">for</span> <span class="n">track_result</span> <span class="ow">in</span> <span class="n">track_results</span><span class="p">)</span>
+    <span class="n">max_y</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">track_result</span><span class="o">.</span><span class="n">tlwh</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">track_result</span><span class="o">.</span><span class="n">tlwh</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="k">for</span> <span class="n">track_result</span> <span class="ow">in</span> <span class="n">track_results</span><span class="p">)</span>
+
+    <span class="n">merged_dolphin_center</span> <span class="o">=</span> <span class="p">(</span><span class="n">min_x</span> <span class="o">+</span> <span class="p">(</span><span class="n">max_x</span> <span class="o">-</span> <span class="n">min_x</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">min_y</span> <span class="o">+</span> <span class="p">(</span><span class="n">max_y</span> <span class="o">-</span> <span class="n">min_y</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">min_x</span><span class="p">,</span> <span class="n">min_y</span><span class="p">,</span> <span class="n">max_x</span><span class="p">,</span> <span class="n">max_y</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="track"><a class="viewcode-back" href="../../../../../models.bytetrack.api.routers.inference_router.html#models.bytetrack.api.routers.inference_router.track">[문서]</a><span class="k">def</span> <span class="nf">track</span><span class="p">(</span><span class="n">det_results</span><span class="p">,</span> <span class="n">img_w</span><span class="p">,</span> <span class="n">img_h</span><span class="p">,</span> <span class="n">result_path</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        객체추적을 수행하고 그 결과를 파일로 생성합니다.</span>
+
+<span class="sd">        Args</span>
+<span class="sd">            - det_results (list): 객체탐지 &amp; 이상탐지 결과가 병합된 파일이 ByteTrack의 입력이 될 수 있도록 변환된 결과</span>
+<span class="sd">            - img_w (int): 이미지의 가로 크기</span>
+<span class="sd">            - img_h (int): 이미지의 세로 크기</span>
+<span class="sd">            - result_path (str): 객체추적 결과가 저장될 파일 경로</span>
+<span class="sd">            - args (argparse.ArgumentParser()): 객체추적에 사용할 사용자 옵션</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">tracker</span> <span class="o">=</span> <span class="n">BYTETracker</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">frame_rate</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">fps</span><span class="p">)</span>
+    <span class="n">timer</span> <span class="o">=</span> <span class="n">Timer</span><span class="p">()</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1">############### for bev viz ###############</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1">###############            ###############</span>
+    <span class="n">timer</span><span class="o">.</span><span class="n">tic</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">frame_id</span><span class="p">,</span> <span class="n">det_result</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">det_results</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">det_result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">det_result</span><span class="p">)</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">online_targets</span> <span class="o">=</span> <span class="n">tracker</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">det_result</span><span class="p">),</span> <span class="p">[</span><span class="n">img_h</span><span class="p">,</span> <span class="n">img_w</span><span class="p">],</span> <span class="p">[</span><span class="n">img_h</span><span class="p">,</span> <span class="n">img_w</span><span class="p">])</span>
+            <span class="n">online_tlwhs</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">online_ids</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">online_scores</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">online_labels</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="c1">############### for bev viz ###############</span>
+            <span class="n">points</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">dolphin_bboxes</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="c1">###############            ###############</span>
+            <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">online_targets</span><span class="p">:</span>
+                <span class="n">tlwh</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">tlwh</span>
+                <span class="n">tid</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">track_id</span>
+                <span class="n">label</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">label</span><span class="p">)</span>
+                
+                <span class="k">if</span> <span class="n">tlwh</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="n">tlwh</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">args</span><span class="o">.</span><span class="n">min_box_area</span><span class="p">:</span>
+                    <span class="n">online_tlwhs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tlwh</span><span class="p">)</span>
+                    <span class="n">online_ids</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tid</span><span class="p">)</span>
+                    <span class="n">online_scores</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">score</span><span class="p">)</span>
+                    <span class="n">online_labels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">label</span><span class="p">)</span>
+                    
+                    <span class="k">if</span> <span class="n">label</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">t</span><span class="o">.</span><span class="n">score</span> <span class="o">&lt;</span> <span class="mf">0.8</span><span class="p">:</span>
+                        <span class="k">continue</span>
+                    
+                    <span class="c1"># save results</span>
+                    <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">frame_id</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">tid</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">tlwh</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">tlwh</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">tlwh</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">tlwh</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">t</span><span class="o">.</span><span class="n">score</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">,-1,-1,-1</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+                    
+                    <span class="c1">############### for bev viz ###############</span>
+                    <span class="c1"># bbox의 중심점을 계산합니다.</span>
+                    <span class="n">center_x</span><span class="p">,</span> <span class="n">center_y</span> <span class="o">=</span> <span class="p">(</span><span class="n">tlwh</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">tlwh</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="p">(</span><span class="n">tlwh</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">tlwh</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span> <span class="o">/</span> <span class="mi">2</span>
+
+                    <span class="k">if</span> <span class="n">label</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span> <span class="c1"># 선박인 경우</span>
+                        <span class="n">points</span> <span class="o">=</span> <span class="p">[</span><span class="n">frame_id</span><span class="p">,</span> <span class="n">tid</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">center_x</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">center_y</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">center_x</span><span class="p">,</span> <span class="n">center_y</span><span class="p">,</span> <span class="n">t</span><span class="o">.</span><span class="n">score</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="k">else</span> <span class="p">:</span> <span class="c1"># 돌고래인 경우</span>
+                        <span class="n">dolphin_bboxes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+                    
+                    <span class="c1"># csv data add</span>
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">points</span><span class="p">)</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
+                        <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">points</span><span class="p">)</span>
+                        <span class="n">points</span> <span class="o">=</span> <span class="p">[]</span>
+            
+            <span class="c1"># 모든 돌고래 bbox를 하나로 합칩니다.</span>
+            <span class="n">merged_dolphin_bbox</span> <span class="o">=</span> <span class="n">merge_bboxes</span><span class="p">(</span><span class="n">dolphin_bboxes</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">merged_dolphin_bbox</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">center_x</span><span class="p">,</span> <span class="n">center_y</span> <span class="o">=</span> <span class="p">(</span><span class="n">merged_dolphin_bbox</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">merged_dolphin_bbox</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span>  <span class="p">(</span><span class="n">merged_dolphin_bbox</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">merged_dolphin_bbox</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span><span class="o">/</span><span class="mi">2</span> 
+                <span class="k">if</span> <span class="n">label</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">:</span>
+                    <span class="n">points</span> <span class="o">=</span> <span class="p">[</span><span class="n">frame_id</span><span class="p">,</span> <span class="mi">999999</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">merged_dolphin_bbox</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">merged_dolphin_bbox</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">merged_dolphin_bbox</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">merged_dolphin_bbox</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span><span class="n">t</span><span class="o">.</span><span class="n">score</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                
+            <span class="c1"># csv data add</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">points</span><span class="p">)</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
+                <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">points</span><span class="p">)</span>
+
+        <span class="n">timer</span><span class="o">.</span><span class="n">toc</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">frame_id</span> <span class="o">%</span> <span class="mi">20</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Processing frame </span><span class="si">{}</span><span class="s1">: avg </span><span class="si">{:.4f}</span><span class="s1"> seconds per frame&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">frame_id</span><span class="p">,</span> <span class="n">timer</span><span class="o">.</span><span class="n">average_time</span><span class="p">))</span>
+
+
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">result_path</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">writelines</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+    <span class="n">g</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;/home/dva4/DVA_LAB/backend/test/bev_points.csv&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>
+    <span class="n">writer</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">writer</span><span class="p">(</span><span class="n">g</span><span class="p">)</span>
+    <span class="n">writer</span><span class="o">.</span><span class="n">writerows</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="n">g</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;save results to </span><span class="si">{</span><span class="n">result_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="main"><a class="viewcode-back" href="../../../../../models.bytetrack.api.routers.inference_router.html#models.bytetrack.api.routers.inference_router.main">[문서]</a><span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">det_result_path</span><span class="p">,</span> <span class="n">result_path</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        객체추적 모델에 인퍼런스를 수행하는 메인 함수 역할을 수행합니다.</span>
+
+<span class="sd">        Args</span>
+<span class="sd">            - det_result_path (str): 객체탐지와 이상탐지의 결과가 병합된 bbox 정보가 담긴 파일 경로</span>
+<span class="sd">            - reult_path (str): 객체추적 결과가 저장될 파일 경로</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">args</span> <span class="o">=</span> <span class="n">make_parser</span><span class="p">()</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+
+    <span class="c1"># 시작 시간 로그</span>
+    <span class="n">current_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">localtime</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span>
+    <span class="n">time_format</span> <span class="o">=</span> <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1"> %H:%M:%S&#39;</span>
+    <span class="n">time_str</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="n">time_format</span><span class="p">,</span><span class="n">current_time</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Start time: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">time_str</span><span class="p">))</span>
+
+    <span class="c1"># 검출 결과 파일 읽어서 bytetrack 인풋 형태로 변환</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">det_result_path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>
+    <span class="n">lines</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    
+    <span class="n">grouped_data</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
+        <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)</span>
+        
+        <span class="n">key</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">line</span><span class="p">[</span><span class="mi">1</span><span class="p">:]]</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">grouped_data</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            
+            <span class="n">grouped_data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>        
+        <span class="n">grouped_data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+    <span class="n">det_results</span> <span class="o">=</span> <span class="p">[</span><span class="n">grouped_data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">grouped_data</span><span class="o">.</span><span class="n">keys</span><span class="p">())]</span>
+
+    <span class="c1"># 추후 인풋 형식 맞출 때 반영 필요: img w, h 정보 추가</span>
+    <span class="n">img_w</span><span class="p">,</span> <span class="n">img_h</span> <span class="o">=</span> <span class="mi">3840</span><span class="p">,</span> <span class="mi">1260</span>
+    <span class="n">track</span><span class="p">(</span><span class="n">det_results</span><span class="p">,</span> <span class="n">img_w</span><span class="p">,</span> <span class="n">img_h</span><span class="p">,</span> <span class="n">result_path</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span></div>
+
+
+<span class="n">router</span> <span class="o">=</span> <span class="n">APIRouter</span><span class="p">(</span><span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;bytetrack&quot;</span><span class="p">])</span>
+
+<div class="viewcode-block" id="inference"><a class="viewcode-back" href="../../../../../models.bytetrack.api.routers.inference_router.html#models.bytetrack.api.routers.inference_router.inference">[문서]</a><span class="nd">@router</span><span class="o">.</span><span class="n">post</span><span class="p">(</span>
+    <span class="s2">&quot;/bytetrack/track&quot;</span><span class="p">,</span>
+    <span class="n">status_code</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">HTTP_200_OK</span><span class="p">,</span>
+    <span class="n">summary</span><span class="o">=</span><span class="s2">&quot;bytetrack&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span> <span class="nf">inference</span><span class="p">(</span><span class="n">body</span><span class="p">:</span> <span class="n">TrackingRequest</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        객체추적 모델에 인퍼런스를 수행한 뒤 결과 bbox가 담긴 파일 경로를 반환합니다.</span>
+
+<span class="sd">        Args</span>
+<span class="sd">            - body</span>
+<span class="sd">                - det_result_path (str): 객체탐지와 이상탐지의 결과가 병합된 bbox 정보가 담긴 파일 경로</span>
+<span class="sd">                - result_path (str): 객체추적 결과가 저장될 파일 경로</span>
+
+<span class="sd">        Return</span>
+<span class="sd">            - result_path (str): 객체추적 결과가 저장된 파일 경로</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">det_result_path</span> <span class="o">=</span> <span class="n">body</span><span class="o">.</span><span class="n">det_result_path</span>
+    <span class="n">result_path</span> <span class="o">=</span> <span class="n">body</span><span class="o">.</span><span class="n">result_path</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">result_path</span><span class="p">),</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">main</span><span class="p">(</span><span class="n">det_result_path</span><span class="p">,</span> <span class="n">result_path</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">result_path</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; 저작권 2023, DVA Lab.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

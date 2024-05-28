@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>backend.utils.transform_coordinate &mdash; DVA Lab  문서</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/sphinx_highlight.js"></script>
+        <script src="../../../_static/translations.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="색인" href="../../../genindex.html" />
+    <link rel="search" title="검색" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            DVA Lab
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">backend</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../backend.api.html">backend.api package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../backend.interface.html">backend.interface package</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">models</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../models.BEV.html">models.BEV package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../models.bytetrack.html">models.bytetrack package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../models.efficientAD.html">models.efficientAD package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../models.refiner.html">models.refiner package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">DVA Lab</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">모듈 코드</a></li>
+      <li class="breadcrumb-item active">backend.utils.transform_coordinate</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>backend.utils.transform_coordinate의 소스 코드</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">math</span> <span class="kn">import</span> <span class="n">sin</span><span class="p">,</span> <span class="n">cos</span>
+
+
+<div class="viewcode-block" id="get_coordinate_3d"><a class="viewcode-back" href="../../../backend.utils.transform_coordinate.html#backend.utils.transform_coordinate.get_coordinate_3d">[문서]</a><span class="k">def</span> <span class="nf">get_coordinate_3d</span><span class="p">(</span><span class="n">zc</span><span class="p">,</span> <span class="n">intrinsic_parameter</span><span class="p">,</span> <span class="n">extrinsic_parameter</span><span class="p">,</span> <span class="n">coordinate_pixel</span><span class="p">):</span>
+    <span class="n">coordinate_world</span> <span class="o">=</span> <span class="n">zc</span> <span class="o">*</span> <span class="n">extrinsic_parameter</span><span class="o">.</span><span class="n">T</span> <span class="o">*</span> <span class="n">intrinsic_parameter</span><span class="o">.</span><span class="n">T</span> <span class="o">*</span> <span class="n">coordinate_pixel</span>
+    <span class="k">return</span> <span class="n">coordinate_world</span></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="c1"># 카메라 내부 파라미터 (초점 거리, 주점, 왜곡계수) | cv2.calibrateCamera()로 대체 가능</span>
+    <span class="n">fx</span>                  <span class="o">=</span> <span class="kc">False</span> <span class="c1"># focal length x</span>
+    <span class="n">fy</span>                  <span class="o">=</span> <span class="kc">False</span> <span class="c1"># focal length y</span>
+    <span class="n">cx</span>                  <span class="o">=</span> <span class="kc">False</span> <span class="c1"># principal point x</span>
+    <span class="n">cy</span>                  <span class="o">=</span> <span class="kc">False</span> <span class="c1"># principal point y</span>
+    <span class="n">skew_c</span>              <span class="o">=</span> <span class="kc">False</span> <span class="c1"># skew coefficient</span>
+    <span class="n">zc</span>                  <span class="o">=</span> <span class="kc">False</span> <span class="c1"># distance between the lens aperture and the plane.</span>
+
+    <span class="n">intrinsic_parameter</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">matrix</span><span class="p">([[</span><span class="n">fx</span><span class="p">,</span> <span class="n">skew_c</span><span class="o">*</span><span class="n">fx</span><span class="p">,</span>  <span class="n">cx</span><span class="p">,</span>
+                                    <span class="mi">0</span><span class="p">,</span>  <span class="n">fy</span><span class="p">,</span>         <span class="n">cy</span><span class="p">,</span>
+                                    <span class="mi">0</span><span class="p">,</span>  <span class="mi">0</span><span class="p">,</span>          <span class="mi">1</span><span class="p">]])</span>
+
+    <span class="c1"># 카메라 외부 파라미터</span>
+    <span class="n">gimb_tilt</span>   <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">gimb_yaw</span>    <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="n">rotation_matrix_nb</span>  <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">matrix</span><span class="p">([[]])</span>
+    <span class="n">rotation_vector_nnc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">matrix</span><span class="p">([])</span>
+    <span class="n">rotation_matrix_cm</span>  <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">matrix</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span>
+                                    <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span>
+                                    <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]])</span>
+    <span class="n">rotation_matrix_mb</span>  <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">matrix</span><span class="p">([[</span><span class="n">cos</span><span class="p">(</span><span class="n">gimb_yaw</span><span class="p">)</span> <span class="o">*</span> <span class="n">cos</span><span class="p">(</span><span class="n">gimb_tilt</span><span class="p">),</span>   <span class="n">sin</span><span class="p">(</span><span class="n">gimb_yaw</span><span class="p">)</span> <span class="o">*</span> <span class="n">cos</span><span class="p">(</span><span class="n">gimb_tilt</span><span class="p">),</span>  <span class="o">-</span><span class="n">sin</span><span class="p">(</span><span class="n">gimb_tilt</span><span class="p">),</span>
+                                     <span class="o">-</span><span class="n">sin</span><span class="p">(</span><span class="n">gimb_yaw</span><span class="p">)</span>                 <span class="p">,</span>   <span class="n">cos</span><span class="p">(</span><span class="n">gimb_yaw</span><span class="p">)</span>                 <span class="p">,</span>  <span class="mi">0</span>              <span class="p">,</span>
+                                      <span class="n">cos</span><span class="p">(</span><span class="n">gimb_yaw</span><span class="p">)</span> <span class="o">*</span> <span class="n">sin</span><span class="p">(</span><span class="n">gimb_tilt</span><span class="p">),</span>   <span class="n">sin</span><span class="p">(</span><span class="n">gimb_yaw</span><span class="p">)</span> <span class="o">*</span> <span class="n">sin</span><span class="p">(</span><span class="n">gimb_tilt</span><span class="p">),</span>  <span class="n">cos</span><span class="p">(</span><span class="n">gimb_tilt</span><span class="p">)]])</span>
+
+    <span class="n">rotation_matrix_cn</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">rotation_matrix_nb</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">rotation_matrix_cm</span><span class="p">,</span> <span class="n">rotation_matrix_mb</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+    <span class="n">extrinsic_parameter</span> <span class="o">=</span> <span class="n">rotation_matrix_cn</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">rotation_matrix_cn</span><span class="p">,</span> <span class="n">rotation_vector_nnc</span><span class="p">)</span>
+
+    <span class="c1"># 픽셀 좌표계 점</span>
+    <span class="n">r</span><span class="p">,</span> <span class="n">s</span> <span class="o">=</span> <span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">coordinate_pixel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">matrix</span><span class="p">([</span><span class="n">r</span><span class="p">,</span>
+                                <span class="n">s</span><span class="p">,</span>
+                                <span class="mi">1</span><span class="p">])</span>
+    
+    <span class="c1"># 2차원 좌표 → 3차원 좌표 변환</span>
+    <span class="n">coorindate_world</span> <span class="o">=</span> <span class="n">get_coordinate_3d</span><span class="p">(</span><span class="n">zc</span><span class="p">,</span> <span class="n">intrinsic_parameter</span><span class="p">,</span> <span class="n">extrinsic_parameter</span><span class="p">,</span> <span class="n">coordinate_pixel</span><span class="p">)</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; 저작권 2023, DVA Lab.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

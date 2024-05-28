@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="ko">
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>models.refiner.api.services.inference_service module &mdash; DVA Lab  문서</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+        <script src="_static/translations.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="색인" href="genindex.html" />
+    <link rel="search" title="검색" href="search.html" />
+    <link rel="next" title="models.refiner.app module" href="models.refiner.app.html" />
+    <link rel="prev" title="models.refiner.api.services package" href="models.refiner.api.services.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            DVA Lab
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">backend</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="backend.api.html">backend.api package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="backend.interface.html">backend.interface package</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">models</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="models.BEV.html">models.BEV package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.bytetrack.html">models.bytetrack package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.efficientAD.html">models.efficientAD package</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="models.refiner.html">models.refiner package</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="models.refiner.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="models.refiner.api.html">models.refiner.api package</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="models.refiner.api.html#subpackages">Subpackages</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="models.refiner.html#submodules">Submodules</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">DVA Lab</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="models.refiner.html">models.refiner package</a></li>
+          <li class="breadcrumb-item"><a href="models.refiner.api.html">models.refiner.api package</a></li>
+          <li class="breadcrumb-item"><a href="models.refiner.api.services.html">models.refiner.api.services package</a></li>
+      <li class="breadcrumb-item active">models.refiner.api.services.inference_service module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/models.refiner.api.services.inference_service.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-models.refiner.api.services.inference_service">
+<span id="models-refiner-api-services-inference-service-module"></span><h1>models.refiner.api.services.inference_service module<a class="headerlink" href="#module-models.refiner.api.services.inference_service" title="이 제목에 대한 퍼머링크"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="models.refiner.api.services.inference_service.Refiner">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">models.refiner.api.services.inference_service.</span></span><span class="sig-name descname"><span class="pre">Refiner</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fastsam</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/models/refiner/api/services/inference_service.html#Refiner"><span class="viewcode-link"><span class="pre">[소스]</span></span></a><a class="headerlink" href="#models.refiner.api.services.inference_service.Refiner" title="이 정의에 대한 퍼머링크"></a></dt>
+<dd><p>기반 클래스: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="models.refiner.api.services.inference_service.Refiner.calculate_length_along_major_axis">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">calculate_length_along_major_axis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mask</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/models/refiner/api/services/inference_service.html#Refiner.calculate_length_along_major_axis"><span class="viewcode-link"><span class="pre">[소스]</span></span></a><a class="headerlink" href="#models.refiner.api.services.inference_service.Refiner.calculate_length_along_major_axis" title="이 정의에 대한 퍼머링크"></a></dt>
+<dd><p>주축을 따라 마스크의 길이를 계산하는 정적 메소드입니다.</p>
+<dl class="simple">
+<dt>Args</dt><dd><ul class="simple">
+<li><p>mask (np.ndarray): 길이를 계산할 마스크입니다.</p></li>
+</ul>
+</dd>
+<dt>Return</dt><dd><ul class="simple">
+<li><p>length (float): 계산된 길이입니다.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="models.refiner.api.services.inference_service.Refiner.convert_to_xyxy">
+<span class="sig-name descname"><span class="pre">convert_to_xyxy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bbox</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/models/refiner/api/services/inference_service.html#Refiner.convert_to_xyxy"><span class="viewcode-link"><span class="pre">[소스]</span></span></a><a class="headerlink" href="#models.refiner.api.services.inference_service.Refiner.convert_to_xyxy" title="이 정의에 대한 퍼머링크"></a></dt>
+<dd><p>COCO 형식의 바운딩 박스 좌표를 [x_min, y_min, x_max, y_max] 형식으로 변환합니다.</p>
+<dl class="simple">
+<dt>Args</dt><dd><ul class="simple">
+<li><p>bbox (list): COCO 형식의 바운딩 박스 좌표 [x_min, y_min, width, height].</p></li>
+</ul>
+</dd>
+<dt>Return</dt><dd><ul class="simple">
+<li><p>bbox (list): 변환된 바운딩 박스 좌표 [x_min, y_min, x_max, y_max].</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="models.refiner.api.services.inference_service.Refiner.do_refine">
+<span class="sig-name descname"><span class="pre">do_refine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">json_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">image_folder</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/models/refiner/api/services/inference_service.html#Refiner.do_refine"><span class="viewcode-link"><span class="pre">[소스]</span></span></a><a class="headerlink" href="#models.refiner.api.services.inference_service.Refiner.do_refine" title="이 정의에 대한 퍼머링크"></a></dt>
+<dd><p>지정된 JSON 파일과 이미지 폴더를 사용하여 바운딩 박스를 세그먼트 마스크로 세밀화합니다.</p>
+<dl class="simple">
+<dt>Args</dt><dd><ul class="simple">
+<li><p>json_path (str): COCO 형식의 어노테이션 데이터가 담긴 JSON 파일 경로.</p></li>
+<li><p>image_folder (str): 이미지 파일들이 있는 폴더 경로.</p></li>
+</ul>
+</dd>
+<dt>Return</dt><dd><ul class="simple">
+<li><p>coco_data (json): 세그먼트 마스크로 업데이트된 어노테이션 데이터.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="models.refiner.api.services.inference_service.Refiner.find_rotated_bounding_box_and_max_length">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">find_rotated_bounding_box_and_max_length</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mask</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/models/refiner/api/services/inference_service.html#Refiner.find_rotated_bounding_box_and_max_length"><span class="viewcode-link"><span class="pre">[소스]</span></span></a><a class="headerlink" href="#models.refiner.api.services.inference_service.Refiner.find_rotated_bounding_box_and_max_length" title="이 정의에 대한 퍼머링크"></a></dt>
+<dd><p>마스크를 기반으로 회전된 바운딩 박스와 그 박스의 가장 긴 변의 길이를 찾는 정적 메소드입니다.</p>
+<dl class="simple">
+<dt>Args</dt><dd><ul class="simple">
+<li><p>mask (np.ndarray): 객체의 세그먼트 마스크를 나타내는 2차원 배열.</p></li>
+</ul>
+</dd>
+<dt>Return</dt><dd><ul class="simple">
+<li><p>max_length (float): 마스크에서 가장 긴 변의 길이.</p></li>
+<li><p>box (np.ndarray): 마스크에 대한 회전된 최소 영역 바운딩 박스의 꼭짓점.</p></li>
+<li><p>longest_edge_points (tuple): 가장 긴 변을 이루는 두 꼭짓점의 좌표.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="models.refiner.api.services.inference_service.Refiner.get_color">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_color</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">random_color</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/models/refiner/api/services/inference_service.html#Refiner.get_color"><span class="viewcode-link"><span class="pre">[소스]</span></span></a><a class="headerlink" href="#models.refiner.api.services.inference_service.Refiner.get_color" title="이 정의에 대한 퍼머링크"></a></dt>
+<dd><p>색상을 반환합니다.</p>
+<dl class="simple">
+<dt>Args</dt><dd><ul class="simple">
+<li><p>random_color (bool): 색상 랜덤 여부</p></li>
+</ul>
+</dd>
+<dt>Return</dt><dd><ul class="simple">
+<li><p>color (np.array): 색상</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="models.refiner.api.services.inference_service.Refiner.save_update">
+<span class="sig-name descname"><span class="pre">save_update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coco_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/models/refiner/api/services/inference_service.html#Refiner.save_update"><span class="viewcode-link"><span class="pre">[소스]</span></span></a><a class="headerlink" href="#models.refiner.api.services.inference_service.Refiner.save_update" title="이 정의에 대한 퍼머링크"></a></dt>
+<dd><p>업데이트된 어노테이션 데이터를 JSON 파일로 저장합니다.</p>
+<dl class="simple">
+<dt>Args</dt><dd><ul class="simple">
+<li><p>coco_data (json): 업데이트된 어노테이션 데이터.</p></li>
+<li><p>save_path (str): 저장할 파일 경로.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="models.refiner.api.services.inference_service.Refiner.show_mask">
+<span class="sig-name descname"><span class="pre">show_mask</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">masks</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_color</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/models/refiner/api/services/inference_service.html#Refiner.show_mask"><span class="viewcode-link"><span class="pre">[소스]</span></span></a><a class="headerlink" href="#models.refiner.api.services.inference_service.Refiner.show_mask" title="이 정의에 대한 퍼머링크"></a></dt>
+<dd><p>세그먼트 마스크를 이미지 위에 표시합니다.</p>
+<dl class="simple">
+<dt>Args</dt><dd><ul class="simple">
+<li><p>masks (np.ndarray): 표시할 마스크.</p></li>
+<li><p>random_color (bool): 마스크에 적용할 색상을 무작위로 선택할지 여부.</p></li>
+<li><p>save (str): 결과 이미지를 저장할 파일 경로 (저장하지 않을 경우 None).</p></li>
+</ul>
+</dd>
+<dt>Note</dt><dd><ul class="simple">
+<li><p>이미지는 <a href="#id1"><span class="problematic" id="id2">`</span></a>self.rgb_img`에 저장되어 있어야 합니다.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="models.refiner.api.services.inference_service.Refiner.show_mask_bbox">
+<span class="sig-name descname"><span class="pre">show_mask_bbox</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">masks</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">old_bboxes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_bboxes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_color</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/models/refiner/api/services/inference_service.html#Refiner.show_mask_bbox"><span class="viewcode-link"><span class="pre">[소스]</span></span></a><a class="headerlink" href="#models.refiner.api.services.inference_service.Refiner.show_mask_bbox" title="이 정의에 대한 퍼머링크"></a></dt>
+<dd><p>세그먼트 마스크와 바운딩 박스를 이미지 위에 표시합니다.</p>
+<dl class="simple">
+<dt>Args</dt><dd><ul class="simple">
+<li><p>masks (list): 표시할 세그먼트 마스크 목록.</p></li>
+<li><p>old_bboxes (list): 원래 바운딩 박스 좌표 목록.</p></li>
+<li><p>new_bboxes (list): 업데이트된 바운딩 박스 좌표 목록.</p></li>
+<li><p>random_color (bool): 마스크에 적용할 색상을 무작위로 선택할지 여부.</p></li>
+<li><p>save (str): 결과 이미지를 저장할 파일 경로 (저장하지 않을 경우 None).</p></li>
+</ul>
+</dd>
+<dt>Note</dt><dd><ul class="simple">
+<li><p>이미지는 <a href="#id3"><span class="problematic" id="id4">`</span></a>self.rgb_img`에 저장되어 있어야 합니다.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="models.refiner.api.services.inference_service.Refiner.update_bbox_with_mask">
+<span class="sig-name descname"><span class="pre">update_bbox_with_mask</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mask</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bbox</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/models/refiner/api/services/inference_service.html#Refiner.update_bbox_with_mask"><span class="viewcode-link"><span class="pre">[소스]</span></span></a><a class="headerlink" href="#models.refiner.api.services.inference_service.Refiner.update_bbox_with_mask" title="이 정의에 대한 퍼머링크"></a></dt>
+<dd><p>세그먼트 마스크를 사용하여 바운딩 박스 좌표를 업데이트합니다.</p>
+<dl class="simple">
+<dt>Args</dt><dd><ul class="simple">
+<li><p>mask (np.ndarray): 세그먼트화된 객체의 마스크.</p></li>
+<li><p>bbox (list): 원래 바운딩 박스 좌표 [x_min, y_min, width, height].</p></li>
+</ul>
+</dd>
+<dt>Return</dt><dd><ul class="simple">
+<li><p>updated_bbox (list): 업데이트된 바운딩 박스 좌표 [x_min, y_min, width, height].</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="models.refiner.api.services.html" class="btn btn-neutral float-left" title="models.refiner.api.services package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="models.refiner.app.html" class="btn btn-neutral float-right" title="models.refiner.app module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; 저작권 2023, DVA Lab.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
