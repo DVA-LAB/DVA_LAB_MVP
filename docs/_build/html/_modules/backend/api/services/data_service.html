@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>backend.api.services.data_service &mdash; DVA Lab  문서</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/sphinx_highlight.js"></script>
+        <script src="../../../../_static/translations.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="색인" href="../../../../genindex.html" />
+    <link rel="search" title="검색" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            DVA Lab
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">backend</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../backend.api.html">backend.api package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../backend.interface.html">backend.interface package</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">models</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../models.BEV.html">models.BEV package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../models.bytetrack.html">models.bytetrack package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../models.efficientAD.html">models.efficientAD package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../models.refiner.html">models.refiner package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">DVA Lab</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">모듈 코드</a></li>
+      <li class="breadcrumb-item active">backend.api.services.data_service</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>backend.api.services.data_service의 소스 코드</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">cv2</span>
+<span class="kn">import</span> <span class="nn">threading</span>
+
+
+<div class="viewcode-block" id="parse_video_to_frames"><a class="viewcode-back" href="../../../../backend.api.services.data_service.html#backend.api.services.data_service.parse_video_to_frames">[문서]</a><span class="k">def</span> <span class="nf">parse_video_to_frames</span><span class="p">(</span><span class="n">video_path</span><span class="p">,</span> <span class="n">output_base_folder_path</span><span class="p">,</span> <span class="n">frame_interval</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        비디오 파일을 파싱하여 프레임으로 추출합니다. </span>
+<span class="sd">        </span>
+<span class="sd">        파일명 형식은 &#39;원본파일명_프레임번호.jpg&#39;이며 프레임번호는 제로 패딩된 5자리 숫자 입니다.</span>
+
+<span class="sd">        Args</span>
+<span class="sd">            - video_path (str): 프레임을 파싱할 비디오 파일 경로</span>
+<span class="sd">            - output_base_folder_path (str): 파싱된 프레임이 저장될 경로</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">filename_without_ext</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">video_path</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">output_folder_path</span> <span class="o">=</span> <span class="n">output_base_folder_path</span>
+
+    <span class="c1"># Create a subdirectory for the current video if it doesn&#39;t exist</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">output_folder_path</span><span class="p">):</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">output_folder_path</span><span class="p">)</span>
+
+    <span class="n">cap</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">VideoCapture</span><span class="p">(</span><span class="n">video_path</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">cap</span><span class="o">.</span><span class="n">isOpened</span><span class="p">():</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error opening video file: </span><span class="si">{</span><span class="n">filename_without_ext</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span>
+
+    <span class="n">frame_count</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">ret</span><span class="p">,</span> <span class="n">frame</span> <span class="o">=</span> <span class="n">cap</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">ret</span><span class="p">:</span>
+            <span class="k">break</span>
+
+        <span class="c1"># Save frame with padded frame number</span>
+        <span class="k">if</span> <span class="n">frame_count</span> <span class="o">%</span> <span class="n">frame_interval</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">padded_frame_number</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">frame_count</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+            <span class="n">frame_filename</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">filename_without_ext</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">padded_frame_number</span><span class="si">}</span><span class="s2">.jpg&quot;</span>
+            <span class="n">cv2</span><span class="o">.</span><span class="n">imwrite</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_folder_path</span><span class="p">,</span> <span class="n">frame_filename</span><span class="p">),</span> <span class="n">frame</span><span class="p">)</span>
+
+        <span class="n">frame_count</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="n">cap</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Completed parsing video: </span><span class="si">{</span><span class="n">filename_without_ext</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="parse_videos_multithreaded"><a class="viewcode-back" href="../../../../backend.api.services.data_service.html#backend.api.services.data_service.parse_videos_multithreaded">[문서]</a><span class="k">def</span> <span class="nf">parse_videos_multithreaded</span><span class="p">(</span><span class="n">video_folder_path</span><span class="p">,</span> <span class="n">output_base_folder_path</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        멀티쓰레드를 활용하여 비디오 파일을 프레임으로 추출합니다.</span>
+
+<span class="sd">        Args</span>
+<span class="sd">            - video_folder_path (str): 프레임을 파싱할 비디오 파일 경로</span>
+<span class="sd">            - output_base_folder_path (str): 파싱된 프레임이 저장될 경로</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">threads</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># Ensure base output folder exists</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">output_base_folder_path</span><span class="p">):</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">output_base_folder_path</span><span class="p">)</span>
+
+    <span class="c1"># Create a thread for each video file</span>
+    <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">video_folder_path</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">filename</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span>
+            <span class="p">(</span><span class="s2">&quot;.mp4&quot;</span><span class="p">,</span> <span class="s2">&quot;.avi&quot;</span><span class="p">,</span> <span class="s2">&quot;.mov&quot;</span><span class="p">,</span> <span class="s2">&quot;.mkv&quot;</span><span class="p">)</span>
+        <span class="p">):</span>  <span class="c1"># Handles both lowercase and uppercase extensions</span>
+            <span class="n">video_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">video_folder_path</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+            <span class="n">thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span>
+                <span class="n">target</span><span class="o">=</span><span class="n">parse_video_to_frames</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">video_path</span><span class="p">,</span> <span class="n">output_base_folder_path</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="n">threads</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">thread</span><span class="p">)</span>
+            <span class="n">thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+    <span class="c1"># Wait for all threads to complete</span>
+    <span class="k">for</span> <span class="n">thread</span> <span class="ow">in</span> <span class="n">threads</span><span class="p">:</span>
+        <span class="n">thread</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;All videos have been processed.&quot;</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; 저작권 2023, DVA Lab.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
