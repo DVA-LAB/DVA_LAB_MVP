@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>models.refiner.api.services.inference_service &mdash; DVA Lab  문서</title>
+      <link rel="stylesheet" type="text/css" href="../../../../../_static/pygments.css" />
+      <link rel="stylesheet" type="text/css" href="../../../../../_static/css/theme.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../../../" id="documentation_options" src="../../../../../_static/documentation_options.js"></script>
+        <script src="../../../../../_static/jquery.js"></script>
+        <script src="../../../../../_static/underscore.js"></script>
+        <script src="../../../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../../../../_static/doctools.js"></script>
+        <script src="../../../../../_static/sphinx_highlight.js"></script>
+        <script src="../../../../../_static/translations.js"></script>
+    <script src="../../../../../_static/js/theme.js"></script>
+    <link rel="index" title="색인" href="../../../../../genindex.html" />
+    <link rel="search" title="검색" href="../../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../../index.html" class="icon icon-home">
+            DVA Lab
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">backend</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../backend.api.html">backend.api package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../backend.interface.html">backend.interface package</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">models</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../models.BEV.html">models.BEV package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../models.bytetrack.html">models.bytetrack package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../models.efficientAD.html">models.efficientAD package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../models.refiner.html">models.refiner package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../../index.html">DVA Lab</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../../index.html">모듈 코드</a></li>
+      <li class="breadcrumb-item active">models.refiner.api.services.inference_service</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>models.refiner.api.services.inference_service의 소스 코드</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">import</span> <span class="nn">cv2</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">tqdm</span>
+<span class="kn">from</span> <span class="nn">transformers</span> <span class="kn">import</span> <span class="n">SamModel</span><span class="p">,</span> <span class="n">SamProcessor</span>
+
+<span class="kn">from</span> <span class="nn">.FastSAM.fastsam</span> <span class="kn">import</span> <span class="n">FastSAM</span><span class="p">,</span> <span class="n">FastSAMPrompt</span>
+
+
+<div class="viewcode-block" id="Refiner"><a class="viewcode-back" href="../../../../../models.refiner.api.services.inference_service.html#models.refiner.api.services.inference_service.Refiner">[문서]</a><span class="k">class</span> <span class="nc">Refiner</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">fastsam</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            SAM (Segmentation-Aware Model)을 사용하여 이미지의 객체를 세그먼트화하는 Refiner 클래스의 생성자입니다.</span>
+
+<span class="sd">            Args</span>
+<span class="sd">                - device (str): 모델을 실행할 장치 (&#39;cuda&#39; 또는 &#39;cpu&#39;).</span>
+
+<span class="sd">            Note</span>
+<span class="sd">                - `self.model`과 `self.processor`는 Facebook의 &#39;sam-vit-huge&#39; 모델을 사용하여 초기화됩니다.</span>
+<span class="sd">                - 추후 &#39;refiner-HQ&#39; 옵션을 추가할 예정입니다 (https://drive.google.com/file/d/1qobFYrI4eyIANfBSmYcGuWRaSIXfMOQ8/view?usp=sharing).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">device</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rgb_img</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="n">fastsam</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">FastSAM</span><span class="p">(</span><span class="s2">&quot;./FastSAM-x.pt&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">SamModel</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span>
+                <span class="n">pretrained_model_name_or_path</span><span class="o">=</span><span class="s2">&quot;facebook/sam-vit-huge&quot;</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">processor</span> <span class="o">=</span> <span class="n">SamProcessor</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="s2">&quot;facebook/sam-vit-huge&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_loader</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">json_path</span><span class="p">,</span> <span class="n">image_folder</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            COCO 형식의 JSON 파일과 이미지 폴더에서 이미지와 해당 바운딩 박스, 어노테이션 ID를 로드하는 제너레이터입니다.</span>
+
+<span class="sd">            Args</span>
+<span class="sd">                - json_path (str): COCO 형식의 어노테이션 데이터가 담긴 JSON 파일 경로.</span>
+<span class="sd">                - image_folder (str): 이미지 파일들이 있는 폴더 경로.</span>
+
+<span class="sd">            Yields</span>
+<span class="sd">                - image (np.ndarray): 로드된 이미지.</span>
+<span class="sd">                - bbox (list): 해당 이미지의 바운딩 박스 좌표.</span>
+<span class="sd">                - anno_id (int): 어노테이션 ID.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">json_path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+            <span class="n">coco_data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+
+        <span class="n">images</span> <span class="o">=</span> <span class="p">{</span><span class="n">image</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]:</span> <span class="n">image</span><span class="p">[</span><span class="s2">&quot;file_name&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">image</span> <span class="ow">in</span> <span class="n">coco_data</span><span class="p">[</span><span class="s2">&quot;images&quot;</span><span class="p">]}</span>
+
+        <span class="k">for</span> <span class="n">anno</span> <span class="ow">in</span> <span class="n">coco_data</span><span class="p">[</span><span class="s2">&quot;annotations&quot;</span><span class="p">]:</span>
+            <span class="n">img_name</span> <span class="o">=</span> <span class="n">images</span><span class="p">[</span><span class="n">anno</span><span class="p">[</span><span class="s2">&quot;image_id&quot;</span><span class="p">]]</span>
+            <span class="n">image_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">image_folder</span><span class="p">,</span> <span class="n">img_name</span><span class="p">)</span>
+            <span class="n">image</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">imread</span><span class="p">(</span><span class="n">image_path</span><span class="p">)</span>
+            <span class="n">bbox</span> <span class="o">=</span> <span class="n">anno</span><span class="p">[</span><span class="s2">&quot;bbox&quot;</span><span class="p">]</span>
+            <span class="n">anno_id</span> <span class="o">=</span> <span class="n">anno</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span>
+            <span class="k">yield</span> <span class="n">image</span><span class="p">,</span> <span class="n">bbox</span><span class="p">,</span> <span class="n">anno_id</span>
+
+<div class="viewcode-block" id="Refiner.do_refine"><a class="viewcode-back" href="../../../../../models.refiner.api.services.inference_service.html#models.refiner.api.services.inference_service.Refiner.do_refine">[문서]</a>    <span class="k">def</span> <span class="nf">do_refine</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">json_path</span><span class="p">,</span> <span class="n">image_folder</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            지정된 JSON 파일과 이미지 폴더를 사용하여 바운딩 박스를 세그먼트 마스크로 세밀화합니다.</span>
+
+<span class="sd">            Args</span>
+<span class="sd">                - json_path (str): COCO 형식의 어노테이션 데이터가 담긴 JSON 파일 경로.</span>
+<span class="sd">                - image_folder (str): 이미지 파일들이 있는 폴더 경로.</span>
+
+<span class="sd">            Return</span>
+<span class="sd">                - coco_data (json): 세그먼트 마스크로 업데이트된 어노테이션 데이터.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">loader</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_loader</span><span class="p">(</span><span class="n">json_path</span><span class="p">,</span> <span class="n">image_folder</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">json_path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+            <span class="n">coco_data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">bbox</span><span class="p">,</span> <span class="n">anno_id</span><span class="p">)</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="o">.</span><span class="n">tqdm</span><span class="p">(</span><span class="nb">enumerate</span><span class="p">(</span><span class="n">loader</span><span class="p">)):</span>
+            <span class="n">int_bbox</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">coord</span><span class="p">)</span> <span class="k">for</span> <span class="n">coord</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">convert_to_xyxy</span><span class="p">(</span><span class="n">bbox</span><span class="p">)]</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_seg</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="p">[</span><span class="n">int_bbox</span><span class="p">])</span>
+            <span class="n">updated_bbox</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_bbox_with_mask</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">bbox</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">anno</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">coco_data</span><span class="p">[</span><span class="s2">&quot;annotations&quot;</span><span class="p">]):</span>
+                <span class="k">if</span> <span class="n">anno</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">anno_id</span><span class="p">:</span>
+                    <span class="n">coco_data</span><span class="p">[</span><span class="s2">&quot;annotations&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;bbox&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">updated_bbox</span>
+
+            <span class="k">if</span> <span class="n">idx</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">show_mask_bbox</span><span class="p">(</span>
+                    <span class="p">[</span><span class="n">mask</span><span class="p">],</span>
+                    <span class="p">[</span><span class="n">int_bbox</span><span class="p">],</span>
+                    <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">convert_to_xyxy</span><span class="p">(</span><span class="n">updated_bbox</span><span class="p">)],</span>
+                    <span class="n">random_color</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                    <span class="n">save</span><span class="o">=</span><span class="s2">&quot;test_single_box.jpg&quot;</span><span class="p">,</span>
+                <span class="p">)</span>
+        <span class="k">return</span> <span class="n">coco_data</span></div>
+
+<div class="viewcode-block" id="Refiner.save_update"><a class="viewcode-back" href="../../../../../models.refiner.api.services.inference_service.html#models.refiner.api.services.inference_service.Refiner.save_update">[문서]</a>    <span class="k">def</span> <span class="nf">save_update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coco_data</span><span class="p">,</span> <span class="n">save_path</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            업데이트된 어노테이션 데이터를 JSON 파일로 저장합니다.</span>
+
+<span class="sd">            Args</span>
+<span class="sd">                - coco_data (json): 업데이트된 어노테이션 데이터.</span>
+<span class="sd">                - save_path (str): 저장할 파일 경로.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">save_path</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+            <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">coco_data</span><span class="p">,</span> <span class="n">file</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_get_horizontal_bbox_from_mask</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mask</span><span class="p">,</span> <span class="n">bbox</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            마스크를 기반으로 수평 바운딩 박스 좌표를 계산합니다.</span>
+
+<span class="sd">            Args</span>
+<span class="sd">                - mask (np.ndarray): 세그먼트화된 객체의 마스크.</span>
+<span class="sd">                - bbox (list): 원래 바운딩 박스 좌표 [x_min, y_min, width, height].</span>
+
+<span class="sd">            Return</span>
+<span class="sd">                - bbox (list): 마스크에 기반한 새로운 바운딩 박스 좌표 [x_min, y_min, width, height].</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">mask</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span>
+        <span class="k">if</span> <span class="n">mask</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+            <span class="n">y_indices</span><span class="p">,</span> <span class="n">x_indices</span> <span class="o">=</span> <span class="n">mask</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">as_tuple</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">x_min</span><span class="p">,</span> <span class="n">x_max</span> <span class="o">=</span> <span class="n">x_indices</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span> <span class="n">x_indices</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+            <span class="n">y_min</span><span class="p">,</span> <span class="n">y_max</span> <span class="o">=</span> <span class="n">y_indices</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span> <span class="n">y_indices</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+            <span class="k">return</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">x_min</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">y_min</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">x_max</span> <span class="o">-</span> <span class="n">x_min</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">y_max</span> <span class="o">-</span> <span class="n">y_min</span><span class="p">)]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">bbox</span>
+
+<div class="viewcode-block" id="Refiner.update_bbox_with_mask"><a class="viewcode-back" href="../../../../../models.refiner.api.services.inference_service.html#models.refiner.api.services.inference_service.Refiner.update_bbox_with_mask">[문서]</a>    <span class="k">def</span> <span class="nf">update_bbox_with_mask</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mask</span><span class="p">,</span> <span class="n">bbox</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            세그먼트 마스크를 사용하여 바운딩 박스 좌표를 업데이트합니다.</span>
+
+<span class="sd">            Args</span>
+<span class="sd">                - mask (np.ndarray): 세그먼트화된 객체의 마스크.</span>
+<span class="sd">                - bbox (list): 원래 바운딩 박스 좌표 [x_min, y_min, width, height].</span>
+
+<span class="sd">            Return</span>
+<span class="sd">                - updated_bbox (list): 업데이트된 바운딩 박스 좌표 [x_min, y_min, width, height].</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">updated_bbox</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_horizontal_bbox_from_mask</span><span class="p">(</span><span class="n">mask</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">bbox</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">updated_bbox</span></div>
+
+    <span class="k">def</span> <span class="nf">_do_seg</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bgr_img</span><span class="p">,</span> <span class="n">boxes</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            주어진 이미지와 바운딩 박스에 대해 세그먼트화를 수행합니다.</span>
+
+<span class="sd">            Args</span>
+<span class="sd">                - bgr_img (np.ndarray): 세그먼트화할 이미지.</span>
+<span class="sd">                - boxes (list): 세그먼트화할 영역의 바운딩 박스 좌표 목록.</span>
+
+<span class="sd">            Return</span>
+<span class="sd">                - masks (np.ndarray): 계산된 세그먼트 마스크.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">rgb_img</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">cvtColor</span><span class="p">(</span><span class="n">bgr_img</span><span class="p">,</span> <span class="n">cv2</span><span class="o">.</span><span class="n">COLOR_BGR2RGB</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">boxes</span><span class="p">):</span>
+            <span class="n">inputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">rgb_img</span><span class="p">,</span> <span class="n">input_boxes</span><span class="o">=</span><span class="p">[</span><span class="n">boxes</span><span class="p">],</span> <span class="n">return_tensors</span><span class="o">=</span><span class="s2">&quot;pt&quot;</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+
+            <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+                <span class="c1"># TODO@jh: multimask 처리 구상</span>
+                <span class="n">outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="o">**</span><span class="n">inputs</span><span class="p">,</span> <span class="n">multimask_output</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+            <span class="n">masks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="o">.</span><span class="n">image_processor</span><span class="o">.</span><span class="n">post_process_masks</span><span class="p">(</span>
+                <span class="n">outputs</span><span class="o">.</span><span class="n">pred_masks</span><span class="o">.</span><span class="n">cpu</span><span class="p">(),</span>
+                <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;original_sizes&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">cpu</span><span class="p">(),</span>
+                <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;reshaped_input_sizes&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">cpu</span><span class="p">(),</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="n">masks</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">_do_seg_fast</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bgr_img</span><span class="p">,</span> <span class="n">boxes</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        주어진 이미지와 바운딩 박스에 대해 세그먼트화를 수행합니다.</span>
+
+<span class="sd">        Args</span>
+<span class="sd">            - bgr_img (np.ndarray): 세그먼트화할 이미지.</span>
+<span class="sd">            - boxes (list): 세그먼트화할 영역의 바운딩 박스 좌표 목록.</span>
+
+<span class="sd">        Return</span>
+<span class="sd">            - masks (np.ndarray): 계산된 세그먼트 마스크.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rgb_img</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">cvtColor</span><span class="p">(</span><span class="n">bgr_img</span><span class="p">,</span> <span class="n">cv2</span><span class="o">.</span><span class="n">COLOR_BGR2RGB</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+                <span class="n">everything_results</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">rgb_img</span><span class="p">,</span>
+                    <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">,</span>
+                    <span class="n">retina_masks</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="n">imgsz</span><span class="o">=</span><span class="mi">1024</span><span class="p">,</span>
+                    <span class="n">conf</span><span class="o">=</span><span class="mf">0.4</span><span class="p">,</span>
+                    <span class="n">iou</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="n">prompt_process</span> <span class="o">=</span> <span class="n">FastSAMPrompt</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">rgb_img</span><span class="p">,</span> <span class="n">everything_results</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span>
+                <span class="p">)</span>
+                <span class="n">ann</span> <span class="o">=</span> <span class="n">prompt_process</span><span class="o">.</span><span class="n">box_prompt</span><span class="p">(</span><span class="n">bboxes</span><span class="o">=</span><span class="n">boxes</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">ann</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="Refiner.show_mask"><a class="viewcode-back" href="../../../../../models.refiner.api.services.inference_service.html#models.refiner.api.services.inference_service.Refiner.show_mask">[문서]</a>    <span class="k">def</span> <span class="nf">show_mask</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">masks</span><span class="p">,</span> <span class="n">random_color</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            세그먼트 마스크를 이미지 위에 표시합니다.</span>
+
+<span class="sd">            Args</span>
+<span class="sd">                - masks (np.ndarray): 표시할 마스크.</span>
+<span class="sd">                - random_color (bool): 마스크에 적용할 색상을 무작위로 선택할지 여부.</span>
+<span class="sd">                - save (str): 결과 이미지를 저장할 파일 경로 (저장하지 않을 경우 None).</span>
+
+<span class="sd">            Note</span>
+<span class="sd">                - 이미지는 `self.rgb_img`에 저장되어 있어야 합니다.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rgb_img</span><span class="p">))</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">mask</span> <span class="ow">in</span> <span class="n">masks</span><span class="p">:</span>
+            <span class="n">color</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_color</span><span class="p">(</span><span class="n">random_color</span><span class="p">)</span>
+            <span class="n">h</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="n">mask</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span>
+            <span class="n">mask_image</span> <span class="o">=</span> <span class="n">mask</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">color</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">mask_image</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">&quot;off&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">save</span><span class="p">:</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">save</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">600</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Refiner.show_mask_bbox"><a class="viewcode-back" href="../../../../../models.refiner.api.services.inference_service.html#models.refiner.api.services.inference_service.Refiner.show_mask_bbox">[문서]</a>    <span class="k">def</span> <span class="nf">show_mask_bbox</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">masks</span><span class="p">,</span> <span class="n">old_bboxes</span><span class="p">,</span> <span class="n">new_bboxes</span><span class="p">,</span> <span class="n">random_color</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="kc">None</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            세그먼트 마스크와 바운딩 박스를 이미지 위에 표시합니다.</span>
+
+<span class="sd">            Args</span>
+<span class="sd">                - masks (list): 표시할 세그먼트 마스크 목록.</span>
+<span class="sd">                - old_bboxes (list): 원래 바운딩 박스 좌표 목록.</span>
+<span class="sd">                - new_bboxes (list): 업데이트된 바운딩 박스 좌표 목록.</span>
+<span class="sd">                - random_color (bool): 마스크에 적용할 색상을 무작위로 선택할지 여부.</span>
+<span class="sd">                - save (str): 결과 이미지를 저장할 파일 경로 (저장하지 않을 경우 None).</span>
+
+<span class="sd">            Note</span>
+<span class="sd">                - 이미지는 `self.rgb_img`에 저장되어 있어야 합니다.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">for</span> <span class="n">bbox</span> <span class="ow">in</span> <span class="n">old_bboxes</span><span class="p">:</span>
+            <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">y2</span> <span class="o">=</span> <span class="n">bbox</span>
+            <span class="n">cv2</span><span class="o">.</span><span class="n">rectangle</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rgb_img</span><span class="p">,</span> <span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">),</span> <span class="p">(</span><span class="n">x2</span><span class="p">,</span> <span class="n">y2</span><span class="p">),</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">bbox</span> <span class="ow">in</span> <span class="n">new_bboxes</span><span class="p">:</span>
+            <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">y2</span> <span class="o">=</span> <span class="n">bbox</span>
+            <span class="n">cv2</span><span class="o">.</span><span class="n">rectangle</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rgb_img</span><span class="p">,</span> <span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">),</span> <span class="p">(</span><span class="n">x2</span><span class="p">,</span> <span class="n">y2</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">show_mask</span><span class="p">(</span><span class="n">masks</span><span class="p">,</span> <span class="n">random_color</span><span class="p">,</span> <span class="n">save</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Refiner.convert_to_xyxy"><a class="viewcode-back" href="../../../../../models.refiner.api.services.inference_service.html#models.refiner.api.services.inference_service.Refiner.convert_to_xyxy">[문서]</a>    <span class="k">def</span> <span class="nf">convert_to_xyxy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bbox</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            COCO 형식의 바운딩 박스 좌표를 [x_min, y_min, x_max, y_max] 형식으로 변환합니다.</span>
+
+<span class="sd">            Args</span>
+<span class="sd">                - bbox (list): COCO 형식의 바운딩 박스 좌표 [x_min, y_min, width, height].</span>
+
+<span class="sd">            Return</span>
+<span class="sd">                - bbox (list): 변환된 바운딩 박스 좌표 [x_min, y_min, x_max, y_max].</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">x_min</span><span class="p">,</span> <span class="n">y_min</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span> <span class="o">=</span> <span class="n">bbox</span>
+        <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span> <span class="o">=</span> <span class="n">x_min</span><span class="p">,</span> <span class="n">y_min</span>
+        <span class="n">x2</span><span class="p">,</span> <span class="n">y2</span> <span class="o">=</span> <span class="n">x_min</span> <span class="o">+</span> <span class="n">width</span><span class="p">,</span> <span class="n">y_min</span> <span class="o">+</span> <span class="n">height</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">y2</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="Refiner.get_color"><a class="viewcode-back" href="../../../../../models.refiner.api.services.inference_service.html#models.refiner.api.services.inference_service.Refiner.get_color">[문서]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">get_color</span><span class="p">(</span><span class="n">random_color</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            색상을 반환합니다.</span>
+
+<span class="sd">            Args</span>
+<span class="sd">                - random_color (bool): 색상 랜덤 여부</span>
+
+<span class="sd">            Return</span>
+<span class="sd">                - color (np.array): 색상</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">random_color</span><span class="p">:</span>
+            <span class="n">color</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.6</span><span class="p">])],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">color</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">30</span> <span class="o">/</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">144</span> <span class="o">/</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span> <span class="o">/</span> <span class="mi">255</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">color</span></div>
+
+<div class="viewcode-block" id="Refiner.calculate_length_along_major_axis"><a class="viewcode-back" href="../../../../../models.refiner.api.services.inference_service.html#models.refiner.api.services.inference_service.Refiner.calculate_length_along_major_axis">[문서]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">calculate_length_along_major_axis</span><span class="p">(</span><span class="n">mask</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            주축을 따라 마스크의 길이를 계산하는 정적 메소드입니다.</span>
+
+<span class="sd">            Args</span>
+<span class="sd">                - mask (np.ndarray): 길이를 계산할 마스크입니다.</span>
+
+<span class="sd">            Return</span>
+<span class="sd">                - length (float): 계산된 길이입니다.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">mask_2d</span> <span class="o">=</span> <span class="n">mask</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>  <span class="c1"># 첫 번째 채널을 2차원 배열로 변환</span>
+        <span class="n">y_coords</span><span class="p">,</span> <span class="n">x_coords</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">mask_2d</span><span class="p">)</span>
+        <span class="n">coords</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">column_stack</span><span class="p">((</span><span class="n">x_coords</span><span class="p">,</span> <span class="n">y_coords</span><span class="p">))</span>
+        <span class="n">coords</span> <span class="o">=</span> <span class="n">coords</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+        <span class="c1"># PCA를 사용하여 주축 계산</span>
+        <span class="n">mean</span><span class="p">,</span> <span class="n">eigenvectors</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">PCACompute</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">mean</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+
+        <span class="c1"># 주축을 따라 길이 측정</span>
+        <span class="n">proj_coords</span> <span class="o">=</span> <span class="p">(</span><span class="n">coords</span> <span class="o">-</span> <span class="n">mean</span><span class="p">)</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">eigenvectors</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+        <span class="n">min_coord</span><span class="p">,</span> <span class="n">max_coord</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">proj_coords</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">proj_coords</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">length</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">max_coord</span> <span class="o">-</span> <span class="n">min_coord</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">length</span></div>
+
+<div class="viewcode-block" id="Refiner.find_rotated_bounding_box_and_max_length"><a class="viewcode-back" href="../../../../../models.refiner.api.services.inference_service.html#models.refiner.api.services.inference_service.Refiner.find_rotated_bounding_box_and_max_length">[문서]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">find_rotated_bounding_box_and_max_length</span><span class="p">(</span><span class="n">mask</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            마스크를 기반으로 회전된 바운딩 박스와 그 박스의 가장 긴 변의 길이를 찾는 정적 메소드입니다.</span>
+
+<span class="sd">            Args</span>
+<span class="sd">                - mask (np.ndarray): 객체의 세그먼트 마스크를 나타내는 2차원 배열.</span>
+
+<span class="sd">            Return</span>
+<span class="sd">                - max_length (float): 마스크에서 가장 긴 변의 길이.</span>
+<span class="sd">                - box (np.ndarray): 마스크에 대한 회전된 최소 영역 바운딩 박스의 꼭짓점.</span>
+<span class="sd">                - longest_edge_points (tuple): 가장 긴 변을 이루는 두 꼭짓점의 좌표.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">mask_np</span> <span class="o">=</span> <span class="n">mask</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="n">mask_np</span> <span class="o">=</span> <span class="n">mask</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
+        <span class="n">mask_np</span> <span class="o">=</span> <span class="n">mask_np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+
+        <span class="n">contours</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">findContours</span><span class="p">(</span>
+            <span class="n">mask_np</span><span class="p">,</span> <span class="n">cv2</span><span class="o">.</span><span class="n">RETR_EXTERNAL</span><span class="p">,</span> <span class="n">cv2</span><span class="o">.</span><span class="n">CHAIN_APPROX_SIMPLE</span>
+        <span class="p">)</span>
+
+        <span class="n">rect</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">minAreaRect</span><span class="p">(</span><span class="n">contours</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">box</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">boxPoints</span><span class="p">(</span><span class="n">rect</span><span class="p">)</span>
+        <span class="n">box</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int0</span><span class="p">(</span><span class="n">box</span><span class="p">)</span>
+
+        <span class="n">max_length</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">longest_edge_points</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
+            <span class="n">p1</span> <span class="o">=</span> <span class="n">box</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">p2</span> <span class="o">=</span> <span class="n">box</span><span class="p">[(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="mi">4</span><span class="p">]</span>
+            <span class="n">edge_length</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">p1</span> <span class="o">-</span> <span class="n">p2</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">edge_length</span> <span class="o">&gt;</span> <span class="n">max_length</span><span class="p">:</span>
+                <span class="n">max_length</span> <span class="o">=</span> <span class="n">edge_length</span>
+                <span class="n">longest_edge_points</span> <span class="o">=</span> <span class="p">(</span><span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">max_length</span><span class="p">,</span> <span class="n">box</span><span class="p">,</span> <span class="n">longest_edge_points</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; 저작권 2023, DVA Lab.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

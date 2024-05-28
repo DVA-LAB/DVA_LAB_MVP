@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="ko">
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>backend.api.services.data_service module &mdash; DVA Lab  문서</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+        <script src="_static/translations.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="색인" href="genindex.html" />
+    <link rel="search" title="검색" href="search.html" />
+    <link rel="next" title="backend.interface package" href="backend.interface.html" />
+    <link rel="prev" title="backend.api.services package" href="backend.api.services.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            DVA Lab
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">backend</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="backend.api.html">backend.api package</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="backend.api.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="backend.api.routers.html">backend.api.routers package</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="backend.api.services.html">backend.api.services package</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="backend.api.services.html#submodules">Submodules</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="backend.interface.html">backend.interface package</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">models</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="models.BEV.html">models.BEV package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.bytetrack.html">models.bytetrack package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.efficientAD.html">models.efficientAD package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.refiner.html">models.refiner package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">DVA Lab</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="backend.api.html">backend.api package</a></li>
+          <li class="breadcrumb-item"><a href="backend.api.services.html">backend.api.services package</a></li>
+      <li class="breadcrumb-item active">backend.api.services.data_service module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/backend.api.services.data_service.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-backend.api.services.data_service">
+<span id="backend-api-services-data-service-module"></span><h1>backend.api.services.data_service module<a class="headerlink" href="#module-backend.api.services.data_service" title="이 제목에 대한 퍼머링크"></a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="backend.api.services.data_service.parse_video_to_frames">
+<span class="sig-prename descclassname"><span class="pre">backend.api.services.data_service.</span></span><span class="sig-name descname"><span class="pre">parse_video_to_frames</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">video_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_base_folder_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame_interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/api/services/data_service.html#parse_video_to_frames"><span class="viewcode-link"><span class="pre">[소스]</span></span></a><a class="headerlink" href="#backend.api.services.data_service.parse_video_to_frames" title="이 정의에 대한 퍼머링크"></a></dt>
+<dd><p>비디오 파일을 파싱하여 프레임으로 추출합니다.</p>
+<p>파일명 형식은 ‘원본파일명_프레임번호.jpg’이며 프레임번호는 제로 패딩된 5자리 숫자 입니다.</p>
+<dl class="simple">
+<dt>Args</dt><dd><ul class="simple">
+<li><p>video_path (str): 프레임을 파싱할 비디오 파일 경로</p></li>
+<li><p>output_base_folder_path (str): 파싱된 프레임이 저장될 경로</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="backend.api.services.data_service.parse_videos_multithreaded">
+<span class="sig-prename descclassname"><span class="pre">backend.api.services.data_service.</span></span><span class="sig-name descname"><span class="pre">parse_videos_multithreaded</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">video_folder_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_base_folder_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/api/services/data_service.html#parse_videos_multithreaded"><span class="viewcode-link"><span class="pre">[소스]</span></span></a><a class="headerlink" href="#backend.api.services.data_service.parse_videos_multithreaded" title="이 정의에 대한 퍼머링크"></a></dt>
+<dd><p>멀티쓰레드를 활용하여 비디오 파일을 프레임으로 추출합니다.</p>
+<dl class="simple">
+<dt>Args</dt><dd><ul class="simple">
+<li><p>video_folder_path (str): 프레임을 파싱할 비디오 파일 경로</p></li>
+<li><p>output_base_folder_path (str): 파싱된 프레임이 저장될 경로</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="backend.api.services.html" class="btn btn-neutral float-left" title="backend.api.services package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="backend.interface.html" class="btn btn-neutral float-right" title="backend.interface package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; 저작권 2023, DVA Lab.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

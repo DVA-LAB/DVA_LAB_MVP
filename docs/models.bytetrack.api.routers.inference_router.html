@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="ko">
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>models.bytetrack.api.routers.inference_router module &mdash; DVA Lab  문서</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+        <script src="_static/translations.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="색인" href="genindex.html" />
+    <link rel="search" title="검색" href="search.html" />
+    <link rel="next" title="models.bytetrack.app module" href="models.bytetrack.app.html" />
+    <link rel="prev" title="models.bytetrack.api.routers package" href="models.bytetrack.api.routers.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            DVA Lab
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">backend</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="backend.api.html">backend.api package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="backend.interface.html">backend.interface package</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">models</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="models.BEV.html">models.BEV package</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="models.bytetrack.html">models.bytetrack package</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="models.bytetrack.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="models.bytetrack.api.html">models.bytetrack.api package</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="models.bytetrack.api.html#subpackages">Subpackages</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="models.bytetrack.html#submodules">Submodules</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="models.efficientAD.html">models.efficientAD package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.refiner.html">models.refiner package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">DVA Lab</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="models.bytetrack.html">models.bytetrack package</a></li>
+          <li class="breadcrumb-item"><a href="models.bytetrack.api.html">models.bytetrack.api package</a></li>
+          <li class="breadcrumb-item"><a href="models.bytetrack.api.routers.html">models.bytetrack.api.routers package</a></li>
+      <li class="breadcrumb-item active">models.bytetrack.api.routers.inference_router module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/models.bytetrack.api.routers.inference_router.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-models.bytetrack.api.routers.inference_router">
+<span id="models-bytetrack-api-routers-inference-router-module"></span><h1>models.bytetrack.api.routers.inference_router module<a class="headerlink" href="#module-models.bytetrack.api.routers.inference_router" title="이 제목에 대한 퍼머링크"></a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="models.bytetrack.api.routers.inference_router.inference">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">models.bytetrack.api.routers.inference_router.</span></span><span class="sig-name descname"><span class="pre">inference</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">body</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">TrackingRequest</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/models/bytetrack/api/routers/inference_router.html#inference"><span class="viewcode-link"><span class="pre">[소스]</span></span></a><a class="headerlink" href="#models.bytetrack.api.routers.inference_router.inference" title="이 정의에 대한 퍼머링크"></a></dt>
+<dd><p>객체추적 모델에 인퍼런스를 수행한 뒤 결과 bbox가 담긴 파일 경로를 반환합니다.</p>
+<dl class="simple">
+<dt>Args</dt><dd><ul class="simple">
+<li><dl class="simple">
+<dt>body</dt><dd><ul>
+<li><p>det_result_path (str): 객체탐지와 이상탐지의 결과가 병합된 bbox 정보가 담긴 파일 경로</p></li>
+<li><p>result_path (str): 객체추적 결과가 저장될 파일 경로</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+<dt>Return</dt><dd><ul class="simple">
+<li><p>result_path (str): 객체추적 결과가 저장된 파일 경로</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="models.bytetrack.api.routers.inference_router.main">
+<span class="sig-prename descclassname"><span class="pre">models.bytetrack.api.routers.inference_router.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">det_result_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">result_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/models/bytetrack/api/routers/inference_router.html#main"><span class="viewcode-link"><span class="pre">[소스]</span></span></a><a class="headerlink" href="#models.bytetrack.api.routers.inference_router.main" title="이 정의에 대한 퍼머링크"></a></dt>
+<dd><p>객체추적 모델에 인퍼런스를 수행하는 메인 함수 역할을 수행합니다.</p>
+<dl class="simple">
+<dt>Args</dt><dd><ul class="simple">
+<li><p>det_result_path (str): 객체탐지와 이상탐지의 결과가 병합된 bbox 정보가 담긴 파일 경로</p></li>
+<li><p>reult_path (str): 객체추적 결과가 저장될 파일 경로</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="models.bytetrack.api.routers.inference_router.make_parser">
+<span class="sig-prename descclassname"><span class="pre">models.bytetrack.api.routers.inference_router.</span></span><span class="sig-name descname"><span class="pre">make_parser</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/models/bytetrack/api/routers/inference_router.html#make_parser"><span class="viewcode-link"><span class="pre">[소스]</span></span></a><a class="headerlink" href="#models.bytetrack.api.routers.inference_router.make_parser" title="이 정의에 대한 퍼머링크"></a></dt>
+<dd><p>객체추적에 사용할 사용자 옵션을 반환합니다.</p>
+<dl class="simple">
+<dt>Args</dt><dd><ul class="simple">
+<li><p>fps (int): 초당 프레임 수</p></li>
+<li><p>track_thresh (float): tracking confidence treshold</p></li>
+<li><p>track_buffer (int): 트래킹이 끊긴 프레임을 보존할 버퍼 크기</p></li>
+<li><p>match_thresh (float): matching threshold for tracking</p></li>
+<li><p>min_box_area (float): 최소 bbox 넓이</p></li>
+<li><p>mot20 (bool): 데이터셋이 mot20 여부</p></li>
+</ul>
+</dd>
+<dt>Return</dt><dd><ul class="simple">
+<li><p>parser (argparse.ArgumentParser()): 사용자 옵션 값</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="models.bytetrack.api.routers.inference_router.merge_bboxes">
+<span class="sig-prename descclassname"><span class="pre">models.bytetrack.api.routers.inference_router.</span></span><span class="sig-name descname"><span class="pre">merge_bboxes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">track_results</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/models/bytetrack/api/routers/inference_router.html#merge_bboxes"><span class="viewcode-link"><span class="pre">[소스]</span></span></a><a class="headerlink" href="#models.bytetrack.api.routers.inference_router.merge_bboxes" title="이 정의에 대한 퍼머링크"></a></dt>
+<dd><p>여러 경계 상자들을 포함하는 하나의 큰 경계 상자를 계산합니다.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="models.bytetrack.api.routers.inference_router.track">
+<span class="sig-prename descclassname"><span class="pre">models.bytetrack.api.routers.inference_router.</span></span><span class="sig-name descname"><span class="pre">track</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">det_results</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">img_w</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">img_h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">result_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/models/bytetrack/api/routers/inference_router.html#track"><span class="viewcode-link"><span class="pre">[소스]</span></span></a><a class="headerlink" href="#models.bytetrack.api.routers.inference_router.track" title="이 정의에 대한 퍼머링크"></a></dt>
+<dd><p>객체추적을 수행하고 그 결과를 파일로 생성합니다.</p>
+<dl class="simple">
+<dt>Args</dt><dd><ul class="simple">
+<li><p>det_results (list): 객체탐지 &amp; 이상탐지 결과가 병합된 파일이 ByteTrack의 입력이 될 수 있도록 변환된 결과</p></li>
+<li><p>img_w (int): 이미지의 가로 크기</p></li>
+<li><p>img_h (int): 이미지의 세로 크기</p></li>
+<li><p>result_path (str): 객체추적 결과가 저장될 파일 경로</p></li>
+<li><p>args (argparse.ArgumentParser()): 객체추적에 사용할 사용자 옵션</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="models.bytetrack.api.routers.html" class="btn btn-neutral float-left" title="models.bytetrack.api.routers package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="models.bytetrack.app.html" class="btn btn-neutral float-right" title="models.bytetrack.app module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; 저작권 2023, DVA Lab.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

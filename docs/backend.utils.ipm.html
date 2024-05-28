@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="ko">
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>backend.utils.ipm module &mdash; DVA Lab  문서</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+        <script src="_static/translations.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="색인" href="genindex.html" />
+    <link rel="search" title="검색" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            DVA Lab
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">backend</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="backend.api.html">backend.api package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="backend.interface.html">backend.interface package</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">models</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="models.BEV.html">models.BEV package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.bytetrack.html">models.bytetrack package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.efficientAD.html">models.efficientAD package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.refiner.html">models.refiner package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">DVA Lab</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">backend.utils.ipm module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/backend.utils.ipm.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-backend.utils.ipm">
+<span id="backend-utils-ipm-module"></span><h1>backend.utils.ipm module<a class="headerlink" href="#module-backend.utils.ipm" title="이 제목에 대한 퍼머링크"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="backend.utils.ipm.IPM">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">backend.utils.ipm.</span></span><span class="sig-name descname"><span class="pre">IPM</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">camera_info</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ipm_info</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/utils/ipm.html#IPM"><span class="viewcode-link"><span class="pre">[소스]</span></span></a><a class="headerlink" href="#backend.utils.ipm.IPM" title="이 정의에 대한 퍼머링크"></a></dt>
+<dd><p>기반 클래스: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>원본 프레임을 BirdEyeView (BEV)로 변환합니다. (Inverse Perspective Mapping)</p>
+<p>BEV 변환을 위해 Pin-hole 카메라를 가정합니다.</p>
+<p><cite>_c</cite>: 카메라 좌표
+<cite>_w</cite>: 월드 좌표
+<cite>uv</cite>: 입력 이미지에 대해 원근변환 된 uv 2D 좌표</p>
+<p>Inverse perspective mapping to a bird-eye view. Assume pin-hole camera model.
+There are detailed explanation of every step in the comments, and variable names in the code follow these conventions:
+<cite>_c</cite> for camera coordinates
+<cite>_w</cite> for world coordinates
+<cite>uv</cite> for perspective transformed uv 2d coordinates (the input image)</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="backend.utils.ipm.IPM.ipm">
+<span class="sig-name descname"><span class="pre">ipm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/utils/ipm.html#IPM.ipm"><span class="viewcode-link"><span class="pre">[소스]</span></span></a><a class="headerlink" href="#backend.utils.ipm.IPM.ipm" title="이 정의에 대한 퍼머링크"></a></dt>
+<dd><p>?</p>
+<dl class="simple">
+<dt>Args</dt><dd><ul class="simple">
+<li><p>img (?): ?</p></li>
+</ul>
+</dd>
+<dt>Return</dt><dd><ul class="simple">
+<li><p>? (?): ?</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="backend.utils.ipm.IPM.reverse_ipm">
+<span class="sig-name descname"><span class="pre">reverse_ipm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shape</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/utils/ipm.html#IPM.reverse_ipm"><span class="viewcode-link"><span class="pre">[소스]</span></span></a><a class="headerlink" href="#backend.utils.ipm.IPM.reverse_ipm" title="이 정의에 대한 퍼머링크"></a></dt>
+<dd><p>?</p>
+<dl class="simple">
+<dt>Args</dt><dd><ul class="simple">
+<li><p>img (?): ?</p></li>
+<li><p>shape (tuple): ?</p></li>
+</ul>
+</dd>
+<dt>Return</dt><dd><ul class="simple">
+<li><p>out_img (?): ?</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="backend.utils.ipm.IPM.uv2xy">
+<span class="sig-name descname"><span class="pre">uv2xy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uvs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/utils/ipm.html#IPM.uv2xy"><span class="viewcode-link"><span class="pre">[소스]</span></span></a><a class="headerlink" href="#backend.utils.ipm.IPM.uv2xy" title="이 정의에 대한 퍼머링크"></a></dt>
+<dd><p>?</p>
+<dl class="simple">
+<dt>Args</dt><dd><ul class="simple">
+<li><p>uvs (?): ?</p></li>
+</ul>
+</dd>
+<dt>Return</dt><dd><ul class="simple">
+<li><p>xy_w (?): ?</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="backend.utils.ipm.IPM.xy2uv">
+<span class="sig-name descname"><span class="pre">xy2uv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xys</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/utils/ipm.html#IPM.xy2uv"><span class="viewcode-link"><span class="pre">[소스]</span></span></a><a class="headerlink" href="#backend.utils.ipm.IPM.xy2uv" title="이 정의에 대한 퍼머링크"></a></dt>
+<dd><p>?</p>
+<dl class="simple">
+<dt>Args</dt><dd><ul class="simple">
+<li><p>xys (?): ?</p></li>
+</ul>
+</dd>
+<dt>Return</dt><dd><ul class="simple">
+<li><p>xy_w (?): ?</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="backend.utils.ipm.estimate_focal_length">
+<span class="sig-prename descclassname"><span class="pre">backend.utils.ipm.</span></span><span class="sig-name descname"><span class="pre">estimate_focal_length</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image_width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fov_degrees</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="_modules/backend/utils/ipm.html#estimate_focal_length"><span class="viewcode-link"><span class="pre">[소스]</span></span></a><a class="headerlink" href="#backend.utils.ipm.estimate_focal_length" title="이 정의에 대한 퍼머링크"></a></dt>
+<dd><p>이미지 가로 길이와 FOV 가 주어졌을 때 focal length를 추정합니다.</p>
+<dl class="simple">
+<dt>Args</dt><dd><ul class="simple">
+<li><p>image_width (float): 픽셀상의 이미지 가로 길이</p></li>
+<li><p>fov_degrees (float): field of view in degree</p></li>
+</ul>
+</dd>
+<dt>Return</dt><dd><ul class="simple">
+<li><p>추정 된 픽셀 상의 focal length</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="backend.utils.ipm.extract_exif">
+<span class="sig-prename descclassname"><span class="pre">backend.utils.ipm.</span></span><span class="sig-name descname"><span class="pre">extract_exif</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filepath</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/backend/utils/ipm.html#extract_exif"><span class="viewcode-link"><span class="pre">[소스]</span></span></a><a class="headerlink" href="#backend.utils.ipm.extract_exif" title="이 정의에 대한 퍼머링크"></a></dt>
+<dd><p>jpg 파일에서 EXIF 정보를 추출합니다.</p>
+<dl class="simple">
+<dt>Args</dt><dd><ul class="simple">
+<li><p>filepath (str): jpg 파일 경로</p></li>
+</ul>
+</dd>
+<dt>Return</dt><dd><ul class="simple">
+<li><p>exif_table (dict): EXIF 정보가 매핑된 정보</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="backend.utils.ipm.extract_xmp">
+<span class="sig-prename descclassname"><span class="pre">backend.utils.ipm.</span></span><span class="sig-name descname"><span class="pre">extract_xmp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filepath</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/backend/utils/ipm.html#extract_xmp"><span class="viewcode-link"><span class="pre">[소스]</span></span></a><a class="headerlink" href="#backend.utils.ipm.extract_xmp" title="이 정의에 대한 퍼머링크"></a></dt>
+<dd><p>jpg 파일에서 XMP 정보를 추출합니다.</p>
+<dl class="simple">
+<dt>Args</dt><dd><ul class="simple">
+<li><p>filepath (str): jpg 파일 경로</p></li>
+</ul>
+</dd>
+<dt>Return</dt><dd><ul class="simple">
+<li><dl class="simple">
+<dt>xmp (tuple): xmp에서 추출한 드론 절대고도, 상대고도 비행 요 각도, 피치각도 롤각도, 짐벌의 요각도, 피치각도 롤각도</dt><dd><ul>
+<li><p>altitude_absolute (float): 드론 절대고도</p></li>
+<li><p>altitude_relative (float): 드론 상대고도</p></li>
+<li><p>flight_yaw (float): 드론이 yaw 축으로 회전한 각도</p></li>
+<li><p>flight_pitch (float): 드론이 pitch 축으로 회전한 각도</p></li>
+<li><p>flight_roll (float): 드론이 roll 축으로 회전한 각도</p></li>
+<li><p>gimbal_yaw (float): 드론 짐벌 카메라가 yaw 축으로 회전한 각도</p></li>
+<li><p>gimbal_pitch (float): 드론 짐벌 카메라가 pitch 축으로 회전한 각도</p></li>
+<li><p>gimbal_roll (float): 드론 짐벌 카메라가 roll 축으로 회전한 각도</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="backend.utils.ipm.get_file_path">
+<span class="sig-prename descclassname"><span class="pre">backend.utils.ipm.</span></span><span class="sig-name descname"><span class="pre">get_file_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">directory</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="reference internal" href="_modules/backend/utils/ipm.html#get_file_path"><span class="viewcode-link"><span class="pre">[소스]</span></span></a><a class="headerlink" href="#backend.utils.ipm.get_file_path" title="이 정의에 대한 퍼머링크"></a></dt>
+<dd><p>특정 디렉터리 하위에 존재하는 jpg 파일 경로 목록을 추출합니다.</p>
+<dl class="simple">
+<dt>Args</dt><dd><ul class="simple">
+<li><p>directory (str): 디렉터리 경로</p></li>
+</ul>
+</dd>
+<dt>Return</dt><dd><ul class="simple">
+<li><p>filepaths (list): jpg 파일 경로 목록</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; 저작권 2023, DVA Lab.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
