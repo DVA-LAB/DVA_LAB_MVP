@@ -1,10 +1,23 @@
-import tqdm
+import argparse
+import os
+from typing import Union
+
 import cv2
 import numpy as np
-import argparse
-from typing import Union
 import torch
+from tqdm import tqdm
 
+#########
+# utils #
+#########
+def attach_suffix_on_filename(path: str, suffix: str) -> str:
+    name, extension = os.path.splitext(path)
+    return f"{name}{suffix}{extension}"
+
+
+#################
+# Glare Remover #
+#################
 class RGLARE:
     """
         빛반사 제거를 목적으로 합니다. 
@@ -29,6 +42,7 @@ class RGLARE:
         else:
             self.weight = self.get_weight()
         if save:
+            save_path = save_path if save_path else attach_suffix_on_filename(video_path, '_result')
             self.video_save(save_path)
 
     def get_weight(self) -> np.ndarray:
@@ -75,7 +89,6 @@ class RGLARE:
 
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         fps = self.cap.get(cv2.CAP_PROP_FPS)
-        # save_path = video_path.replace(video_path[-4:], '_result'+ video_path[-4:])
         self.out = cv2.VideoWriter(save_path, fourcc, fps, self.frame_size)
 
     def gamma_correction(self, frame:np.ndarray, alpha:float=0.8) -> np.ndarray:
