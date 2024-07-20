@@ -1,10 +1,23 @@
-import tqdm
+import argparse
+import os
+from typing import Union
+
 import cv2
 import numpy as np
-import argparse
-from typing import Union
 import torch
+from tqdm import tqdm
 
+#########
+# utils #
+#########
+def attach_suffix_on_filename(path: str, suffix: str) -> str:
+    name, extension = os.path.splitext(path)
+    return f"{name}{suffix}{extension}"
+
+
+#################
+# Glare Remover #
+#################
 class RGLARE:
     """
         빛반사 제거를 목적으로 합니다. 
@@ -29,6 +42,7 @@ class RGLARE:
         else:
             self.weight = self.get_weight()
         if save:
+            save_path = save_path if save_path else attach_suffix_on_filename(video_path, '_result')
             self.video_save(save_path)
 
     def get_weight(self) -> np.ndarray:
@@ -75,7 +89,6 @@ class RGLARE:
 
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         fps = self.cap.get(cv2.CAP_PROP_FPS)
-        # save_path = video_path.replace(video_path[-4:], '_result'+ video_path[-4:])
         self.out = cv2.VideoWriter(save_path, fourcc, fps, self.frame_size)
 
     def gamma_correction(self, frame:np.ndarray, alpha:float=0.8) -> np.ndarray:
@@ -102,7 +115,7 @@ class RGLARE:
             GPU를 사용해 빛반사가 제거된 비디오를 생성합니다.
         """
 
-        for _ in range(self.total_frame):
+        for _ in tqdm(range(self.total_frame)):
             while self.frame_count < self.total_frame+self.queue_len:
                 ret, frame = self.cap.read()
 
@@ -202,7 +215,7 @@ class RGLARE:
 
     def video_cpu(self):
         ''' CPU를 사용해 빛반사가 제거된 비디오를 생성합니다. '''
-        for _ in range(self.total_frame):
+        for _ in tqdm(range(self.total_frame)):
             while self.frame_count < self.total_frame+self.queue_len:
                 ret, frame = self.cap.read()
                 if not ret:
@@ -287,15 +300,24 @@ class RGLARE:
             return self.f_run()
         return None
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='--ql : queue length ex) 4 '
-                                                 '--save : save video ex) True'
-                                                 '--video : video path '
-                                                 '--gamma : gamma stretching ex) True')
-    parser.add_argument('--ql',default=4, type=int, required=True)
-    parser.add_argument('--save',default=True, type=bool, required=True)
-    parser.add_argument('--video', default=None, type=str, required=True)
-    parser.add_argument('--gamma', default=False, type=bool, required=True)
+
+########
+# main #
+########
+def main():
+    parser = argparse.ArgumentParser(description="Remove Glare from Video")
+    parser.add_argument('-i', '--input_path', type=str, required=True, help='input video path')
+    parser.add_argument('-o', '--output_path', default=None, type=str, help='output video path')
+    parser.add_argument('-q', '--queue_length', default=4, type=int, help='queue length')
+    parser.add_argument('-s', '--save', default=True, type=bool, help='whether to save video')
+    parser.add_argument('-g', '--gamma', default=True, type=bool, help='whether to apply gamma stretching')
+    parser.add_argument('-d', '--device', default='gpu', type=str, help='device to use. cpu or gpu')
     args = parser.parse_args()
-    main = RGLARE(args.video, args.ql, args.save, args.gamma)
-    main.video_gpu()
+    
+    glare_remover = RGLARE(args.input_path, args.output_path, args.queue_length, args.save, args.gamma)
+    remove_func = getattr(glare_remover, f'video_{args.device}')
+    remove_func()
+
+
+if __name__ == '__main__':
+    main()
