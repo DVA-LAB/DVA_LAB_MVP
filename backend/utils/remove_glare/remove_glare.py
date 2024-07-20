@@ -287,15 +287,24 @@ class RGLARE:
             return self.f_run()
         return None
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='--ql : queue length ex) 4 '
-                                                 '--save : save video ex) True'
-                                                 '--video : video path '
-                                                 '--gamma : gamma stretching ex) True')
-    parser.add_argument('--ql',default=4, type=int, required=True)
-    parser.add_argument('--save',default=True, type=bool, required=True)
-    parser.add_argument('--video', default=None, type=str, required=True)
-    parser.add_argument('--gamma', default=False, type=bool, required=True)
+
+########
+# main #
+########
+def main():
+    parser = argparse.ArgumentParser(description="Remove Glare from Video")
+    parser.add_argument('-i', '--input_path', type=str, required=True, help='input video path')
+    parser.add_argument('-o', '--output_path', default=None, type=str, help='output video path')
+    parser.add_argument('-q', '--queue_length', default=4, type=int, help='queue length')
+    parser.add_argument('-s', '--save', default=True, type=bool, help='whether to save video')
+    parser.add_argument('-g', '--gamma', default=True, type=bool, help='whether to apply gamma stretching')
+    parser.add_argument('-d', '--device', default='gpu', type=str, help='device to use. cpu or gpu')
     args = parser.parse_args()
-    main = RGLARE(args.video, args.ql, args.save, args.gamma)
-    main.video_gpu()
+    
+    glare_remover = RGLARE(args.input_path, args.output_path, args.queue_length, args.save, args.gamma)
+    remove_func = getattr(glare_remover, f'video_{args.device}')
+    remove_func()
+
+
+if __name__ == '__main__':
+    main()
