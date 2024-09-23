@@ -347,22 +347,30 @@ def draw_combined_layers(image_info: ImageInfo, drone_info: DroneInfo, vis_confi
     # Create layers for drawing
     layer2a = Image.new("RGBA", image_info.frame.size)
     draw2a = ImageDraw.Draw(layer2a, 'RGBA')
-    
+
     layer2b = Image.new("RGBA", image_info.frame.size)
     draw2b = ImageDraw.Draw(layer2b, 'RGBA')
-    
+
     layer4 = Image.new("RGBA", image_info.frame.size)
     draw4 = ImageDraw.Draw(layer4, 'RGBA')
-    
+
     boats = []
     dolphins = []
 
+    # Initialize a dictionary to collect data for each object
+    objects_data = {}
+
     current_time = df_log.iloc[image_info.frame_count - 1]['datetime']
 
-    current_objects_info, _ = get_bev(df_log, image_info.frame_count, frame_objects, drone_info.ori_frame_shape, [image_info.frame.size[0] // 2, image_info.frame.size[1] // 2])
+    current_objects_info, _ = get_bev(df_log, image_info.frame_count, frame_objects, drone_info.ori_frame_shape,
+                                      [image_info.frame.size[0] // 2, image_info.frame.size[1] // 2])
 
     for obj_bbox, cls, id in zip(image_info.bboxes, image_info.classes, image_info.ids):
-        transformed_bbox = transform_bbox_using_get_point(drone_info.ori_frame_shape, drone_info.boundary, drone_info.boundary_rows, drone_info.boundary_cols, drone_info.ground_height, drone_info.bev_GSD, drone_info.eo, drone_info.R, drone_info.focal_length, drone_info.pixel_size, obj_bbox)
+        transformed_bbox = transform_bbox_using_get_point(drone_info.ori_frame_shape, drone_info.boundary,
+                                                          drone_info.boundary_rows, drone_info.boundary_cols,
+                                                          drone_info.ground_height, drone_info.bev_GSD, drone_info.eo,
+                                                          drone_info.R, drone_info.focal_length, drone_info.pixel_size,
+                                                          obj_bbox)
         x1, y1, x2, y2 = map(int, transformed_bbox)
 
         if cls == 0:  # Ship
@@ -372,7 +380,8 @@ def draw_combined_layers(image_info: ImageInfo, drone_info: DroneInfo, vis_confi
 
             for obj_id, obj_row, pixel_size, obj_center, im_center, point, time in current_objects_info:
                 if obj_id == id and id in previous_objects_info:
-                    prev_pixel_size, prev_obj_center, prev_im_center, prev_point, prev_time = previous_objects_info[id][1:]
+                    prev_pixel_size, prev_obj_center, prev_im_center, prev_point, prev_time = previous_objects_info[id][
+                                                                                              1:]
 
                     delta_t = (time - prev_time) / np.timedelta64(1, 'ms')
                     if delta_t != 0:
@@ -389,6 +398,21 @@ def draw_combined_layers(image_info: ImageInfo, drone_info: DroneInfo, vis_confi
 
             boats.append((x1, y1, x2, y2, id, ship_speed))
 
+            # Collect data for the boat
+            boat_data = {
+                'datetime': current_time.strftime('%Y-%m-%d %H:%M:%S.%f'),
+                'frame': image_info.frame_count,
+                'object_id': id,
+                'class': 'boat',
+                'bbox_x1': x1,
+                'bbox_y1': y1,
+                'bbox_x2': x2,
+                'bbox_y2': y2,
+                'speed_knots': f"{ship_speed:.2f}" if ship_speed is not None else "-",
+                'distance_m': None  # Will be updated later if distance is computed
+            }
+            objects_data[id] = boat_data
+
             draw4.rectangle([x1, y1, x2, y2], outline=outline_color, width=2, fill=fill_color)
             label = f"Boat{id} {f'{ship_speed:.2f} kt' if ship_speed else ''}"
             label_bbox = draw4.textbbox((0, 0), label, font=vis_config.font)
@@ -396,7 +420,8 @@ def draw_combined_layers(image_info: ImageInfo, drone_info: DroneInfo, vis_confi
             label_height = (label_bbox[3] - label_bbox[1]) * 1.3
 
             center_x, center_y = (x1 + x2) // 2, (y1 + y2) // 2
-            draw4.rectangle([center_x - 10, center_y - 10, center_x + 10, center_y + 10], fill=outline_color, outline=outline_color)
+            draw4.rectangle([center_x - 10, center_y - 10, center_x + 10, center_y + 10], fill=outline_color,
+                            outline=outline_color)
 
             if y1 - label_height < 0:
                 label_position = (x1, y2)
@@ -406,12 +431,29 @@ def draw_combined_layers(image_info: ImageInfo, drone_info: DroneInfo, vis_confi
                 label_position = (x1, y1 - label_height)
                 draw4.rectangle([x1, y1 - label_height, x1 + label_width, y1], fill=outline_color)
                 draw4.text(label_position, label, font=vis_config.font, fill=(0, 0, 0))
-        
+
         else:  # Dolphin
             outline_color = hex_to_rgba(vis_config.colors.dolphin_outline)
-            dolphins.append((x1, y1, x2, y2))
+            dolphins.append((x1, y1, x2, y2, id))
+
+            # Collect data for the dolphin
+            dolphin_data = {
+                'datetime': current_time.strftime('%Y-%m-%d %H:%M:%S.%f'),
+                'frame': image_info.frame_count,
+                'object_id': id,
+                'class': 'dolphin',
+                'bbox_x1': x1,
+                'bbox_y1': y1,
+                'bbox_x2': x2,
+                'bbox_y2': y2,
+                'speed_knots': None,
+                'distance_m': None  # Will be updated later if distance is computed
+            }
+            objects_data[id] = dolphin_data
+
             draw4.rectangle([x1, y1, x2, y2], outline=outline_color, width=2)
             label = "Dolphin"
+
             text_bbox = draw4.textbbox((0, 0), label, font=vis_config.font)
             text_width = text_bbox[2] - text_bbox[0]
             text_height = (text_bbox[3] - text_bbox[1]) * 1.3
@@ -419,41 +461,52 @@ def draw_combined_layers(image_info: ImageInfo, drone_info: DroneInfo, vis_confi
             draw4.text((x1, y1 - text_height), label, font=vis_config.font, fill=(0, 0, 0))
 
             center_x, center_y = (x1 + x2) // 2, (y1 + y2) // 2
-            draw4.rectangle([center_x - 10, center_y - 10, center_x + 10, center_y + 10], fill=outline_color, outline=outline_color)
+            draw4.rectangle([center_x - 10, center_y - 10, center_x + 10, center_y + 10], fill=outline_color,
+                            outline=outline_color)
 
     for boat in boats:
         x1, y1, x2, y2, id, ship_speed = boat
         center_x, center_y = (x1 + x2) // 2, (y1 + y2) // 2
         circle_color_50m = hex_to_rgba(vis_config.colors.around_circle_50m)
 
-        draw2a.ellipse([center_x - vis_config.px_50m, center_y - vis_config.px_50m, center_x + vis_config.px_50m, center_y + vis_config.px_50m], 
-                        outline=circle_color_50m, width=2, fill=circle_color_50m)
+        draw2a.ellipse([center_x - vis_config.px_50m, center_y - vis_config.px_50m, center_x + vis_config.px_50m,
+                        center_y + vis_config.px_50m],
+                       outline=circle_color_50m, width=2, fill=circle_color_50m)
 
         circle_color_300m = hex_to_rgba(vis_config.colors.around_circle_300m)
 
-        draw2b.ellipse([center_x - vis_config.px_300m, center_y - vis_config.px_300m, center_x + vis_config.px_300m, center_y + vis_config.px_300m], 
-                        outline=circle_color_300m, width=2, fill=circle_color_300m)
-            
+        draw2b.ellipse(
+            [center_x - vis_config.px_300m, center_y - vis_config.px_300m, center_x + vis_config.px_300m,
+             center_y + vis_config.px_300m],
+            outline=circle_color_300m, width=2, fill=circle_color_300m)
+
     if boats and dolphins:
         min_distance = float('inf')
         closest_pair = None
         for boat in boats:
-            bx1, by1, bx2, by2, id, _ = boat
+            bx1, by1, bx2, by2, boat_id, _ = boat
             for dolphin in dolphins:
-                dx1, dy1, dx2, dy2 = dolphin
-                distance = calculate_distance([bx1, by1, bx2 - bx1, by2 - by1], [dx1, dy1, dx2 - dx1, dy2 - dy1])
+                dx1, dy1, dx2, dy2, dolphin_id = dolphin
+                distance = calculate_distance([bx1, by1, bx2 - bx1, by2 - by1],
+                                              [dx1, dy1, dx2 - dx1, dy2 - dy1])
                 if distance < min_distance:
                     min_distance = distance
                     closest_pair = (boat, dolphin)
 
         if closest_pair:
             boat, dolphin = closest_pair
-            bx1, by1, bx2, by2, id, _ = boat
-            dx1, dy1, dx2, dy2 = dolphin
+            bx1, by1, bx2, by2, boat_id, _ = boat
+            dx1, dy1, dx2, dy2, dolphin_id = dolphin
             boat_center = ((bx1 + bx2) // 2, (by1 + by2) // 2)
             dolphin_center = ((dx1 + dx2) // 2, (dy1 + dy2) // 2)
 
-            if min_distance * drone_info.bev_GSD <= 50:
+            distance_m = min_distance * drone_info.bev_GSD
+
+            # Update distance_m for both boat and dolphin
+            objects_data[boat_id]['distance_m'] = f"{distance_m:.2f}"
+            objects_data[dolphin_id]['distance_m'] = f"{distance_m:.2f}"
+
+            if distance_m <= 50:
                 outline_color = hex_to_rgba(vis_config.colors.boat_outline_50m)
                 fill_color = hex_to_rgba(vis_config.colors.boat_fill_50m)
                 line_color = hex_to_rgba(vis_config.colors.line_color_50m)
@@ -466,14 +519,17 @@ def draw_combined_layers(image_info: ImageInfo, drone_info: DroneInfo, vis_confi
             draw3 = ImageDraw.Draw(layer3, 'RGBA')
             draw_dashed_line(draw3, boat_center, dolphin_center, dash_length=10, color=line_color, width=2)
 
-            distance_text = f"{min_distance * drone_info.bev_GSD:.1f}m"
-            mid_point = ((boat_center[0] + dolphin_center[0]) // 2, (boat_center[1] + dolphin_center[1]) // 2)
+            distance_text = f"{distance_m:.1f}m"
+            mid_point = ((boat_center[0] + dolphin_center[0]) // 2,
+                         (boat_center[1] + dolphin_center[1]) // 2)
             text_bbox = draw3.textbbox((0, 0), distance_text, font=vis_config.font)
             text_width = text_bbox[2] - text_bbox[0]
             text_height = (text_bbox[3] - text_bbox[1]) * 1.3
 
-            draw3.rectangle([mid_point[0] - text_width // 2, mid_point[1] - text_height // 2, mid_point[0] + text_width // 2, mid_point[1] + text_height // 2], fill=text_bg_color)
-            draw3.text((mid_point[0] - text_width // 2, mid_point[1] - text_height // 2), distance_text, font=vis_config.font, fill=(255, 255, 255))
+            draw3.rectangle([mid_point[0] - text_width // 2, mid_point[1] - text_height // 2,
+                             mid_point[0] + text_width // 2, mid_point[1] + text_height // 2], fill=text_bg_color)
+            draw3.text((mid_point[0] - text_width // 2, mid_point[1] - text_height // 2), distance_text,
+                       font=vis_config.font, fill=(255, 255, 255))
 
             combined = Image.alpha_composite(layer3, layer4)
     else:
@@ -481,8 +537,13 @@ def draw_combined_layers(image_info: ImageInfo, drone_info: DroneInfo, vis_confi
 
     combined = Image.alpha_composite(layer2a, combined)
     combined = Image.alpha_composite(layer2b, combined)
+
     final_image = Image.alpha_composite(base_frame, combined)
-    return final_image.convert("RGB")
+
+    # Collect all object data into frame_data
+    frame_data = list(objects_data.values())
+
+    return final_image.convert("RGB"), frame_data
 
 def draw_combined_layers_on_original(image_info: ImageInfo, drone_info: DroneInfo, vis_config: VisualizationConfig, previous_objects_info, df_log, frame_objects):
     base_frame = image_info.frame.convert("RGBA")
@@ -507,7 +568,10 @@ def draw_combined_layers_on_original(image_info: ImageInfo, drone_info: DroneInf
 
     for obj_bbox, cls, id in zip(image_info.bboxes, image_info.classes, image_info.ids):
         x1, y1, x2, y2 = map(int, obj_bbox)
-
+        if x1 > x2:
+            x1, x2 = x2, x1
+        if y1 > y2:
+            y1, y2 = y2, y1  
         if cls == 0:  # Ship
             fill_color = hex_to_rgba(vis_config.colors.boat_fill)
             outline_color = hex_to_rgba(vis_config.colors.boat_outline)
@@ -640,6 +704,8 @@ def process_frames(params: FrameProcessingParams):
     bev_previous_objects_info = {}
     ori_previous_objects_info = {}
 
+    collected_data = []  # Initialize an empty list to collect data
+
     for frame_count, (bev_frame_file, ori_frame_file) in enumerate(zip(bev_frame_files, ori_frame_files), start=1):
         frame_data = next((item['result'] for item in json_data['data'] if item['frame_id'] == frame_count - 1), [])
         bboxes = [item['bbox'] for item in frame_data]
@@ -656,9 +722,11 @@ def process_frames(params: FrameProcessingParams):
         px_300m = int(300 / input_GSD) if input_GSD != 0 else 0
         drone_info = get_drone_info(bev_info_dict.get(frame_count), input_GSD, bev_frame.size)
         vis_config = VisualizationConfig(font, px_50m, px_300m)
-        final_image_bev = draw_combined_layers(bev_info, drone_info, vis_config, bev_previous_objects_info, df_log, frame_data)
+        
+        final_image_bev, frame_data_bev = draw_combined_layers(bev_info, drone_info, vis_config, bev_previous_objects_info, df_log, frame_data)
         bev_output_frame_path = os.path.join(bev_output_dir, f'frame_{str(frame_count).zfill(6)}.jpg')
         final_image_bev.save(bev_output_frame_path)
+        collected_data.extend(frame_data_bev)  # Collect data
 
         # Load Original Frame
         ori_frame = Image.open(ori_frame_file)
@@ -669,6 +737,11 @@ def process_frames(params: FrameProcessingParams):
         final_image_ori = draw_combined_layers_on_original(ori_info, ori_drone_info, vis_config, ori_previous_objects_info, df_log, frame_data)
         ori_output_frame_path = os.path.join(original_output_dir, f'frame_{str(frame_count).zfill(6)}.jpg')
         final_image_ori.save(ori_output_frame_path)
+
+    # Save collected data to CSV
+    output_csv_filename = f"{params.csv_path.split('/')[-1].split('.')[0]}_rawdata.csv"
+    df_collected_data = pd.DataFrame(collected_data)
+    df_collected_data.to_csv(output_csv_filename, index=False)
 
     # Create BEV video
     create_video(bev_output_dir, params.output_video_bev)
@@ -700,7 +773,7 @@ def main(args):
         bev_info_path=args.bev_info_path,
         output_dir=args.output_dir,
         output_video_bev=args.output_video_bev,
-        output_video_original=args.output_video_original
+        output_video_original=args.output_video_original,
     )
     process_frames(params)
 
