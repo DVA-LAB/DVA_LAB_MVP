@@ -344,7 +344,6 @@ def get_drone_info(bev_info_data: dict, input_GSD: float, image_shape: Tuple[int
 
 def draw_combined_layers(image_info: ImageInfo, drone_info: DroneInfo, vis_config: VisualizationConfig, previous_objects_info, df_log, frame_objects):
     base_frame = image_info.frame.convert("RGBA")
-    # Create layers for drawing
     layer2a = Image.new("RGBA", image_info.frame.size)
     draw2a = ImageDraw.Draw(layer2a, 'RGBA')
 
@@ -356,12 +355,8 @@ def draw_combined_layers(image_info: ImageInfo, drone_info: DroneInfo, vis_confi
 
     boats = []
     dolphins = []
-
-    # Initialize a dictionary to collect data for each object
     objects_data = {}
-
     current_time = df_log.iloc[image_info.frame_count - 1]['datetime']
-
     current_objects_info, _ = get_bev(df_log, image_info.frame_count, frame_objects, drone_info.ori_frame_shape,
                                       [image_info.frame.size[0] // 2, image_info.frame.size[1] // 2])
 
@@ -380,9 +375,7 @@ def draw_combined_layers(image_info: ImageInfo, drone_info: DroneInfo, vis_confi
 
             for obj_id, obj_row, pixel_size, obj_center, im_center, point, time in current_objects_info:
                 if obj_id == id and id in previous_objects_info:
-                    prev_pixel_size, prev_obj_center, prev_im_center, prev_point, prev_time = previous_objects_info[id][
-                                                                                              1:]
-
+                    prev_pixel_size, prev_obj_center, prev_im_center, prev_point, prev_time = previous_objects_info[id][1:]
                     delta_t = (time - prev_time) / np.timedelta64(1, 'ms')
                     if delta_t != 0:
                         bearing = calculate_bearing(prev_point, point)
@@ -395,10 +388,8 @@ def draw_combined_layers(image_info: ImageInfo, drone_info: DroneInfo, vis_confi
                         ship_speed = speed_ms * 1.94384  # Convert m/s to knots
 
             previous_objects_info[id] = (obj_row, pixel_size, obj_center, im_center, point, current_time)
-
             boats.append((x1, y1, x2, y2, id, ship_speed))
 
-            # Collect data for the boat
             boat_data = {
                 'datetime': current_time.strftime('%Y-%m-%d %H:%M:%S.%f'),
                 'frame': image_info.frame_count,
@@ -436,7 +427,6 @@ def draw_combined_layers(image_info: ImageInfo, drone_info: DroneInfo, vis_confi
             outline_color = hex_to_rgba(vis_config.colors.dolphin_outline)
             dolphins.append((x1, y1, x2, y2, id))
 
-            # Collect data for the dolphin
             dolphin_data = {
                 'datetime': current_time.strftime('%Y-%m-%d %H:%M:%S.%f'),
                 'frame': image_info.frame_count,
@@ -502,7 +492,6 @@ def draw_combined_layers(image_info: ImageInfo, drone_info: DroneInfo, vis_confi
 
             distance_m = min_distance * drone_info.bev_GSD
 
-            # Update distance_m for both boat and dolphin
             objects_data[boat_id]['distance_m'] = f"{distance_m:.2f}"
             objects_data[dolphin_id]['distance_m'] = f"{distance_m:.2f}"
 
@@ -543,9 +532,9 @@ def draw_combined_layers(image_info: ImageInfo, drone_info: DroneInfo, vis_confi
     # Collect all object data into frame_data
     frame_data = list(objects_data.values())
 
-    return final_image.convert("RGB"), frame_data
+    return final_image.convert("RGB"), frame_data, objects_data
 
-def draw_combined_layers_on_original(image_info: ImageInfo, drone_info: DroneInfo, vis_config: VisualizationConfig, previous_objects_info, df_log, frame_objects):
+def draw_combined_layers_on_original(image_info: ImageInfo, drone_info: DroneInfo, vis_config: VisualizationConfig, previous_objects_info, df_log, frame_objects, objects_data):
     base_frame = image_info.frame.convert("RGBA")
     
     # Create layers for drawing
@@ -577,26 +566,15 @@ def draw_combined_layers_on_original(image_info: ImageInfo, drone_info: DroneInf
             outline_color = hex_to_rgba(vis_config.colors.boat_outline)
             ship_speed = None
 
+            # Use the ship speed calculated in BEV
             for obj_id, obj_row, pixel_size, obj_center, im_center, point, time in current_objects_info:
-                if obj_id == id and id in previous_objects_info:
-                    prev_pixel_size, prev_obj_center, prev_im_center, prev_point, prev_time = previous_objects_info[id][1:]
-
-                    delta_t = (time - prev_time) / np.timedelta64(1, 'ms')
-                    if delta_t != 0:
-                        bearing = calculate_bearing(prev_point, point)
-                        distance_a = math.dist(prev_obj_center, prev_im_center) * prev_pixel_size
-                        distance_b = math.dist(obj_center, im_center) * pixel_size
-                        point_a_obj = calculate_object_point(prev_point, bearing, distance_a)
-                        point_b_obj = calculate_object_point(point, bearing, distance_b)
-                        distance_obj = geodesic(point_a_obj, point_b_obj).meters
-                        ship_speed = (distance_obj / delta_t) * 1000 * 1.94384  # Convert m/s to knots
-
-            previous_objects_info[id] = (obj_row, pixel_size, obj_center, im_center, point, current_time)
+                if obj_id == id:
+                    ship_speed = objects_data[obj_id]['speed_knots']  # Get the speed from the collected data
+                    break
 
             boats.append((x1, y1, x2, y2, id, ship_speed))
-
             draw4.rectangle([x1, y1, x2, y2], outline=outline_color, width=2, fill=fill_color)
-            label = f"Boat{id} {f'{ship_speed:.2f} kt' if ship_speed else ''}"
+            label = f"Boat{id} {f'{float(ship_speed):.2f} kt' if ship_speed is not None else ''}"
             label_bbox = draw4.textbbox((0, 0), label, font=vis_config.font)
             label_width = label_bbox[2] - label_bbox[0]
             label_height = (label_bbox[3] - label_bbox[1]) * 1.3
@@ -672,8 +650,10 @@ def draw_combined_layers_on_original(image_info: ImageInfo, drone_info: DroneInf
             text_width = text_bbox[2] - text_bbox[0]
             text_height = (text_bbox[3] - text_bbox[1]) * 1.3
 
-            draw3.rectangle([mid_point[0] - text_width // 2, mid_point[1] - text_height // 2, mid_point[0] + text_width // 2, mid_point[1] + text_height // 2], fill=text_bg_color)
-            draw3.text((mid_point[0] - text_width // 2, mid_point[1] - text_height // 2), distance_text, font=vis_config.font, fill=(255, 255, 255))
+            draw3.rectangle([mid_point[0] - text_width // 2, mid_point[1] - text_height // 2,
+                             mid_point[0] + text_width // 2, mid_point[1] + text_height // 2], fill=text_bg_color)
+            draw3.text((mid_point[0] - text_width // 2, mid_point[1] - text_height // 2), distance_text,
+                       font=vis_config.font, fill=(255, 255, 255))
 
             combined = Image.alpha_composite(layer3, layer4)
     else:
@@ -682,6 +662,7 @@ def draw_combined_layers_on_original(image_info: ImageInfo, drone_info: DroneInf
     combined = Image.alpha_composite(layer2a, combined)
     combined = Image.alpha_composite(layer2b, combined)
     final_image = Image.alpha_composite(base_frame, combined)
+
     return final_image.convert("RGB")
 
 def process_frames(params: FrameProcessingParams):
@@ -707,6 +688,8 @@ def process_frames(params: FrameProcessingParams):
     collected_data = []  # Initialize an empty list to collect data
 
     for frame_count, (bev_frame_file, ori_frame_file) in enumerate(zip(bev_frame_files, ori_frame_files), start=1):
+        if frame_count > 500:
+            break
         frame_data = next((item['result'] for item in json_data['data'] if item['frame_id'] == frame_count - 1), [])
         bboxes = [item['bbox'] for item in frame_data]
         classes = [item['label'] for item in frame_data]
@@ -723,7 +706,7 @@ def process_frames(params: FrameProcessingParams):
         drone_info = get_drone_info(bev_info_dict.get(frame_count), input_GSD, bev_frame.size)
         vis_config = VisualizationConfig(font, px_50m, px_300m)
         
-        final_image_bev, frame_data_bev = draw_combined_layers(bev_info, drone_info, vis_config, bev_previous_objects_info, df_log, frame_data)
+        final_image_bev, frame_data_bev, objects_data = draw_combined_layers(bev_info, drone_info, vis_config, bev_previous_objects_info, df_log, frame_data)
         bev_output_frame_path = os.path.join(bev_output_dir, f'frame_{str(frame_count).zfill(6)}.jpg')
         final_image_bev.save(bev_output_frame_path)
         collected_data.extend(frame_data_bev)  # Collect data
@@ -734,7 +717,7 @@ def process_frames(params: FrameProcessingParams):
 
         # Process Original Frame independently of BEV
         ori_drone_info = get_drone_info(bev_info_dict.get(frame_count), input_GSD, ori_frame.size)  # Ensure the size matches ori_frame
-        final_image_ori = draw_combined_layers_on_original(ori_info, ori_drone_info, vis_config, ori_previous_objects_info, df_log, frame_data)
+        final_image_ori = draw_combined_layers_on_original(ori_info, ori_drone_info, vis_config, ori_previous_objects_info, df_log, frame_data, objects_data)
         ori_output_frame_path = os.path.join(original_output_dir, f'frame_{str(frame_count).zfill(6)}.jpg')
         final_image_ori.save(ori_output_frame_path)
 
