@@ -408,7 +408,7 @@ def draw_combined_layers(image_info: ImageInfo, drone_info: DroneInfo, vis_confi
                 'bbox_y1': y1,
                 'bbox_x2': x2,
                 'bbox_y2': y2,
-                'speed_knots': f"{ship_speed:.2f}" if ship_speed is not None else "-",
+                'speed_knots': f"{ship_speed:.2f}" if ship_speed is not None else None,
                 'distance_m': None  # Will be updated later if distance is computed
             }
             objects_data[id] = boat_data
