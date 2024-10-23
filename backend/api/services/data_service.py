@@ -3,7 +3,7 @@ import cv2
 import threading
 
 
-def parse_video_to_frames(video_path, output_base_folder_path, frame_interval=1):
+def parse_video_to_frames(video_path, output_base_folder_path, frame_interval=5): # 1
     """
         비디오 파일을 파싱하여 프레임으로 추출합니다. 
         
